@@ -1,63 +1,37 @@
 {
-  "name": "faxi-core-system",
+  "name": "faxi-monorepo",
   "version": "1.0.0",
-  "description": "Fax-to-internet bridge service",
-  "main": "dist/index.js",
+  "description": "Faxi Core System - Backend API and Admin Dashboard",
+  "private": true,
+  "workspaces": [
+    "backend",
+    "admin-dashboard"
+  ],
   "scripts": {
-    "build": "tsc",
-    "dev": "tsx watch src/index.ts",
-    "start": "node dist/index.js",
-    "typecheck": "tsc --noEmit",
-    "migrate": "tsx src/database/migrate.ts",
-    "generate-fixtures": "tsx src/test/generateFixtures.ts",
-    "test": "vitest --run",
-    "test:watch": "vitest",
-    "test:integration": "vitest --run src/test/integration"
+    "dev": "npm run dev --workspace=backend",
+    "dev:admin": "npm run dev --workspace=admin-dashboard",
+    "dev:all": "concurrently \"npm run dev --workspace=backend\" \"npm run dev --workspace=admin-dashboard\"",
+    "build": "npm run build --workspaces",
+    "build:backend": "npm run build --workspace=backend",
+    "build:admin": "npm run build --workspace=admin-dashboard",
+    "start": "npm run start --workspace=backend",
+    "start:admin": "npm run start --workspace=admin-dashboard",
+    "typecheck": "npm run typecheck --workspaces",
+    "migrate": "npm run migrate --workspace=backend",
+    "test": "npm run test --workspaces",
+    "test:backend": "npm run test --workspace=backend",
+    "test:admin": "npm run test --workspace=admin-dashboard"
   },
   "keywords": [
     "fax",
     "bridge",
-    "ai"
+    "ai",
+    "admin",
+    "dashboard"
   ],
   "author": "",
   "license": "MIT",
-  "dependencies": {
-    "@aws-sdk/client-s3": "^3.478.0",
-    "@aws-sdk/s3-request-presigner": "^3.478.0",
-    "@google/generative-ai": "^0.24.1",
-    "@langchain/core": "^0.2.31",
-    "axios": "^1.6.2",
-    "bullmq": "^5.1.0",
-    "canvas": "^3.2.0",
-    "cors": "^2.8.5",
-    "dotenv": "^16.3.1",
-    "express": "^4.18.2",
-    "helmet": "^7.1.0",
-    "ioredis": "^5.3.2",
-    "jsbarcode": "^3.12.1",
-    "langchain": "^0.2.19",
-    "multer": "^2.0.2",
-    "pg": "^8.11.3",
-    "sharp": "^0.34.5",
-    "stripe": "^19.3.1",
-    "telnyx": "^4.2.1",
-    "tweetnacl": "^1.0.3",
-    "uuid": "^13.0.0",
-    "winston": "^3.11.0",
-    "zod": "^3.22.4"
-  },
   "devDependencies": {
-    "@types/cors": "^2.8.17",
-    "@types/express": "^4.17.21",
-    "@types/multer": "^2.0.0",
-    "@types/node": "^20.10.5",
-    "@types/pg": "^8.10.9",
-    "@types/stripe": "^8.0.416",
-    "@types/supertest": "^6.0.2",
-    "@types/uuid": "^10.0.0",
-    "supertest": "^6.3.3",
-    "tsx": "^4.7.0",
-    "typescript": "^5.3.3",
-    "vitest": "^1.0.0"
+    "concurrently": "^8.2.2"
   }
 }
