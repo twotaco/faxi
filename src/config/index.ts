@@ -96,6 +96,28 @@ const configSchema = z.object({
     maxStalledCount: z.number(),
     stalledInterval: z.number(),
   }).optional(),
+  
+  // Alerting configuration
+  alerts: z.object({
+    email: z.object({
+      enabled: z.boolean(),
+      smtpHost: z.string(),
+      smtpPort: z.number(),
+      username: z.string(),
+      password: z.string(),
+      from: z.string(),
+      to: z.array(z.string()),
+    }).optional(),
+    slack: z.object({
+      enabled: z.boolean(),
+      webhookUrl: z.string(),
+      channel: z.string(),
+    }).optional(),
+    pagerduty: z.object({
+      enabled: z.boolean(),
+      integrationKey: z.string(),
+    }).optional(),
+  }).optional(),
 });
 
 export type Config = z.infer<typeof configSchema>;
@@ -173,6 +195,26 @@ function buildConfig(): Config {
       concurrency: parseInt(process.env.WORKER_CONCURRENCY || '1', 10),
       maxStalledCount: parseInt(process.env.WORKER_MAX_STALLED_COUNT || '1', 10),
       stalledInterval: parseInt(process.env.WORKER_STALLED_INTERVAL || '30000', 10),
+    },
+    alerts: {
+      email: process.env.ALERTS_EMAIL_ENABLED === 'true' ? {
+        enabled: true,
+        smtpHost: process.env.ALERTS_EMAIL_SMTP_HOST || '',
+        smtpPort: parseInt(process.env.ALERTS_EMAIL_SMTP_PORT || '587', 10),
+        username: process.env.ALERTS_EMAIL_USERNAME || '',
+        password: process.env.ALERTS_EMAIL_PASSWORD || '',
+        from: process.env.ALERTS_EMAIL_FROM || '',
+        to: (process.env.ALERTS_EMAIL_TO || '').split(',').filter(Boolean),
+      } : undefined,
+      slack: process.env.ALERTS_SLACK_ENABLED === 'true' ? {
+        enabled: true,
+        webhookUrl: process.env.ALERTS_SLACK_WEBHOOK_URL || '',
+        channel: process.env.ALERTS_SLACK_CHANNEL || '#alerts',
+      } : undefined,
+      pagerduty: process.env.ALERTS_PAGERDUTY_ENABLED === 'true' ? {
+        enabled: true,
+        integrationKey: process.env.ALERTS_PAGERDUTY_INTEGRATION_KEY || '',
+      } : undefined,
     },
   };
 }

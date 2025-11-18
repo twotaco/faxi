@@ -19,6 +19,10 @@ import { agentDecisionFramework } from './agentDecisionFramework';
 import { agentStateManager } from './agentStateManager';
 import { config } from '../config';
 import { emailMCPServer } from '../mcp/emailMcpServer';
+import { shoppingMCPServer } from '../mcp/shoppingMcpServer';
+import { paymentMCPServer } from '../mcp/paymentMcpServer';
+import { aiChatMCPServer } from '../mcp/aiChatMcpServer';
+import { userProfileMCPServer } from '../mcp/userProfileMcpServer';
 
 /**
  * MCP Controller Agent - Orchestrates complex workflows using MCP tools
@@ -45,6 +49,18 @@ export class MCPControllerAgent {
   private initializeMCPServers(): void {
     // Register Email MCP Server
     this.registerMCPServer(emailMCPServer);
+    
+    // Register Shopping MCP Server
+    this.registerMCPServer(shoppingMCPServer);
+    
+    // Register Payment MCP Server
+    this.registerMCPServer(paymentMCPServer);
+    
+    // Register AI Chat MCP Server
+    this.registerMCPServer(aiChatMCPServer);
+    
+    // Register User Profile MCP Server
+    this.registerMCPServer(userProfileMCPServer);
   }
 
   /**
@@ -66,6 +82,37 @@ export class MCPControllerAgent {
   getServerTools(serverName: string): MCPTool[] {
     const server = this.mcpServers.get(serverName);
     return server ? server.tools : [];
+  }
+
+  /**
+   * Get all registered servers and their tools
+   */
+  getAllServersAndTools(): { serverName: string; tools: string[] }[] {
+    const result: { serverName: string; tools: string[] }[] = [];
+    
+    for (const [serverName, server] of this.mcpServers) {
+      result.push({
+        serverName,
+        tools: server.tools.map(tool => tool.name)
+      });
+    }
+    
+    return result;
+  }
+
+  /**
+   * Verify all expected MCP servers are registered
+   */
+  verifyServerRegistration(): { success: boolean; registeredServers: string[]; missingServers: string[] } {
+    const expectedServers = ['email', 'shopping', 'payment', 'ai_chat', 'user_profile'];
+    const registeredServers = Array.from(this.mcpServers.keys());
+    const missingServers = expectedServers.filter(server => !registeredServers.includes(server));
+    
+    return {
+      success: missingServers.length === 0,
+      registeredServers,
+      missingServers
+    };
   }
 
   /**
@@ -575,11 +622,11 @@ DECISION FRAMEWORK:
    - Limit to 2-3 suggestions to avoid overwhelming
 
 AVAILABLE MCP TOOLS:
-- Email: send_email, lookup_contact, search_emails
-- Shopping: search_products, get_complementary_products, add_to_cart, checkout
-- Payment: get_payment_methods, process_payment, generate_konbini_barcode
-- AI Chat: chat, get_conversation
-- User Profile: get_user_profile, update_delivery_address
+- Email: send_email, get_email_thread, search_emails
+- Shopping: search_products, get_product_details, add_to_cart, get_cart, update_cart_item, remove_from_cart, checkout, get_complementary_products, get_bundle_deals
+- Payment: get_payment_methods, register_payment_method, process_payment, generate_konbini_barcode, check_payment_status
+- AI Chat: chat, get_conversation, summarize_conversation
+- User Profile: get_user_profile, update_delivery_address, get_address_book, add_contact, update_contact, delete_contact, lookup_contact, get_order_history, track_order
 
 Always log your reasoning and tool calls for audit purposes.
 `;
