@@ -5,10 +5,18 @@ import { redis } from './queue/connection';
 import { s3Storage } from './storage/s3';
 import { checkQueueHealth } from './queue/faxQueue';
 import { telnyxWebhookController } from './webhooks/telnyxWebhookController';
+import { stripeWebhookController } from './webhooks/stripeWebhookController';
+import { emailWebhookController } from './webhooks/emailWebhookController';
+import { testWebhookController } from './webhooks/testWebhookController';
+import { emailToFaxWorker } from './services/emailToFaxWorker';
+import { faxProcessorWorker } from './services/faxProcessorWorker';
 
 const app = express();
 
-// Middleware
+// Special middleware for Stripe webhooks (needs raw body)
+app.use('/webhooks/stripe', express.raw({ type: 'application/json' }));
+
+// Regular middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -62,6 +70,66 @@ app.post('/webhooks/telnyx/fax/received', (req: Request, res: Response) => {
   telnyxWebhookController.handleFaxReceived(req, res);
 });
 
+app.post('/webhooks/stripe', (req: Request, res: Response) => {
+  stripeWebhookController.handleWebhook(req, res);
+});
+
+app.post('/webhooks/email/received', (req: Request, res: Response) => {
+  emailWebhookController.handleEmailReceived(req, res);
+});
+
+// Test endpoints (only available in test mode)
+if (config.app.testMode) {
+  app.post('/test/fax/receive', (req: Request, res: Response) => {
+    testWebhookController.handleTestFaxReceive(req, res);
+  });
+
+  app.get('/test/fax/media/:fax_id', (req: Request, res: Response) => {
+    testWebhookController.serveTestFaxMedia(req, res);
+  });
+
+  app.get('/test/fax/status/:fax_id', (req: Request, res: Response) => {
+    testWebhookController.getTestFaxStatus(req, res);
+  });
+
+  app.get('/test/fax/list', (req: Request, res: Response) => {
+    testWebhookController.listTestFaxes(req, res);
+  });
+
+  app.delete('/test/fax/clear', (req: Request, res: Response) => {
+    testWebhookController.clearTestData(req, res);
+  });
+
+  app.get('/test/fax/responses', (req: Request, res: Response) => {
+    testWebhookController.getMockSentFaxes(req, res);
+  });
+
+  app.get('/test/fax/download/:fax_id', (req: Request, res: Response) => {
+    testWebhookController.downloadMockFax(req, res);
+  });
+
+  app.get('/test/fax/stats', (req: Request, res: Response) => {
+    testWebhookController.getMockFaxStats(req, res);
+  });
+
+  app.get('/test/fax/fixtures', (req: Request, res: Response) => {
+    testWebhookController.listTestFixtures(req, res);
+  });
+
+  app.get('/test/fax/fixtures/:filename', (req: Request, res: Response) => {
+    testWebhookController.serveTestFixture(req, res);
+  });
+
+  app.post('/test/fax/fixtures/generate', (req: Request, res: Response) => {
+    testWebhookController.generateTestFixtures(req, res);
+  });
+
+  // Serve test UI
+  app.get('/test', (req: Request, res: Response) => {
+    res.sendFile('test/testUI.html', { root: __dirname });
+  });
+}
+
 // Start server
 async function start() {
   try {
@@ -87,6 +155,14 @@ async function start() {
       console.log('✓ S3 connected');
     }
 
+    // Start email-to-fax worker
+    emailToFaxWorker.start();
+    console.log('✓ Email-to-fax worker started');
+
+    // Start fax processor worker
+    await faxProcessorWorker.start();
+    console.log('✓ Fax processor worker started');
+
     // Start server
     app.listen(config.app.port, () => {
       console.log(`✓ Server running on port ${config.app.port}`);
@@ -102,6 +178,8 @@ async function start() {
 // Graceful shutdown
 process.on('SIGTERM', async () => {
   console.log('SIGTERM received, shutting down gracefully...');
+  await emailToFaxWorker.stop();
+  await faxProcessorWorker.shutdown();
   await db.close();
   await redis.close();
   process.exit(0);
@@ -109,6 +187,8 @@ process.on('SIGTERM', async () => {
 
 process.on('SIGINT', async () => {
   console.log('SIGINT received, shutting down gracefully...');
+  await emailToFaxWorker.stop();
+  await faxProcessorWorker.shutdown();
   await db.close();
   await redis.close();
   process.exit(0);

@@ -1,0 +1,81 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: faxi-ingress
+  namespace: faxi
+  labels:
+    app.kubernetes.io/name: faxi
+    app.kubernetes.io/component: ingress
+  annotations:
+    # Nginx ingress controller annotations
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    
+    # Rate limiting
+    nginx.ingress.kubernetes.io/rate-limit: "100"
+    nginx.ingress.kubernetes.io/rate-limit-window: "1m"
+    
+    # Webhook-specific rate limiting
+    nginx.ingress.kubernetes.io/server-snippet: |
+      location /webhooks/ {
+        limit_req zone=webhook burst=20 nodelay;
+      }
+    
+    # Security headers
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      add_header X-Frame-Options DENY;
+      add_header X-Content-Type-Options nosniff;
+      add_header X-XSS-Protection "1; mode=block";
+      add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+    
+    # Client body size for fax uploads
+    nginx.ingress.kubernetes.io/proxy-body-size: "50m"
+    
+    # Timeouts
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "10"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "60"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "60"
+    
+    # Certificate manager (if using cert-manager)
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    
+    # AWS Load Balancer Controller annotations (if using AWS)
+    # kubernetes.io/ingress.class: "alb"
+    # alb.ingress.kubernetes.io/scheme: internet-facing
+    # alb.ingress.kubernetes.io/target-type: ip
+    # alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:region:account:certificate/cert-id
+spec:
+  ingressClassName: nginx  # Adjust based on your ingress controller
+  tls:
+  - hosts:
+    - api.faxi.jp
+    secretName: faxi-tls-secret
+  rules:
+  - host: api.faxi.jp
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: faxi-app-service
+            port:
+              number: 3000
+
+---
+# TLS Secret (if not using cert-manager)
+apiVersion: v1
+kind: Secret
+metadata:
+  name: faxi-tls-secret
+  namespace: faxi
+  labels:
+    app.kubernetes.io/name: faxi
+    app.kubernetes.io/component: tls
+type: kubernetes.io/tls
+data:
+  # Base64 encoded certificate and key
+  # Replace with your actual certificate data
+  tls.crt: LS0tLS1CRUdJTi... # Base64 encoded certificate
+  tls.key: LS0tLS1CRUdJTi... # Base64 encoded private key

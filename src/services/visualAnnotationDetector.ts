@@ -1,7 +1,7 @@
 import {
-  VisualAnnotation,
-  FaxTemplate
-} from '../types/vision';
+  VisualAnnotation
+} from '../types/vision.js';
+import { FaxTemplate } from '../types/fax.js';
 import { auditLogService } from './auditLogService';
 
 export class VisualAnnotationDetector {
@@ -336,11 +336,11 @@ export class VisualAnnotationDetector {
         return {
           type: templateType,
           referenceId,
-          hasReplyForm: true,
-          expectedSelections,
+          pages: [], // Will be populated by template engine
           contextData: {
             detectedAt: new Date().toISOString(),
-            annotationCount: annotations.length
+            annotationCount: annotations.length,
+            expectedSelections
           }
         };
       }
@@ -356,10 +356,12 @@ export class VisualAnnotationDetector {
       return {
         type: 'product_selection', // Default assumption
         referenceId: '', // Will need context recovery
-        hasReplyForm: true,
-        expectedSelections: annotations
-          .filter(ann => ann.type === 'circle' && /^[A-Z]$/.test(ann.associatedText || ''))
-          .map(ann => ann.associatedText || '')
+        pages: [], // Will be populated by template engine
+        contextData: {
+          expectedSelections: annotations
+            .filter(ann => ann.type === 'circle' && /^[A-Z]$/.test(ann.associatedText || ''))
+            .map(ann => ann.associatedText || '')
+        }
       };
     }
 

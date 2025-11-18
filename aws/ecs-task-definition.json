@@ -1,0 +1,199 @@
+{
+  "family": "faxi-core-system",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "1024",
+  "memory": "2048",
+  "executionRoleArn": "arn:aws:iam::ACCOUNT_ID:role/ecsTaskExecutionRole",
+  "taskRoleArn": "arn:aws:iam::ACCOUNT_ID:role/faxiTaskRole",
+  "containerDefinitions": [
+    {
+      "name": "faxi-app",
+      "image": "ACCOUNT_ID.dkr.ecr.REGION.amazonaws.com/faxi-core-system:latest",
+      "portMappings": [
+        {
+          "containerPort": 3000,
+          "protocol": "tcp"
+        }
+      ],
+      "essential": true,
+      "environment": [
+        {
+          "name": "NODE_ENV",
+          "value": "production"
+        },
+        {
+          "name": "LOG_LEVEL",
+          "value": "info"
+        },
+        {
+          "name": "PORT",
+          "value": "3000"
+        },
+        {
+          "name": "TEST_MODE",
+          "value": "false"
+        },
+        {
+          "name": "DATABASE_HOST",
+          "value": "faxi-postgres.cluster-XXXXX.REGION.rds.amazonaws.com"
+        },
+        {
+          "name": "DATABASE_PORT",
+          "value": "5432"
+        },
+        {
+          "name": "DATABASE_NAME",
+          "value": "faxi"
+        },
+        {
+          "name": "DATABASE_USER",
+          "value": "faxi_user"
+        },
+        {
+          "name": "DATABASE_POOL_MIN",
+          "value": "5"
+        },
+        {
+          "name": "DATABASE_POOL_MAX",
+          "value": "20"
+        },
+        {
+          "name": "REDIS_HOST",
+          "value": "faxi-redis.XXXXX.cache.amazonaws.com"
+        },
+        {
+          "name": "REDIS_PORT",
+          "value": "6379"
+        },
+        {
+          "name": "REDIS_DB",
+          "value": "0"
+        },
+        {
+          "name": "S3_REGION",
+          "value": "us-east-1"
+        },
+        {
+          "name": "S3_BUCKET",
+          "value": "faxi-production-fax-images"
+        },
+        {
+          "name": "EMAIL_FROM_DOMAIN",
+          "value": "me.faxi.jp"
+        },
+        {
+          "name": "EMAIL_PROVIDER",
+          "value": "sendgrid"
+        },
+        {
+          "name": "TELNYX_FAX_NUMBER",
+          "value": "+1234567890"
+        },
+        {
+          "name": "TELNYX_WEBHOOK_TIMEOUT",
+          "value": "5"
+        },
+        {
+          "name": "GEMINI_MODEL",
+          "value": "gemini-2.0-flash-exp"
+        },
+        {
+          "name": "SMTP_HOST",
+          "value": "mail.faxi.jp"
+        },
+        {
+          "name": "SMTP_PORT",
+          "value": "587"
+        },
+        {
+          "name": "SMTP_SECURE",
+          "value": "true"
+        },
+        {
+          "name": "SMTP_USER",
+          "value": "noreply@faxi.jp"
+        },
+        {
+          "name": "BASE_URL",
+          "value": "https://api.faxi.jp"
+        }
+      ],
+      "secrets": [
+        {
+          "name": "DATABASE_PASSWORD",
+          "valueFrom": "arn:aws:secretsmanager:REGION:ACCOUNT_ID:secret:faxi/database-XXXXX:password::"
+        },
+        {
+          "name": "REDIS_PASSWORD",
+          "valueFrom": "arn:aws:secretsmanager:REGION:ACCOUNT_ID:secret:faxi/redis-XXXXX:password::"
+        },
+        {
+          "name": "S3_ACCESS_KEY_ID",
+          "valueFrom": "arn:aws:secretsmanager:REGION:ACCOUNT_ID:secret:faxi/s3-XXXXX:access_key_id::"
+        },
+        {
+          "name": "S3_SECRET_ACCESS_KEY",
+          "valueFrom": "arn:aws:secretsmanager:REGION:ACCOUNT_ID:secret:faxi/s3-XXXXX:secret_access_key::"
+        },
+        {
+          "name": "TELNYX_API_KEY",
+          "valueFrom": "arn:aws:secretsmanager:REGION:ACCOUNT_ID:secret:faxi/telnyx-XXXXX:api_key::"
+        },
+        {
+          "name": "TELNYX_PUBLIC_KEY",
+          "valueFrom": "arn:aws:secretsmanager:REGION:ACCOUNT_ID:secret:faxi/telnyx-XXXXX:public_key::"
+        },
+        {
+          "name": "GEMINI_API_KEY",
+          "valueFrom": "arn:aws:secretsmanager:REGION:ACCOUNT_ID:secret:faxi/gemini-XXXXX:api_key::"
+        },
+        {
+          "name": "EMAIL_WEBHOOK_SECRET",
+          "valueFrom": "arn:aws:secretsmanager:REGION:ACCOUNT_ID:secret:faxi/email-XXXXX:webhook_secret::"
+        },
+        {
+          "name": "SENDGRID_API_KEY",
+          "valueFrom": "arn:aws:secretsmanager:REGION:ACCOUNT_ID:secret:faxi/sendgrid-XXXXX:api_key::"
+        },
+        {
+          "name": "SMTP_PASS",
+          "valueFrom": "arn:aws:secretsmanager:REGION:ACCOUNT_ID:secret:faxi/smtp-XXXXX:password::"
+        },
+        {
+          "name": "STRIPE_SECRET_KEY",
+          "valueFrom": "arn:aws:secretsmanager:REGION:ACCOUNT_ID:secret:faxi/stripe-XXXXX:secret_key::"
+        },
+        {
+          "name": "STRIPE_PUBLISHABLE_KEY",
+          "valueFrom": "arn:aws:secretsmanager:REGION:ACCOUNT_ID:secret:faxi/stripe-XXXXX:publishable_key::"
+        },
+        {
+          "name": "STRIPE_WEBHOOK_SECRET",
+          "valueFrom": "arn:aws:secretsmanager:REGION:ACCOUNT_ID:secret:faxi/stripe-XXXXX:webhook_secret::"
+        }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/faxi-core-system",
+          "awslogs-region": "us-east-1",
+          "awslogs-stream-prefix": "ecs"
+        }
+      },
+      "healthCheck": {
+        "command": [
+          "CMD-SHELL",
+          "curl -f http://localhost:3000/health || exit 1"
+        ],
+        "interval": 30,
+        "timeout": 5,
+        "retries": 3,
+        "startPeriod": 60
+      },
+      "cpu": 1024,
+      "memory": 2048,
+      "memoryReservation": 1024
+    }
+  ]
+}

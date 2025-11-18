@@ -1,9 +1,9 @@
 import {
   InterpretationResult,
   ContextRecoveryResult,
-  ConversationContext,
-  FaxTemplate
-} from '../types/vision';
+  ConversationContext
+} from '../types/vision.js';
+import { FaxTemplate } from '../types/fax.js';
 import { conversationContextRepository } from '../repositories/conversationContextRepository';
 import { faxJobRepository } from '../repositories/faxJobRepository';
 import { auditLogService } from './auditLogService';

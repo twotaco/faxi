@@ -1,0 +1,57 @@
+# Development overrides for docker-compose.yml
+# This file is automatically loaded by docker-compose
+version: '3.8'
+
+services:
+  faxi-app:
+    # Override for development with hot reload
+    build:
+      target: builder
+    command: npm run dev
+    volumes:
+      # Mount source code for hot reload
+      - ./src:/app/src:ro
+      - ./package*.json:/app/
+      # Preserve node_modules in container
+      - /app/node_modules
+    environment:
+      # Development-specific environment variables
+      - NODE_ENV=development
+      - LOG_LEVEL=debug
+      - TEST_MODE=true
+    # Enable debugging
+    ports:
+      - "3000:3000"
+      - "9229:9229"  # Node.js debug port
+
+  # Add pgAdmin for database management in development
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=admin@faxi.jp
+      - PGADMIN_DEFAULT_PASSWORD=admin
+      - PGADMIN_CONFIG_SERVER_MODE=False
+    ports:
+      - "5050:80"
+    depends_on:
+      - postgres
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    networks:
+      - faxi-network
+
+  # Redis Commander for Redis management in development
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    environment:
+      - REDIS_HOSTS=local:redis:6379
+    ports:
+      - "8081:8081"
+    depends_on:
+      - redis
+    networks:
+      - faxi-network
+
+volumes:
+  pgadmin_data:
+    driver: local

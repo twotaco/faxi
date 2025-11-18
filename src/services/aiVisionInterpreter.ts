@@ -5,9 +5,9 @@ import {
   InterpretationResult,
   VisualAnnotation,
   ContextRecoveryResult,
-  ConversationContext,
-  FaxTemplate
-} from '../types/vision';
+  ConversationContext
+} from '../types/vision.js';
+import { FaxTemplate } from '../types/fax.js';
 import { auditLogService } from './auditLogService';
 import { intentExtractor } from './intentExtractor';
 import { visualAnnotationDetector } from './visualAnnotationDetector';

@@ -5,6 +5,8 @@ export interface User {
   phoneNumber: string;
   emailAddress: string;
   name: string | null;
+  stripeCustomerId: string | null;
+  preferences: Record<string, any>;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -13,6 +15,8 @@ export interface CreateUserData {
   phoneNumber: string;
   emailAddress: string;
   name?: string;
+  stripeCustomerId?: string;
+  preferences?: Record<string, any>;
 }
 
 export class UserRepository {
@@ -22,7 +26,8 @@ export class UserRepository {
   async findByPhoneNumber(phoneNumber: string): Promise<User | null> {
     const result = await db.query<User>(
       `SELECT id, phone_number as "phoneNumber", email_address as "emailAddress", 
-              name, created_at as "createdAt", updated_at as "updatedAt"
+              name, stripe_customer_id as "stripeCustomerId", preferences,
+              created_at as "createdAt", updated_at as "updatedAt"
        FROM users 
        WHERE phone_number = $1`,
       [phoneNumber]
@@ -37,7 +42,8 @@ export class UserRepository {
   async findByEmail(emailAddress: string): Promise<User | null> {
     const result = await db.query<User>(
       `SELECT id, phone_number as "phoneNumber", email_address as "emailAddress", 
-              name, created_at as "createdAt", updated_at as "updatedAt"
+              name, stripe_customer_id as "stripeCustomerId", preferences,
+              created_at as "createdAt", updated_at as "updatedAt"
        FROM users 
        WHERE email_address = $1`,
       [emailAddress]
@@ -52,7 +58,8 @@ export class UserRepository {
   async findById(id: string): Promise<User | null> {
     const result = await db.query<User>(
       `SELECT id, phone_number as "phoneNumber", email_address as "emailAddress", 
-              name, created_at as "createdAt", updated_at as "updatedAt"
+              name, stripe_customer_id as "stripeCustomerId", preferences,
+              created_at as "createdAt", updated_at as "updatedAt"
        FROM users 
        WHERE id = $1`,
       [id]
@@ -65,12 +72,25 @@ export class UserRepository {
    * Create a new user
    */
   async create(data: CreateUserData): Promise<User> {
+    const defaultPreferences = {
+      spamSensitivity: 'medium',
+      welcomeFaxSent: false,
+      ...data.preferences,
+    };
+
     const result = await db.query<User>(
-      `INSERT INTO users (phone_number, email_address, name)
-       VALUES ($1, $2, $3)
+      `INSERT INTO users (phone_number, email_address, name, stripe_customer_id, preferences)
+       VALUES ($1, $2, $3, $4, $5)
        RETURNING id, phone_number as "phoneNumber", email_address as "emailAddress", 
-                 name, created_at as "createdAt", updated_at as "updatedAt"`,
-      [data.phoneNumber, data.emailAddress, data.name || null]
+                 name, stripe_customer_id as "stripeCustomerId", preferences,
+                 created_at as "createdAt", updated_at as "updatedAt"`,
+      [
+        data.phoneNumber, 
+        data.emailAddress, 
+        data.name || null, 
+        data.stripeCustomerId || null,
+        JSON.stringify(defaultPreferences)
+      ]
     );
 
     return result.rows[0];
@@ -89,6 +109,16 @@ export class UserRepository {
       values.push(data.name);
     }
 
+    if (data.stripeCustomerId !== undefined) {
+      updates.push(`stripe_customer_id = $${paramIndex++}`);
+      values.push(data.stripeCustomerId);
+    }
+
+    if (data.preferences !== undefined) {
+      updates.push(`preferences = $${paramIndex++}`);
+      values.push(JSON.stringify(data.preferences));
+    }
+
     if (updates.length === 0) {
       throw new Error('No fields to update');
     }
@@ -100,11 +130,19 @@ export class UserRepository {
        SET ${updates.join(', ')}
        WHERE id = $${paramIndex}
        RETURNING id, phone_number as "phoneNumber", email_address as "emailAddress", 
-                 name, created_at as "createdAt", updated_at as "updatedAt"`,
+                 name, stripe_customer_id as "stripeCustomerId", preferences,
+                 created_at as "createdAt", updated_at as "updatedAt"`,
       values
     );
 
     return result.rows[0];
+  }
+
+  /**
+   * Update user preferences
+   */
+  async updatePreferences(id: string, preferences: Record<string, any>): Promise<User> {
+    return await this.update(id, { preferences });
   }
 
   /**

@@ -28,6 +28,7 @@ export interface InterpretationResult {
   extractedText?: string;
   referenceId?: string; // Extracted from fax
   contextRecovery?: ContextRecoveryResult;
+  context?: ConversationContext; // Recovered conversation context
 }
 
 export interface IntentParameters {
@@ -75,10 +76,4 @@ export interface ContextRecoveryResult {
   ambiguousMatches?: string[]; // Multiple possible contexts
 }
 
-export interface FaxTemplate {
-  type: 'email_reply' | 'product_selection' | 'payment_barcodes' | 'confirmation' | 'multi_action' | 'clarification';
-  referenceId: string;
-  hasReplyForm: boolean;
-  expectedSelections?: string[]; // Expected option letters/numbers
-  contextData?: Record<string, any>;
-}
+// FaxTemplate is defined in fax.ts

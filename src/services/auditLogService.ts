@@ -34,12 +34,15 @@ export class AuditLogService {
    * Log fax transmission
    */
   async logFaxTransmission(data: {
-    userId: string;
-    faxJobId: string;
+    userId?: string;
+    faxJobId?: string;
     fromNumber: string;
     toNumber: string;
+    mediaUrl?: string;
     referenceId?: string;
-    status: 'sent' | 'failed';
+    status: 'attempting' | 'queued' | 'sent' | 'failed' | 'retry' | 'failed_final' | 'mock_sent';
+    attempt?: number;
+    telnyxFaxId?: string;
     errorMessage?: string;
   }): Promise<void> {
     await auditLogRepository.create({
@@ -49,8 +52,11 @@ export class AuditLogService {
       eventData: {
         fromNumber: data.fromNumber,
         toNumber: data.toNumber,
+        mediaUrl: data.mediaUrl,
         referenceId: data.referenceId,
         status: data.status,
+        attempt: data.attempt,
+        telnyxFaxId: data.telnyxFaxId,
         errorMessage: data.errorMessage,
         timestamp: new Date().toISOString(),
       },
@@ -172,18 +178,24 @@ export class AuditLogService {
    */
   async logEmailReceived(data: {
     userId: string;
-    from: string;
-    to: string;
+    fromEmail: string;
+    toEmail: string;
     subject: string;
+    bodyLength: number;
+    hasAttachments: boolean;
+    provider: string;
     messageId?: string;
   }): Promise<void> {
     await auditLogRepository.create({
       userId: data.userId,
       eventType: 'email.received',
       eventData: {
-        from: data.from,
-        to: data.to,
+        fromEmail: data.fromEmail,
+        toEmail: data.toEmail,
         subject: data.subject,
+        bodyLength: data.bodyLength,
+        hasAttachments: data.hasAttachments,
+        provider: data.provider,
         messageId: data.messageId,
         timestamp: new Date().toISOString(),
       },
@@ -218,29 +230,124 @@ export class AuditLogService {
   }
 
   /**
+   * Log shopping action (add to cart, remove from cart, etc.)
+   */
+  async logShoppingAction(data: {
+    userId: string;
+    faxJobId?: string;
+    action: 'add_to_cart' | 'remove_from_cart' | 'update_cart_item' | 'clear_cart';
+    productId?: string;
+    quantity?: number;
+    cartTotal?: number;
+  }): Promise<void> {
+    await auditLogRepository.create({
+      userId: data.userId,
+      faxJobId: data.faxJobId,
+      eventType: `shopping.${data.action}`,
+      eventData: {
+        productId: data.productId,
+        quantity: data.quantity,
+        cartTotal: data.cartTotal,
+        timestamp: new Date().toISOString(),
+      },
+    });
+  }
+
+  /**
+   * Log order placed
+   */
+  async logOrderPlaced(data: {
+    userId: string;
+    faxJobId?: string;
+    orderId: string;
+    externalOrderId?: string;
+    totalAmount: number;
+    itemCount: number;
+  }): Promise<void> {
+    await auditLogRepository.create({
+      userId: data.userId,
+      faxJobId: data.faxJobId,
+      eventType: 'order.placed',
+      eventData: {
+        orderId: data.orderId,
+        externalOrderId: data.externalOrderId,
+        totalAmount: data.totalAmount,
+        itemCount: data.itemCount,
+        timestamp: new Date().toISOString(),
+      },
+    });
+  }
+
+  /**
+   * Log payment method registered
+   */
+  async logPaymentMethodRegistered(data: {
+    userId: string;
+    faxJobId?: string;
+    paymentMethodId: string;
+    type: 'card' | 'konbini';
+    isDefault: boolean;
+  }): Promise<void> {
+    await auditLogRepository.create({
+      userId: data.userId,
+      faxJobId: data.faxJobId,
+      eventType: 'payment.method_registered',
+      eventData: {
+        paymentMethodId: data.paymentMethodId,
+        type: data.type,
+        isDefault: data.isDefault,
+        timestamp: new Date().toISOString(),
+      },
+    });
+  }
+
+  /**
    * Log payment processed
    */
   async logPaymentProcessed(data: {
     userId: string;
     faxJobId?: string;
-    paymentMethodId: string;
+    paymentIntentId: string;
     amount: number;
     currency: string;
-    transactionId?: string;
-    success: boolean;
-    errorMessage?: string;
+    status: string;
+    paymentMethodId: string;
   }): Promise<void> {
     await auditLogRepository.create({
       userId: data.userId,
       faxJobId: data.faxJobId,
       eventType: 'payment.processed',
       eventData: {
-        paymentMethodId: data.paymentMethodId,
+        paymentIntentId: data.paymentIntentId,
         amount: data.amount,
         currency: data.currency,
-        transactionId: data.transactionId,
-        success: data.success,
-        errorMessage: data.errorMessage,
+        status: data.status,
+        paymentMethodId: data.paymentMethodId,
+        timestamp: new Date().toISOString(),
+      },
+    });
+  }
+
+  /**
+   * Log konbini barcode generated
+   */
+  async logKonbiniBarcodeGenerated(data: {
+    userId: string;
+    faxJobId?: string;
+    paymentIntentId: string;
+    amount: number;
+    currency: string;
+    expiresAt: Date;
+  }): Promise<void> {
+    await auditLogRepository.create({
+      userId: data.userId,
+      faxJobId: data.faxJobId,
+      eventType: 'payment.konbini_barcode_generated',
+      eventData: {
+        paymentIntentId: data.paymentIntentId,
+        amount: data.amount,
+        currency: data.currency,
+        expiresAt: data.expiresAt.toISOString(),
         timestamp: new Date().toISOString(),
       },
     });
@@ -260,6 +367,31 @@ export class AuditLogService {
       eventData: {
         phoneNumber: data.phoneNumber,
         emailAddress: data.emailAddress,
+        timestamp: new Date().toISOString(),
+      },
+    });
+  }
+
+  /**
+   * Log AI chat interaction
+   */
+  async logAIChatInteraction(data: {
+    userId: string;
+    faxJobId?: string;
+    conversationId: string;
+    userMessage: string;
+    aiResponse: string;
+    referenceId: string;
+  }): Promise<void> {
+    await auditLogRepository.create({
+      userId: data.userId,
+      faxJobId: data.faxJobId,
+      eventType: 'ai.chat_interaction',
+      eventData: {
+        conversationId: data.conversationId,
+        userMessage: data.userMessage,
+        aiResponse: data.aiResponse,
+        referenceId: data.referenceId,
         timestamp: new Date().toISOString(),
       },
     });
@@ -321,6 +453,88 @@ export class AuditLogService {
    */
   async log(data: CreateAuditLogData): Promise<void> {
     await auditLogRepository.create(data);
+  }
+
+  /**
+   * Log user profile updated
+   */
+  async logUserProfileUpdated(data: {
+    userId: string;
+    field: string;
+    oldValue?: any;
+    newValue?: any;
+  }): Promise<void> {
+    await auditLogRepository.create({
+      userId: data.userId,
+      eventType: 'user.profile_updated',
+      eventData: {
+        field: data.field,
+        oldValue: data.oldValue,
+        newValue: data.newValue,
+        timestamp: new Date().toISOString(),
+      },
+    });
+  }
+
+  /**
+   * Log contact added
+   */
+  async logContactAdded(data: {
+    userId: string;
+    contactId: string;
+    name: string;
+    emailAddress: string;
+  }): Promise<void> {
+    await auditLogRepository.create({
+      userId: data.userId,
+      eventType: 'contact.added',
+      eventData: {
+        contactId: data.contactId,
+        name: data.name,
+        emailAddress: data.emailAddress,
+        timestamp: new Date().toISOString(),
+      },
+    });
+  }
+
+  /**
+   * Log contact updated
+   */
+  async logContactUpdated(data: {
+    userId: string;
+    contactId: string;
+    changes: any;
+  }): Promise<void> {
+    await auditLogRepository.create({
+      userId: data.userId,
+      eventType: 'contact.updated',
+      eventData: {
+        contactId: data.contactId,
+        changes: data.changes,
+        timestamp: new Date().toISOString(),
+      },
+    });
+  }
+
+  /**
+   * Log contact deleted
+   */
+  async logContactDeleted(data: {
+    userId: string;
+    contactId: string;
+    name: string;
+    emailAddress: string;
+  }): Promise<void> {
+    await auditLogRepository.create({
+      userId: data.userId,
+      eventType: 'contact.deleted',
+      eventData: {
+        contactId: data.contactId,
+        name: data.name,
+        emailAddress: data.emailAddress,
+        timestamp: new Date().toISOString(),
+      },
+    });
   }
 
   /**

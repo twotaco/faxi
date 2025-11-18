@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: faxi
+  labels:
+    name: faxi
+    app.kubernetes.io/name: faxi
+    app.kubernetes.io/component: namespace

@@ -1,0 +1,50 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: faxi-config
+  namespace: faxi
+  labels:
+    app.kubernetes.io/name: faxi
+    app.kubernetes.io/component: config
+data:
+  NODE_ENV: "production"
+  LOG_LEVEL: "info"
+  PORT: "3000"
+  
+  # Database configuration
+  DATABASE_HOST: "postgres-service"
+  DATABASE_PORT: "5432"
+  DATABASE_NAME: "faxi"
+  DATABASE_USER: "faxi_user"
+  DATABASE_POOL_MIN: "5"
+  DATABASE_POOL_MAX: "20"
+  
+  # Redis configuration
+  REDIS_HOST: "redis-service"
+  REDIS_PORT: "6379"
+  REDIS_DB: "0"
+  
+  # S3 configuration
+  S3_REGION: "us-east-1"
+  S3_BUCKET: "faxi-production-fax-images"
+  
+  # Application configuration
+  TEST_MODE: "false"
+  EMAIL_FROM_DOMAIN: "me.faxi.jp"
+  EMAIL_PROVIDER: "sendgrid"
+  
+  # Telnyx configuration
+  TELNYX_FAX_NUMBER: "+1234567890"
+  TELNYX_WEBHOOK_TIMEOUT: "5"
+  
+  # Gemini configuration
+  GEMINI_MODEL: "gemini-2.0-flash-exp"
+  
+  # SMTP configuration
+  SMTP_HOST: "mail.faxi.jp"
+  SMTP_PORT: "587"
+  SMTP_SECURE: "true"
+  SMTP_USER: "noreply@faxi.jp"
+  
+  # Base URL
+  BASE_URL: "https://api.faxi.jp"
