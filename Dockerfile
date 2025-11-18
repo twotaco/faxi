@@ -19,16 +19,17 @@ RUN apk add --no-cache \
 # Set working directory
 WORKDIR /app
 
-# Copy package files
+# Copy root package files for workspace setup
 COPY package*.json ./
 
-# Install dependencies
+# Copy backend workspace
+COPY backend ./backend
+
+# Install all workspace dependencies
 RUN npm ci --only=production
 
-# Copy source code
-COPY . .
-
-# Build TypeScript
+# Build backend TypeScript
+WORKDIR /app/backend
 RUN npm run build
 
 # Production stage
@@ -53,20 +54,21 @@ RUN addgroup -g 1001 -S nodejs && \
     adduser -S faxi -u 1001
 
 # Set working directory
-WORKDIR /app
+WORKDIR /app/backend
 
 # Copy built application from builder stage
-COPY --from=builder --chown=faxi:nodejs /app/dist ./dist
+COPY --from=builder --chown=faxi:nodejs /app/backend/dist ./dist
+COPY --from=builder --chown=faxi:nodejs /app/backend/node_modules ./node_modules
 COPY --from=builder --chown=faxi:nodejs /app/node_modules ./node_modules
-COPY --from=builder --chown=faxi:nodejs /app/package*.json ./
+COPY --from=builder --chown=faxi:nodejs /app/backend/package*.json ./
 
 # Copy static assets if any
-COPY --chown=faxi:nodejs src/test/testUI.html ./dist/test/
-COPY --chown=faxi:nodejs src/test/fixtures ./dist/test/fixtures
+COPY --chown=faxi:nodejs backend/src/test/testUI.html ./dist/test/
+COPY --chown=faxi:nodejs backend/src/test/fixtures ./dist/test/fixtures
 
 # Create directories for runtime data
-RUN mkdir -p /app/data/uploads /app/data/logs && \
-    chown -R faxi:nodejs /app/data
+RUN mkdir -p /app/backend/data/uploads /app/backend/data/logs && \
+    chown -R faxi:nodejs /app/backend/data
 
 # Switch to non-root user
 USER faxi

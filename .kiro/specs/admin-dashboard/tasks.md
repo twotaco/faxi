@@ -4,7 +4,7 @@
 
 ### 0. Setup Monorepo Structure
 
-- [ ] 0.1 Complete monorepo migration
+- [x] 0.1 Complete monorepo migration
   - Move all backend code from root src/ to backend/src/
   - Move tsconfig.json to backend/tsconfig.json
   - Move vitest.config.ts to backend/vitest.config.ts
@@ -13,7 +13,7 @@
   - Test that backend still runs with `npm run dev`
   - _Requirements: All (infrastructure)_
 
-- [ ] 0.2 Initialize Next.js admin dashboard
+- [x] 0.2 Initialize Next.js admin dashboard
   - Run `npx create-next-app@latest admin-dashboard` with TypeScript, Tailwind, App Router
   - Configure admin-dashboard/tsconfig.json
   - Set up Tailwind with Faxi brand colors (orange #f97316)
@@ -22,7 +22,7 @@
   - Test that admin dashboard runs with `npm run dev:admin`
   - _Requirements: All (infrastructure)_
 
-- [ ] 0.3 Verify monorepo setup
+- [x] 0.3 Verify monorepo setup
   - Run `npm install` at root to install all workspace dependencies
   - Test `npm run dev:all` to run both backend and frontend
   - Test `npm run build` to build both workspaces
@@ -34,7 +34,7 @@
 
 ### 1. Backend API Foundation
 
-- [ ] 1.1 Create admin user database schema and migrations
+- [x] 1.1 Create admin user database schema and migrations
   - Create admin_users table with role-based access (super_admin, admin, support, analyst)
   - Create admin_refresh_tokens table for session management
   - Create admin_preferences table for user settings
@@ -42,7 +42,7 @@
   - Create migration file in backend/src/database/migrations/
   - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 1.9, 1.10_
 
-- [ ] 1.2 Implement authentication service
+- [x] 1.2 Implement authentication service
   - Create backend/src/services/adminAuthService.ts
   - Implement password hashing utilities with bcrypt (add bcrypt dependency)
   - Implement JWT token generation and validation (add jsonwebtoken dependency)
@@ -50,14 +50,14 @@
   - Add session management functions
   - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5, 1.10_
 
-- [ ] 1.3 Create admin user repository
+- [x] 1.3 Create admin user repository
   - Create backend/src/repositories/adminUserRepository.ts
   - Implement CRUD operations for admin users
   - Implement token management (create, validate, revoke)
   - Implement preference management
   - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5_
 
-- [ ] 1.4 Create authentication API endpoints
+- [x] 1.4 Create authentication API endpoints
   - Add POST /admin/auth/login endpoint to backend/src/index.ts
   - Add POST /admin/auth/logout endpoint
   - Add POST /admin/auth/refresh endpoint
@@ -65,7 +65,7 @@
   - Add audit logging for authentication events
   - _Requirements: 1.1, 1.2, 1.3, 1.10, 11.1, 11.2, 11.3_
 
-- [ ] 1.5 Implement authorization middleware
+- [x] 1.5 Implement authorization middleware
   - Create backend/src/middleware/adminAuth.ts
   - Create permission checking middleware
   - Implement role-based access control (RBAC)
@@ -73,7 +73,7 @@
   - Create permission helper functions
   - _Requirements: 1.6, 1.7, 1.8, 1.9_
 
-- [ ] 1.6 Create dashboard metrics API endpoints
+- [x] 1.6 Create dashboard metrics API endpoints
   - Add GET /admin/dashboard/metrics endpoint to backend/src/index.ts
   - Leverage existing monitoringService.getHealthStatus()
   - Add active jobs query from fax_jobs table
@@ -82,14 +82,14 @@
   - Add performance metrics aggregation
   - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.7, 2.8_
 
-- [ ] 1.7 Implement Server-Sent Events for real-time updates
+- [x] 1.7 Implement Server-Sent Events for real-time updates
   - Add GET /admin/dashboard/stream SSE endpoint to backend/src/index.ts
   - Implement metrics broadcasting every 5 seconds
   - Add alert event broadcasting from alertingService
   - Add connection management and cleanup
   - _Requirements: 2.2, 2.3, 8.2_
 
-- [ ] 1.8 Create fax job management API endpoints
+- [x] 1.8 Create fax job management API endpoints
   - Add GET /admin/jobs endpoint with filtering and pagination to backend/src/index.ts
   - Add GET /admin/jobs/:id endpoint for job details
   - Add POST /admin/jobs/:id/retry endpoint
@@ -100,7 +100,7 @@
 
 ### 2. Frontend Foundation
 
-- [ ] 2.1 Set up project structure and routing
+- [x] 2.1 Set up project structure and routing
   - Create admin-dashboard/app/(auth)/login route for login page
   - Create admin-dashboard/app/(dashboard) route group for authenticated pages
   - Create admin-dashboard/app/(dashboard)/page.tsx for operations dashboard
@@ -109,7 +109,7 @@
   - Configure admin-dashboard/middleware.ts for route protection
   - _Requirements: 1.1, 1.5_
 
-- [ ] 2.2 Implement authentication UI and logic
+- [x] 2.2 Implement authentication UI and logic
   - Create admin-dashboard/app/(auth)/login/page.tsx with form validation (Zod)
   - Create admin-dashboard/app/api/auth/[...auth]/route.ts (proxy to backend)
   - Create admin-dashboard/lib/auth/AuthContext.tsx and useAuth hook
@@ -118,7 +118,7 @@
   - Create admin-dashboard/lib/api/client.ts for API calls
   - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5, 1.10_
 
-- [ ] 2.3 Create dashboard layout components
+- [x] 2.3 Create dashboard layout components
   - Create admin-dashboard/components/layout/Sidebar.tsx with navigation
   - Create admin-dashboard/components/layout/TopBar.tsx with user menu
   - Create admin-dashboard/components/layout/Breadcrumb.tsx
@@ -126,7 +126,7 @@
   - Add Faxi logo and branding
   - _Requirements: 12.1, 12.2, 12.3, 12.4_
 
-- [ ] 2.4 Set up data fetching infrastructure
+- [x] 2.4 Set up data fetching infrastructure
   - Install @tanstack/react-query in admin-dashboard
   - Create admin-dashboard/lib/api/client.ts with axios and auth interceptors
   - Create admin-dashboard/lib/hooks/useQuery.ts wrapper hooks
@@ -136,56 +136,56 @@
 
 ### 3. Operations Dashboard
 
-- [ ] 3.1 Create operations dashboard page
+- [x] 3.1 Create operations dashboard page
   - Create app/(dashboard)/page.tsx
   - Implement grid layout with metric cards
   - Add loading skeletons and error boundaries
   - Create lib/hooks/useDashboardMetrics.ts
   - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.7, 2.8, 2.9, 2.10_
 
-- [ ] 3.2 Implement system health status component
+- [x] 3.2 Implement system health status component
   - Create components/dashboard/SystemHealth.tsx
   - Display service status cards (DB, Redis, S3, fax queue, email queue)
   - Add visual indicators (green/yellow/red) for health status
   - Implement click-through to service details modal
   - _Requirements: 2.1, 2.3_
 
-- [ ] 3.3 Implement active jobs component
+- [x] 3.3 Implement active jobs component
   - Create components/dashboard/ActiveJobs.tsx
   - Display active jobs list with real-time updates
   - Add job progress indicators (stage, elapsed time)
   - Implement click-through to job details
   - _Requirements: 2.4, 2.10_
 
-- [ ] 3.4 Implement queue metrics component
+- [x] 3.4 Implement queue metrics component
   - Create components/dashboard/QueueMetrics.tsx
   - Display queue status (pending, processing, rate, wait time)
   - Add visual indicators for queue health
   - Show processing rate and average wait time
   - _Requirements: 2.5_
 
-- [ ] 3.5 Implement error rate component
+- [x] 3.5 Implement error rate component
   - Create components/dashboard/ErrorRate.tsx
   - Display error rate card with trend indicator (↑↓→)
   - Show top errors list
   - Add click-through to error details
   - _Requirements: 2.6_
 
-- [ ] 3.6 Implement performance metrics component
+- [x] 3.6 Implement performance metrics component
   - Create components/dashboard/PerformanceMetrics.tsx
   - Display performance chart with response times (Recharts)
   - Show percentile breakdowns (p50, p95, p99)
   - Add time range selector (1h, 6h, 24h)
   - _Requirements: 2.7_
 
-- [ ] 3.7 Implement resource usage component
+- [x] 3.7 Implement resource usage component
   - Create components/dashboard/ResourceUsage.tsx
   - Display resource usage gauges (CPU, memory, disk)
   - Add visual indicators for resource levels
   - Implement alerts for high usage (>90%)
   - _Requirements: 2.8_
 
-- [ ] 3.8 Implement real-time updates with SSE
+- [x] 3.8 Implement real-time updates with SSE
   - Create lib/hooks/useDashboardStream.ts
   - Create EventSource connection to /admin/dashboard/stream
   - Implement automatic reconnection with exponential backoff
@@ -195,28 +195,28 @@
 
 ### 4. Fax Job Management
 
-- [ ] 4.1 Create fax jobs list page
+- [x] 4.1 Create fax jobs list page
   - Create app/(dashboard)/jobs/page.tsx
   - Implement job list table with TanStack Table
   - Add sorting and pagination
   - Create lib/hooks/useFaxJobs.ts
   - _Requirements: 3.1, 3.2_
 
-- [ ] 4.2 Implement job search and filtering
+- [x] 4.2 Implement job search and filtering
   - Create components/jobs/JobFilters.tsx
   - Add search input with debouncing (useDebounce hook)
   - Add filter dropdowns (status, intent, date range)
   - Implement URL state management with useSearchParams
   - _Requirements: 3.1, 3.2_
 
-- [ ] 4.3 Create job details modal
+- [x] 4.3 Create job details modal
   - Create components/jobs/JobDetailsModal.tsx
   - Implement tabbed interface (Overview, Interpretation, Actions, Response, History)
   - Create components/jobs/FaxImageViewer.tsx with zoom and pan
   - Display interpretation results, action results, context
   - _Requirements: 3.3, 3.4, 3.5, 3.6, 3.7, 3.11_
 
-- [ ] 4.4 Implement job actions
+- [x] 4.4 Implement job actions
   - Add retry button with confirmation dialog
   - Add cancel button with confirmation dialog
   - Add download fax button (presigned S3 URL)
@@ -224,7 +224,7 @@
   - Create lib/hooks/useJobActions.ts
   - _Requirements: 3.8, 3.9, 3.10_
 
-- [ ] 4.5 Add audit logging for job operations
+- [x] 4.5 Add audit logging for job operations
   - Log job view actions to backend
   - Log retry and cancel actions
   - Display audit trail in job details History tab
@@ -234,7 +234,7 @@
 
 ### 5. User Management
 
-- [ ] 5.1 Create user management API endpoints
+- [x] 5.1 Create user management API endpoints
   - Add GET /admin/users endpoint with search and pagination to src/index.ts
   - Add GET /admin/users/:id endpoint for user details
   - Add PATCH /admin/users/:id/feature-flags endpoint
@@ -245,7 +245,7 @@
   - Leverage existing userRepository, orderRepository, conversationContextRepository
   - _Requirements: 4.1, 4.2, 4.3, 4.4, 4.5, 4.6, 4.7, 4.8, 4.9, 4.10, 4.11, 4.12_
 
-- [ ] 5.2 Create users list page
+- [x] 5.2 Create users list page
   - Create app/(dashboard)/users/page.tsx
   - Implement user list table with TanStack Table
   - Add search by phone, email, name
@@ -253,28 +253,28 @@
   - Create lib/hooks/useUsers.ts
   - _Requirements: 4.1, 4.2_
 
-- [ ] 5.3 Create user details page
+- [x] 5.3 Create user details page
   - Create app/(dashboard)/users/[id]/page.tsx
   - Implement tabbed interface (Profile, Activity, Orders, Payments, Contacts)
   - Display user profile and statistics
   - Create components/users/UserProfile.tsx
   - _Requirements: 4.3, 4.4, 4.5_
 
-- [ ] 5.4 Implement feature flag management
+- [x] 5.4 Implement feature flag management
   - Create components/users/FeatureFlagToggles.tsx
   - Add toggle controls for each feature flag
   - Add confirmation dialog for flag changes
   - Implement immediate application of changes
   - _Requirements: 4.6, 4.7_
 
-- [ ] 5.5 Implement context management
+- [x] 5.5 Implement context management
   - Create components/users/ActiveContexts.tsx
   - Display active conversation contexts with expiration times
   - Add clear context button with confirmation
   - Show context type and reference ID
   - _Requirements: 4.11, 4.12_
 
-- [ ] 5.6 Display user activity and orders
+- [x] 5.6 Display user activity and orders
   - Create components/users/ActivityTimeline.tsx
   - Create components/users/OrderHistory.tsx
   - Display order history with details

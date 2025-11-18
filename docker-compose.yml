@@ -39,8 +39,8 @@ services:
       minio:
         condition: service_healthy
     volumes:
-      - ./data/uploads:/app/data/uploads
-      - ./data/logs:/app/data/logs
+      - ./data/uploads:/app/backend/data/uploads
+      - ./data/logs:/app/backend/data/logs
     restart: unless-stopped
     networks:
       - faxi-network
@@ -57,7 +57,7 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./src/database/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+      - ./backend/src/database/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U faxi_user -d faxi"]
       interval: 10s

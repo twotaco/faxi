@@ -1,15 +1,24 @@
-# Faxi Core System
+# Faxi - Fax-to-Internet Bridge System
 
-Fax-to-internet bridge service that enables offline users to access online services through fax machines.
+A modern fax-to-internet bridge service powered by AI, enabling offline users to access online services through fax machines.
+
+## 🏗️ Monorepo Structure
+
+This repository uses npm workspaces to manage two applications:
+
+- **backend/** - Express.js API server (port 3000)
+- **admin-dashboard/** - Next.js admin interface (port 3001)
+
+See [MONOREPO.md](./MONOREPO.md) for detailed information about the monorepo structure.
 
 ## Prerequisites
 
-- Node.js 18+ and npm
+- Node.js 20+ and npm
 - PostgreSQL 14+
 - Redis 6+
 - S3-compatible object storage (AWS S3, MinIO, etc.)
 
-## Setup
+## 🚀 Quick Start
 
 ### 1. Install Dependencies
 
@@ -17,7 +26,22 @@ Fax-to-internet bridge service that enables offline users to access online servi
 npm install
 ```
 
-### 2. Configure Environment
+This installs dependencies for both workspaces.
+
+### 2. Development
+
+Run both applications concurrently:
+```bash
+npm run dev:all
+```
+
+Or run individually:
+```bash
+npm run dev          # Backend only (port 3000)
+npm run dev:admin    # Admin dashboard only (port 3001)
+```
+
+### 3. Configure Environment
 
 Copy the example environment file and configure your settings:
 
