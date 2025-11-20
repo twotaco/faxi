@@ -35,7 +35,8 @@ export class PaymentMCPServer implements MCPServer {
       this.createGetPaymentMethodsTool(),
       this.createRegisterPaymentMethodTool(),
       this.createProcessPaymentTool(),
-      this.createGenerateKonbiniBarcodeToool(),
+      this.createInitiateBankTransferTool(),
+      // this.createGenerateKonbiniBarcodeToool(), // TEMPORARILY DISABLED
       this.createCheckPaymentStatusTool(),
     ];
   }
@@ -140,7 +141,7 @@ export class PaymentMCPServer implements MCPServer {
   }
 
   /**
-   * Generate konbini barcode tool - Creates convenience store payment barcode
+   * Generate konbini barcode tool - TEMPORARILY DISABLED
    */
   private createGenerateKonbiniBarcodeToool(): MCPTool {
     const inputSchema = {
@@ -178,9 +179,49 @@ export class PaymentMCPServer implements MCPServer {
 
     return {
       name: 'generate_konbini_barcode',
-      description: 'Create Stripe Konbini payment intent for convenience store payment',
+      description: '[TEMPORARILY DISABLED] Create Stripe Konbini payment intent for convenience store payment',
       inputSchema,
       handler: this.handleGenerateKonbiniBarcode.bind(this)
+    };
+  }
+
+  /**
+   * Initiate bank transfer tool - Creates bank transfer payment intent
+   */
+  private createInitiateBankTransferTool(): MCPTool {
+    const inputSchema = {
+      type: 'object',
+      properties: {
+        userId: {
+          type: 'string',
+          description: 'User ID'
+        },
+        amount: {
+          type: 'number',
+          description: 'Payment amount in smallest currency unit (e.g., yen for JPY)'
+        },
+        currency: {
+          type: 'string',
+          description: 'Currency code (e.g., JPY)',
+          default: 'JPY'
+        },
+        description: {
+          type: 'string',
+          description: 'Payment description'
+        },
+        metadata: {
+          type: 'object',
+          description: 'Additional metadata for the payment'
+        }
+      },
+      required: ['userId', 'amount', 'description']
+    };
+
+    return {
+      name: 'initiate_bank_transfer',
+      description: 'Create Stripe bank transfer payment intent for direct bank payment',
+      inputSchema,
+      handler: this.handleInitiateBankTransfer.bind(this)
     };
   }
 
@@ -289,7 +330,7 @@ export class PaymentMCPServer implements MCPServer {
       });
 
       // Determine payment method details
-      let type: 'card' | 'konbini' = 'card';
+      let type: 'card' | 'konbini' | 'bank_transfer' = 'card';
       let last4: string | null = null;
       let brand: string | null = null;
 
@@ -299,6 +340,8 @@ export class PaymentMCPServer implements MCPServer {
         brand = stripePaymentMethod.card.brand;
       } else if (stripePaymentMethod.konbini) {
         type = 'konbini';
+      } else if (stripePaymentMethod.customer_balance) {
+        type = 'bank_transfer';
       }
 
       // Check if this is the first payment method (auto-default)
@@ -429,10 +472,10 @@ export class PaymentMCPServer implements MCPServer {
   }
 
   /**
-   * Handle generate konbini barcode request
+   * Handle initiate bank transfer request
    */
-  private async handleGenerateKonbiniBarcode(params: any): Promise<any> {
-    const { userId, amount, currency = 'JPY', description, expiresInDays = 7, metadata = {} } = params;
+  private async handleInitiateBankTransfer(params: any): Promise<any> {
+    const { userId, amount, currency = 'JPY', description, metadata = {} } = params;
     
     try {
       // Verify user exists
@@ -444,36 +487,59 @@ export class PaymentMCPServer implements MCPServer {
         };
       }
 
-      // Calculate expiration date
-      const expiresAt = Math.floor(Date.now() / 1000) + (expiresInDays * 24 * 60 * 60);
+      // Get or create Stripe customer
+      let stripeCustomerId = user.stripeCustomerId;
+      if (!stripeCustomerId) {
+        const customer = await this.stripe.customers.create({
+          email: user.emailAddress,
+          phone: user.phoneNumber || undefined,
+          metadata: {
+            userId: userId,
+            faxiUser: 'true'
+          }
+        });
+        stripeCustomerId = customer.id;
+        
+        // Update user with Stripe customer ID
+        await userRepository.update(userId, { stripeCustomerId });
+      }
 
-      // Create payment intent with konbini payment method
+      // Create payment intent with bank transfer (customer_balance)
       const paymentIntent = await this.stripe.paymentIntents.create({
         amount,
         currency: currency.toLowerCase(),
-        payment_method_types: ['konbini'],
+        customer: stripeCustomerId,
+        payment_method_types: ['customer_balance'],
+        payment_method_data: {
+          type: 'customer_balance',
+        },
+        payment_method_options: {
+          customer_balance: {
+            funding_type: 'bank_transfer',
+            bank_transfer: {
+              type: 'jp_bank_transfer',
+            },
+          },
+        },
         description,
         metadata: {
           userId,
-          faxiKonbiniPayment: 'true',
-          expiresInDays: expiresInDays.toString(),
+          faxiBankTransfer: 'true',
           ...metadata
         },
-        payment_method_options: {
-          konbini: {
-            expires_after_days: expiresInDays
-          }
-        }
+        confirm: true,
       });
 
-      // Log the barcode generation
-      await auditLogService.logKonbiniBarcodeGenerated({
+      // Log the bank transfer initiation
+      await auditLogService.logBankTransferInitiated({
         userId,
         paymentIntentId: paymentIntent.id,
         amount,
-        currency,
-        expiresAt: new Date(expiresAt * 1000)
+        currency
       });
+
+      // Extract bank transfer instructions
+      const bankTransferInstructions = paymentIntent.next_action?.display_bank_transfer_instructions;
 
       return {
         success: true,
@@ -485,20 +551,36 @@ export class PaymentMCPServer implements MCPServer {
           description: paymentIntent.description,
           clientSecret: paymentIntent.client_secret
         },
-        konbini: {
-          confirmationNumber: paymentIntent.id, // Use payment intent ID as confirmation number
-          expiresAt: new Date(expiresAt * 1000),
-          instructions: 'Take this barcode to any FamilyMart, 7-Eleven, or Lawson convenience store to complete payment.',
-          stores: ['FamilyMart', '7-Eleven', 'Lawson']
+        bankTransfer: {
+          type: 'jp_bank_transfer',
+          instructions: bankTransferInstructions ? {
+            bankName: bankTransferInstructions.financial_addresses?.[0]?.zengin?.bank_name,
+            branchName: bankTransferInstructions.financial_addresses?.[0]?.zengin?.branch_name,
+            accountNumber: bankTransferInstructions.financial_addresses?.[0]?.zengin?.account_number,
+            accountHolderName: bankTransferInstructions.financial_addresses?.[0]?.zengin?.account_holder_name,
+            reference: bankTransferInstructions.reference,
+          } : null,
+          hostedInstructionsUrl: bankTransferInstructions?.hosted_instructions_url,
+          message: 'Please transfer the exact amount to the bank account provided. Payment will be confirmed automatically once received.'
         }
       };
       
     } catch (error) {
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to generate konbini barcode'
+        error: error instanceof Error ? error.message : 'Failed to initiate bank transfer'
       };
     }
+  }
+
+  /**
+   * Handle generate konbini barcode request - TEMPORARILY DISABLED
+   */
+  private async handleGenerateKonbiniBarcode(params: any): Promise<any> {
+    return {
+      success: false,
+      error: 'Konbini (convenience store) payments are temporarily disabled. Please use credit card or bank transfer instead.'
+    };
   }
 
   /**

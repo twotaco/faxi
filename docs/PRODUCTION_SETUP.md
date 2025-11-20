@@ -103,7 +103,7 @@ TELNYX_FAX_NUMBER=+1234567890  # Your purchased fax number
 **Environment Variables:**
 ```bash
 GEMINI_API_KEY=AIzaSy_your_production_api_key_here
-GEMINI_MODEL=gemini-2.0-flash-exp
+GEMINI_MODEL=gemini-2.5-flash
 ```
 
 ## Stripe Configuration
@@ -446,7 +446,7 @@ TELNYX_WEBHOOK_TIMEOUT=5
 
 # Google Gemini Configuration
 GEMINI_API_KEY=AIzaSy_your_production_api_key_here
-GEMINI_MODEL=gemini-2.0-flash-exp
+GEMINI_MODEL=gemini-2.5-flash
 
 # Email Configuration
 EMAIL_PROVIDER=sendgrid

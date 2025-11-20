@@ -57,6 +57,10 @@ export class StripeWebhookController {
           await this.handlePaymentCanceled(event.data.object as Stripe.PaymentIntent);
           break;
         
+        case 'payment_intent.processing':
+          await this.handlePaymentProcessing(event.data.object as Stripe.PaymentIntent);
+          break;
+        
         default:
           console.log(`Unhandled event type: ${event.type}`);
       }
@@ -183,6 +187,34 @@ export class StripeWebhookController {
 
     // Update any existing orders with this payment intent
     await this.updateOrderStatus(paymentIntent.id, 'canceled');
+  }
+
+  /**
+   * Handle payment processing (for bank transfers)
+   */
+  private async handlePaymentProcessing(paymentIntent: Stripe.PaymentIntent): Promise<void> {
+    const userId = paymentIntent.metadata?.userId;
+    
+    if (!userId) {
+      console.warn('Payment processing but no userId in metadata:', paymentIntent.id);
+      return;
+    }
+
+    // Log payment processing (typically for bank transfers)
+    await auditLogService.log({
+      userId,
+      eventType: 'payment.processing',
+      eventData: {
+        paymentIntentId: paymentIntent.id,
+        amount: paymentIntent.amount,
+        currency: paymentIntent.currency,
+        paymentMethodTypes: paymentIntent.payment_method_types,
+        timestamp: new Date().toISOString(),
+      },
+    });
+
+    // Update any existing orders with this payment intent
+    await this.updateOrderStatus(paymentIntent.id, 'processing');
   }
 
   /**

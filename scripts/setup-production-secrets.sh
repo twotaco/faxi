@@ -142,7 +142,7 @@ setup_aws_secrets() {
     # Google Gemini secrets
     local gemini_secret='{
         "api_key": "CHANGE_ME_GEMINI_API_KEY",
-        "model": "gemini-2.0-flash-exp"
+        "model": "gemini-2.5-flash"
     }'
     
     if [[ "$dry_run" == "true" ]]; then
@@ -315,12 +315,12 @@ setup_k8s_secrets() {
     if [[ "$dry_run" == "true" ]]; then
         echo "kubectl create secret generic faxi-gemini --namespace=$namespace \\"
         echo "  --from-literal=api-key=CHANGE_ME_GEMINI_API_KEY \\"
-        echo "  --from-literal=model=gemini-2.0-flash-exp"
+        echo "  --from-literal=model=gemini-2.5-flash"
     else
         kubectl create secret generic faxi-gemini \
             --namespace="$namespace" \
             --from-literal=api-key="CHANGE_ME_GEMINI_API_KEY" \
-            --from-literal=model="gemini-2.0-flash-exp" \
+            --from-literal=model="gemini-2.5-flash" \
             2>/dev/null || log_warning "Gemini secret may already exist"
     fi
     
@@ -527,7 +527,7 @@ TELNYX_WEBHOOK_TIMEOUT=5
 # GOOGLE GEMINI CONFIGURATION
 # =============================================================================
 GEMINI_API_KEY=AIzaSy_CHANGE_ME_GEMINI_API_KEY
-GEMINI_MODEL=gemini-2.0-flash-exp
+GEMINI_MODEL=gemini-2.5-flash
 
 # =============================================================================
 # EMAIL CONFIGURATION

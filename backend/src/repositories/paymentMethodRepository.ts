@@ -4,7 +4,7 @@ export interface PaymentMethod {
   id: string;
   userId: string;
   stripePaymentMethodId: string;
-  type: 'card' | 'konbini';
+  type: 'card' | 'konbini' | 'bank_transfer';
   last4: string | null;
   brand: string | null;
   isDefault: boolean;
@@ -15,7 +15,7 @@ export interface PaymentMethod {
 export interface CreatePaymentMethodData {
   userId: string;
   stripePaymentMethodId: string;
-  type: 'card' | 'konbini';
+  type: 'card' | 'konbini' | 'bank_transfer';
   last4?: string;
   brand?: string;
   isDefault?: boolean;

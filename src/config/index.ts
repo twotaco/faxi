@@ -163,7 +163,7 @@ function buildConfig(): Config {
     },
     gemini: {
       apiKey: process.env.GEMINI_API_KEY || '',
-      model: process.env.GEMINI_MODEL || 'gemini-2.0-flash-exp',
+      model: process.env.GEMINI_MODEL || 'gemini-2.5-flash',
     },
     email: {
       provider: (process.env.EMAIL_PROVIDER as any) || 'sendgrid',

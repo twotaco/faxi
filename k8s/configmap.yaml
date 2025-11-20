@@ -38,7 +38,7 @@ data:
   TELNYX_WEBHOOK_TIMEOUT: "5"
   
   # Gemini configuration
-  GEMINI_MODEL: "gemini-2.0-flash-exp"
+  GEMINI_MODEL: "gemini-2.5-flash"
   
   # SMTP configuration
   SMTP_HOST: "mail.faxi.jp"
