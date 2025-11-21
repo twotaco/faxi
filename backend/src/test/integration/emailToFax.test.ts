@@ -139,9 +139,9 @@ describe('Email-to-Fax Bridge Integration Tests', () => {
       );
       
       expect(emailFax).toBeDefined();
-      
+
       // The fax should include smart reply options
-      // This would be verified by checking the generated TIFF content
+      // This would be verified by checking the generated PDF content
       // For now, we verify the processing completed successfully
       expect(emailFax.details?.status).toBe('completed');
     });
@@ -360,9 +360,9 @@ describe('Email-to-Fax Bridge Integration Tests', () => {
       
       expect(attachmentFax).toBeDefined();
       expect(attachmentFax.details?.status).toBe('completed');
-      
+
       // The fax should include attachment notification
-      // This would be verified by checking the generated TIFF content
+      // This would be verified by checking the generated PDF content
     });
   });
 });

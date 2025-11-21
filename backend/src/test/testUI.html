@@ -324,12 +324,12 @@
                     </div>
 
                     <div class="form-group">
-                        <label for="faxFile">Fax File (PDF, TIFF, PNG, JPEG):</label>
+                        <label for="faxFile">Fax File (PDF, PNG, JPEG):</label>
                         <div class="file-upload" id="fileUpload">
-                            <input type="file" id="faxFile" accept=".pdf,.tiff,.tif,.png,.jpeg,.jpg" style="display: none;">
+                            <input type="file" id="faxFile" accept=".pdf,.png,.jpeg,.jpg" style="display: none;">
                             <div id="fileUploadText">
                                 📁 Click to select file or drag and drop<br>
-                                <small>Supported: PDF, TIFF, PNG, JPEG (max 10MB)</small>
+                                <small>Supported: PDF, PNG, JPEG (max 10MB)</small>
                             </div>
                         </div>
                     </div>
@@ -482,7 +482,7 @@
                     form.reset();
                     document.getElementById('fileUploadText').innerHTML = `
                         📁 Click to select file or drag and drop<br>
-                        <small>Supported: PDF, TIFF, PNG, JPEG (max 10MB)</small>
+                        <small>Supported: PDF, PNG, JPEG (max 10MB)</small>
                     `;
                     refreshFaxList();
                 } else {
@@ -715,9 +715,9 @@
                             <strong>Sent:</strong> ${new Date(fax.timestamp).toLocaleString()}
                         </p>
                         <div style="display: flex; gap: 8px; margin-top: 12px;">
-                            <a href="/test/fax/download/${fax.faxId}" target="_blank" 
+                            <a href="/test/fax/download/${fax.faxId}" target="_blank"
                                style="display: inline-flex; align-items: center; gap: 4px; padding: 6px 12px; background: #3b82f6; color: white; text-decoration: none; border-radius: 6px; font-size: 13px; font-weight: 500;">
-                                📄 Download TIFF
+                                📄 Download PDF
                             </a>
                         </div>
                     </div>
@@ -752,7 +752,7 @@
         }
 
         async function downloadResponsePDF(faxId) {
-            // Same as TIFF for now since we generate TIFF
+            // Download the generated response fax as PDF
             return downloadResponseFax(faxId);
             alert(`Download response fax for ${faxId} - This feature requires backend implementation`);
         }

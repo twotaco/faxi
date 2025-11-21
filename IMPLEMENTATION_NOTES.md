@@ -104,7 +104,7 @@ TELNYX_WEBHOOK_TIMEOUT=5
 
 ### Storage Organization
 - Fax images stored in S3 with date-based keys
-- Format: `faxes/{year}/{month}/{day}/{fax_id}.tiff`
+- Format: `faxes/{year}/{month}/{day}/{fax_id}.pdf`
 - Easy to manage and query by date
 
 ## Testing

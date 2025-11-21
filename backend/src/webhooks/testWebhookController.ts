@@ -12,10 +12,8 @@ const upload = multer({
     fileSize: 10 * 1024 * 1024, // 10MB limit
   },
   fileFilter: (req, file, cb) => {
-    // Accept PDF and TIFF files
     const allowedMimes = [
       'application/pdf',
-      'image/tiff',
       'image/tif',
       'image/png',
       'image/jpeg',
@@ -24,7 +22,7 @@ const upload = multer({
     if (allowedMimes.includes(file.mimetype)) {
       cb(null, true);
     } else {
-      cb(new Error('Invalid file type. Only PDF, TIFF, PNG, and JPEG files are allowed.'));
+      cb(new Error('Invalid file type. Only PDF, PNG, and JPEG files are allowed.'));
     }
   },
 });
@@ -51,7 +49,7 @@ export class TestWebhookController {
         if (!req.file) {
           res.status(400).json({ 
             error: 'No file uploaded', 
-            message: 'Please upload a fax file (PDF, TIFF, PNG, or JPEG)' 
+            message: 'Please upload a fax file (PDF, PNG, or JPEG)' 
           });
           return;
         }
@@ -189,12 +187,12 @@ export class TestWebhookController {
       }
 
       const fileBuffer = testFaxFiles.get(fax_id)!;
-      
-      // Set appropriate headers
-      res.setHeader('Content-Type', 'image/tiff');
+
+      // Set appropriate headers (default to PDF for fax files)
+      res.setHeader('Content-Type', 'application/pdf');
       res.setHeader('Content-Length', fileBuffer.length);
       res.setHeader('Cache-Control', 'public, max-age=3600');
-      
+
       // Send the file
       res.send(fileBuffer);
 
@@ -448,7 +446,7 @@ export class TestWebhookController {
       // Step 5: Upload to S3
       console.log(`[Test Processing] Uploading to S3`);
       const storageKey = s3Storage.generateFaxKey(fax_id);
-      await s3Storage.uploadFile(storageKey, faxImageBuffer, 'image/tiff');
+      await s3Storage.uploadFile(storageKey, faxImageBuffer, 'application/pdf');
       await faxJobRepository.update(faxJob.id, { storageKey });
 
       await auditLogService.logOperation({
@@ -811,7 +809,7 @@ export class TestWebhookController {
   async downloadMockFax(req: Request, res: Response): Promise<void> {
     try {
       const { fax_id } = req.params;
-      const { format = 'tiff' } = req.query;
+      const { format = 'pdf' } = req.query;
 
       const { mockFaxSender } = await import('../services/mockFaxSender');
       const mockFax = mockFaxSender.getMockFax(fax_id);
@@ -821,14 +819,14 @@ export class TestWebhookController {
         return;
       }
 
-      // Set appropriate headers
-      const contentType = format === 'pdf' ? 'application/pdf' : 'image/tiff';
-      const extension = format === 'pdf' ? 'pdf' : 'tiff';
-      
+      // Set appropriate headers (PDF is the default fax format)
+      const contentType = 'application/pdf';
+      const extension = 'pdf';
+
       res.setHeader('Content-Type', contentType);
       res.setHeader('Content-Disposition', `attachment; filename="${mockFax.faxId}.${extension}"`);
       res.setHeader('Content-Length', mockFax.mediaBuffer.length);
-      
+
       // Send the file
       res.send(mockFax.mediaBuffer);
 
@@ -907,10 +905,10 @@ export class TestWebhookController {
       let contentType = 'application/octet-stream';
       if (filename.endsWith('.png')) {
         contentType = 'image/png';
-      } else if (filename.endsWith('.tiff') || filename.endsWith('.tif')) {
-        contentType = 'image/tiff';
       } else if (filename.endsWith('.pdf')) {
         contentType = 'application/pdf';
+      } else if (filename.endsWith('.jpg') || filename.endsWith('.jpeg')) {
+        contentType = 'image/jpeg';
       }
 
       res.setHeader('Content-Type', contentType);

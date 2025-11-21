@@ -115,7 +115,7 @@ export class MockFaxSender {
       try {
         const { s3Storage } = await import('../storage/s3');
         const s3Key = s3Storage.generateFaxKey(mockFaxId, fileExt);
-        const contentType = fileExt === 'pdf' ? 'application/pdf' : 'image/tiff';
+        const contentType = fileExt === 'pdf' ? 'application/pdf' : `image/${fileExt}`;
         await s3Storage.uploadFile(s3Key, mediaBuffer, contentType);
         console.log('Mock fax uploaded to S3', { faxId: mockFaxId, s3Key, fileExt });
       } catch (s3Error) {
@@ -246,16 +246,14 @@ export class MockFaxSender {
       return 'pdf';
     }
 
-    // TIFF magic bytes: II (little-endian) or MM (big-endian)
-    if (buffer.length >= 4) {
-      if ((buffer[0] === 0x49 && buffer[1] === 0x49) || (buffer[0] === 0x4D && buffer[1] === 0x4D)) {
-        return 'tiff';
-      }
-    }
-
     // PNG magic bytes
     if (buffer.length >= 8 && buffer[0] === 0x89 && buffer[1] === 0x50 && buffer[2] === 0x4E && buffer[3] === 0x47) {
       return 'png';
+    }
+
+    // JPEG magic bytes
+    if (buffer.length >= 3 && buffer[0] === 0xFF && buffer[1] === 0xD8 && buffer[2] === 0xFF) {
+      return 'jpeg';
     }
 
     // Default to PDF (Telnyx format)

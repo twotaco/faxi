@@ -455,8 +455,8 @@ export class TestFaxFixtureGenerator {
   listFixtures(): string[] {
     const fs = require('fs');
     try {
-      return fs.readdirSync(this.outputDir).filter((file: string) => 
-        file.endsWith('.png') || file.endsWith('.tiff') || file.endsWith('.pdf')
+      return fs.readdirSync(this.outputDir).filter((file: string) =>
+        file.endsWith('.png') || file.endsWith('.pdf')
       );
     } catch (error) {
       return [];

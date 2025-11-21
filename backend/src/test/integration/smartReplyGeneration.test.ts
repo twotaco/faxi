@@ -82,7 +82,7 @@ describe('Smart Reply Generation Integration Tests', () => {
         expect(emailFax.details?.status).toBe('completed');
 
         // The fax should include smart reply options
-        // In a real implementation, we would check the generated TIFF content
+        // In a real implementation, we would check the generated PDF content
         // For now, we verify the processing completed successfully
       }
     });
@@ -212,9 +212,9 @@ describe('Smart Reply Generation Integration Tests', () => {
 
       // The generated fax should include:
       // ○ A. Comedy
-      // ○ B. Action movie  
+      // ○ B. Action movie
       // ○ C. Drama
-      // This would be verified by checking the TIFF content in a real implementation
+      // This would be verified by checking the PDF content in a real implementation
     });
 
     it('should include space for custom replies', async () => {

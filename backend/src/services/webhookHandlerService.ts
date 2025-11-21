@@ -84,7 +84,7 @@ export class WebhookHandlerService {
     // Upload fax image to S3
     const storageKey = s3Storage.generateFaxKey(fax_id);
     try {
-      await s3Storage.uploadFile(storageKey, faxImageBuffer, 'image/tiff');
+      await s3Storage.uploadFile(storageKey, faxImageBuffer, 'application/pdf');
       console.log('Fax image uploaded to S3', { 
         faxJobId: faxJob.id, 
         storageKey 

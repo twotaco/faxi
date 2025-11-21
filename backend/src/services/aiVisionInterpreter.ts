@@ -416,10 +416,6 @@ Analyze the image now:`;
           if (bufferView[0] === 0x25 && bufferView[1] === 0x50 && bufferView[2] === 0x44 && bufferView[3] === 0x46) {
             mimeType = 'application/pdf';
           }
-          // TIFF: II or MM
-          else if ((bufferView[0] === 0x49 && bufferView[1] === 0x49) || (bufferView[0] === 0x4D && bufferView[1] === 0x4D)) {
-            mimeType = 'image/tiff';
-          }
           // PNG
           else if (bufferView[0] === 0x89 && bufferView[1] === 0x50 && bufferView[2] === 0x4E && bufferView[3] === 0x47) {
             mimeType = 'image/png';

@@ -143,12 +143,12 @@ class S3Storage {
   /**
    * Generate a storage key for fax images
    */
-  public generateFaxKey(faxId: string, extension: string = 'tiff'): string {
+  public generateFaxKey(faxId: string, extension: string = 'pdf'): string {
     const date = new Date();
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const day = String(date.getDate()).padStart(2, '0');
-    
+
     return `faxes/${year}/${month}/${day}/${faxId}.${extension}`;
   }
 

@@ -944,12 +944,12 @@ app.get('/admin/jobs/:id/fax-image', requireAdminAuth, requirePermission('jobs:v
     
     if (type === 'response' && job.actionResults?.responseFaxId) {
       // Get response fax image
-      s3Key = s3Storage.generateFaxKey(job.actionResults.responseFaxId, 'tiff');
+      s3Key = s3Storage.generateFaxKey(job.actionResults.responseFaxId, 'pdf');
     } else {
       // Get inbound fax image
       if (!job.storageKey) {
         // Try to construct the key from faxId
-        s3Key = s3Storage.generateFaxKey(job.faxId, 'tiff');
+        s3Key = s3Storage.generateFaxKey(job.faxId, 'pdf');
       } else {
         s3Key = job.storageKey;
       }
@@ -986,8 +986,8 @@ app.get('/admin/jobs/:id/fax-image', requireAdminAuth, requirePermission('jobs:v
         imageBuffer = await s3Storage.downloadFile(s3Key);
       }
 
-      // Convert TIFF to PNG for browser compatibility
-      // Modern browsers don't support TIFF natively
+      // Convert PDF to PNG for browser compatibility
+      // Browsers display PNG better than embedded PDFs
       const sharp = await import('sharp');
       const pngBuffer = await sharp.default(imageBuffer)
         .png()

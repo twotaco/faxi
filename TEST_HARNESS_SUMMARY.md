@@ -14,7 +14,7 @@ Successfully implemented a comprehensive test harness for the Faxi core system t
   - `GET /test/fax/list` - List all test faxes
   - `GET /test/fax/media/:fax_id` - Serve test fax media files
 - **Features**:
-  - Accepts PDF, TIFF, PNG, JPEG uploads
+  - Accepts PDF, PNG, JPEG uploads
   - Bypasses Telnyx signature verification in test mode
   - Generates mock fax metadata
   - Enqueues fax processing jobs directly
@@ -171,7 +171,7 @@ Open browser to: `http://localhost:4000/test`
 - ✅ Poor handwriting simulation
 - ✅ Ambiguous requests requiring clarification
 - ✅ Blank replies with reference matching
-- ✅ File format variations (PDF, TIFF, PNG, JPEG)
+- ✅ File format variations (PDF, PNG, JPEG)
 
 ## Benefits
 

@@ -162,7 +162,7 @@ export class FaxProcessingPipeline {
       // Detect file extension from media URL or use pdf as default
       const urlPath = new URL(faxData.mediaUrl).pathname;
       const fileExt = urlPath.split('.').pop()?.toLowerCase() || 'pdf';
-      const validExts = ['pdf', 'tiff', 'tif', 'png', 'jpg', 'jpeg'];
+      const validExts = ['pdf', 'png', 'jpg', 'jpeg'];
       const extension = validExts.includes(fileExt) ? fileExt : 'pdf';
       
       // Check if image is already stored in S3

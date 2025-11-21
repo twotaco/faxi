@@ -177,7 +177,7 @@ faxes/
   YYYY/
     MM/
       DD/
-        {fax_id}.tiff
+        {fax_id}.pdf
 ```
 
 ## Development
