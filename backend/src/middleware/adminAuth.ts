@@ -164,6 +164,14 @@ export function requirePermission(...permissions: string[]) {
 }
 
 /**
+ * Helper function to check if a role has a specific permission
+ */
+export function hasPermission(role: string, permission: string): boolean {
+  const rolePermissions = PERMISSIONS[role as keyof typeof PERMISSIONS] || [];
+  return rolePermissions.includes('*') || rolePermissions.includes(permission);
+}
+
+/**
  * Middleware to check if admin user has specific role
  */
 export function requireRole(...roles: Array<'super_admin' | 'admin' | 'support' | 'analyst'>) {
@@ -205,14 +213,6 @@ export function requireRole(...roles: Array<'super_admin' | 'admin' | 'support' 
       });
     }
   };
-}
-
-/**
- * Helper function to check if user has permission (for use in route handlers)
- */
-export function hasPermission(role: string, permission: string): boolean {
-  const rolePermissions = PERMISSIONS[role as keyof typeof PERMISSIONS] || [];
-  return rolePermissions.includes(permission) || rolePermissions.includes('*');
 }
 
 /**

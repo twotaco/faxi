@@ -19,8 +19,8 @@ This document describes how to deploy the Faxi Core System using Docker and Dock
    ```
 
 2. **Access the services:**
-   - Faxi API: http://localhost:3000
-   - Test UI: http://localhost:3000/test
+   - Faxi API: http://localhost:4000
+   - Test UI: http://localhost:4000/test
    - pgAdmin: http://localhost:5050 (admin@faxi.jp / admin)
    - Redis Commander: http://localhost:8081
    - MinIO Console: http://localhost:9001 (minioadmin / minioadmin)
@@ -176,7 +176,7 @@ Backups are stored in `./backups/` with timestamp directories.
 
 ### Development Ports
 
-- 3000: Faxi API
+- 4000: Faxi API
 - 5432: PostgreSQL
 - 6379: Redis
 - 9000: MinIO API
@@ -216,7 +216,7 @@ Production logging configuration:
 
 ### Common Issues
 
-1. **Port conflicts**: Ensure ports 3000, 5432, 6379 are available
+1. **Port conflicts**: Ensure ports 4000, 5432, 6379 are available
 2. **Memory issues**: Increase Docker memory limit to 4GB+
 3. **Permission errors**: Check file permissions on volumes
 4. **SSL errors**: Verify certificate files in `ssl/` directory

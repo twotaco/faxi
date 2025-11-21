@@ -170,8 +170,7 @@ export class MCPControllerAgent {
       // Create the agent response
       const response: AgentResponse = {
         success: workflowResult.success,
-        steps: executionSummary.errors.length > 0 ? 
-          await this.getExecutionSteps(executionId) : [],
+        steps: await this.getExecutionSteps(executionId), // Always return steps
         finalResult: workflowResult.finalOutput,
         responseType: this.determineResponseType(workflowResult),
         faxTemplate,
@@ -219,6 +218,13 @@ export class MCPControllerAgent {
     // Check if request can be completed immediately
     const canCompleteImmediately = await agentDecisionFramework.canCompleteImmediately(context);
     
+    console.log('[MCP Agent] Can complete immediately?', {
+      canComplete: canCompleteImmediately,
+      intent: context.interpretation.intent,
+      hasQuestion: !!context.interpretation.parameters?.question,
+      parameters: context.interpretation.parameters
+    });
+    
     if (canCompleteImmediately) {
       // Log decision reasoning
       await agentDecisionFramework.logDecisionReasoning(
@@ -228,7 +234,9 @@ export class MCPControllerAgent {
       );
       
       // Create streamlined workflow for immediate completion
-      return await this.createImmediateCompletionWorkflow(context);
+      const workflow = await this.createImmediateCompletionWorkflow(context);
+      console.log('[MCP Agent] Created immediate workflow:', workflow.length, 'steps');
+      return workflow;
     }
 
     // Generate proactive suggestions
@@ -268,11 +276,13 @@ export class MCPControllerAgent {
     workflow: WorkflowStep[], 
     context: DecisionContext
   ): Promise<WorkflowResult> {
+    console.log('[MCP Agent] Executing workflow:', workflow.length, 'steps');
     const results: Record<string, any> = {};
     let finalOutput: any = null;
     let hasErrors = false;
 
     for (const step of workflow) {
+      console.log('[MCP Agent] Executing step:', step.id, step.type);
       // Check dependencies
       if (step.dependencies) {
         const missingDeps = step.dependencies.filter(dep => !(dep in results));
@@ -282,7 +292,14 @@ export class MCPControllerAgent {
       }
 
       if (step.type === 'tool_call' && step.toolCall) {
+        console.log('[MCP Agent] Calling tool:', step.toolCall.server, step.toolCall.tool);
         const agentStep = await this.executeToolCallWithRetry(executionId, step, context, results);
+        
+        console.log('[MCP Agent] Tool result:', {
+          success: agentStep.success,
+          hasOutput: !!agentStep.output,
+          error: agentStep.error
+        });
         
         // Track step in state manager
         await agentStateManager.trackStep(executionId, agentStep);
@@ -508,13 +525,26 @@ export class MCPControllerAgent {
     // This is a simplified implementation - would be enhanced based on specific results
     const referenceId = `FX-${new Date().getFullYear()}-${String(Date.now()).slice(-6)}`;
 
+    // For AI chat, extract the response from the tool output
+    let responseText = 'Your request has been processed.';
+    if (request.interpretation.intent === 'ai_chat' && result.finalOutput) {
+      responseText = result.finalOutput.response || result.finalOutput.message || responseText;
+    }
+
     return {
       type: 'confirmation',
       referenceId,
+      contextData: {
+        type: 'general',
+        actionType: request.interpretation.intent,
+        description: `Processed your ${request.interpretation.intent} request`,
+        result: responseText,
+        nextSteps: []
+      },
       pages: [{
         content: [{
           type: 'text',
-          text: 'Your request has been processed.',
+          text: responseText,
           fontSize: 12
         }],
         pageNumber: 1,

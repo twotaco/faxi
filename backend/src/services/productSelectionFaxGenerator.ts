@@ -1,5 +1,5 @@
 import { FaxTemplateEngine } from './faxTemplateEngine.js';
-import { TiffGenerator } from './tiffGenerator.js';
+import { FaxGenerator } from './faxGenerator.js';
 import { ProductSelectionData, ProductOption, FaxTemplate } from '../types/fax.js';
 
 export interface ProductSelectionOptions {
@@ -20,7 +20,7 @@ export class ProductSelectionFaxGenerator {
     deliveryAddress?: string,
     options: ProductSelectionOptions = {},
     referenceId?: string
-  ): Promise<Buffer[]> {
+  ): Promise<Buffer> {
     const opts = {
       maxMainProducts: 5,
       maxComplementaryItems: 3,
@@ -44,7 +44,7 @@ export class ProductSelectionFaxGenerator {
     };
 
     const template = FaxTemplateEngine.createProductSelectionTemplate(selectionData, referenceId);
-    return await TiffGenerator.generateTiff(template);
+    return await FaxGenerator.generatePdf(template);
   }
 
   /**
@@ -56,7 +56,7 @@ export class ProductSelectionFaxGenerator {
     hasPaymentMethod: boolean,
     deliveryAddress?: string,
     referenceId?: string
-  ): Promise<Buffer[]> {
+  ): Promise<Buffer> {
     // Enhance the template with search context
     const enhancedProducts = products.map(product => ({
       ...product,
@@ -84,7 +84,7 @@ export class ProductSelectionFaxGenerator {
     comparisonCriteria: string[] = ['price', 'features'],
     hasPaymentMethod: boolean,
     referenceId?: string
-  ): Promise<Buffer[]> {
+  ): Promise<Buffer> {
     // Create a comparison table format
     const comparisonData: ProductSelectionData = {
       products: products.map(product => ({
@@ -109,7 +109,7 @@ export class ProductSelectionFaxGenerator {
       });
     }
 
-    return await TiffGenerator.generateTiff(template);
+    return await FaxGenerator.generatePdf(template);
   }
 
   /**
@@ -120,7 +120,7 @@ export class ProductSelectionFaxGenerator {
     alternativeProducts: ProductOption[],
     hasPaymentMethod: boolean,
     referenceId?: string
-  ): Promise<Buffer[]> {
+  ): Promise<Buffer> {
     const selectionData: ProductSelectionData = {
       products: alternativeProducts,
       complementaryItems: [],
@@ -148,7 +148,7 @@ export class ProductSelectionFaxGenerator {
       );
     }
 
-    return await TiffGenerator.generateTiff(template);
+    return await FaxGenerator.generatePdf(template);
   }
 
   /**
@@ -254,7 +254,7 @@ export class ProductSelectionFaxGenerator {
     subcategories: string[] = [],
     hasPaymentMethod: boolean,
     referenceId?: string
-  ): Promise<Buffer[]> {
+  ): Promise<Buffer> {
     const selectionData: ProductSelectionData = {
       products: products.slice(0, 4), // Limit to 4 for category browsing
       complementaryItems: [],
@@ -294,7 +294,7 @@ export class ProductSelectionFaxGenerator {
       }
     }
 
-    return await TiffGenerator.generateTiff(template);
+    return await FaxGenerator.generatePdf(template);
   }
 
   /**
@@ -304,7 +304,7 @@ export class ProductSelectionFaxGenerator {
     wishlistItems: ProductOption[],
     hasPaymentMethod: boolean,
     referenceId?: string
-  ): Promise<Buffer[]> {
+  ): Promise<Buffer> {
     const selectionData: ProductSelectionData = {
       products: wishlistItems,
       complementaryItems: [],
@@ -325,6 +325,6 @@ export class ProductSelectionFaxGenerator {
       };
     }
 
-    return await TiffGenerator.generateTiff(template);
+    return await FaxGenerator.generatePdf(template);
   }
 }

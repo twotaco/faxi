@@ -157,10 +157,10 @@ This document tracks the implementation status of the Faxi Admin Dashboard proje
 # Install dependencies
 npm install
 
-# Start backend (port 3000)
+# Start backend (port 4000)
 npm run dev
 
-# Start admin dashboard (port 3001)
+# Start admin dashboard (port 4001)
 npm run dev:admin
 
 # Run both concurrently

@@ -14,7 +14,7 @@ export * from './agentDecisionFramework';
 export * from './agentStateManager';
 export * from './responseGenerator';
 export * from './faxTemplateEngine';
-export * from './tiffGenerator';
+export * from './faxGenerator';
 export * from './emailFaxGenerator';
 export * from './productSelectionFaxGenerator';
 export * from './paymentBarcodeFaxGenerator';

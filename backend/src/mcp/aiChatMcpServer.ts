@@ -186,11 +186,17 @@ export class AIChatMCPServer implements MCPServer {
       };
       conversationHistory.push(userMessage);
 
-      // Prepare conversation for Gemini
-      const model = this.genAI.getGenerativeModel({ model: config.gemini.model });
-      
       // Create system prompt for fax-optimized responses
       const systemPrompt = this.createSystemPrompt();
+      
+      // Prepare conversation for Gemini with system instruction
+      const model = this.genAI.getGenerativeModel({ 
+        model: config.gemini.model,
+        systemInstruction: {
+          role: 'system',
+          parts: [{ text: systemPrompt }]
+        }
+      });
       
       // Build conversation history for Gemini
       const chatHistory = conversationHistory
@@ -202,8 +208,7 @@ export class AIChatMCPServer implements MCPServer {
 
       // Start chat session with history
       const chat = model.startChat({
-        history: chatHistory.slice(0, -1), // Exclude the current message
-        systemInstruction: systemPrompt
+        history: chatHistory.slice(0, -1) // Exclude the current message
       });
 
       // Send message and get response

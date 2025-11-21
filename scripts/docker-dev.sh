@@ -11,8 +11,8 @@ case $COMMAND in
     echo "Starting Faxi development environment..."
     docker-compose up -d
     echo "Services started. Access:"
-    echo "  - Faxi API: http://localhost:3000"
-    echo "  - Test UI: http://localhost:3000/test"
+    echo "  - Faxi API: http://localhost:4000"
+    echo "  - Test UI: http://localhost:4000/test"
     echo "  - pgAdmin: http://localhost:5050 (admin@faxi.jp / admin)"
     echo "  - Redis Commander: http://localhost:8081"
     echo "  - MinIO Console: http://localhost:9001 (minioadmin / minioadmin)"

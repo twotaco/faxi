@@ -234,7 +234,7 @@ For development and testing:
 TEST_MODE=true
 
 # Access test UI
-http://localhost:3000/test
+http://localhost:4000/test
 ```
 
 Test mode features:
@@ -367,7 +367,7 @@ kubectl exec postgres-xxx -n faxi -- pg_dump -U faxi_user faxi > backup.sql
    kubectl logs -n faxi -l app.kubernetes.io/name=faxi-app | grep webhook
    
    # Test webhook endpoint
-   curl -X POST http://localhost:3000/webhooks/telnyx/fax/received
+   curl -X POST http://localhost:4000/webhooks/telnyx/fax/received
    ```
 
 ### Debug Commands

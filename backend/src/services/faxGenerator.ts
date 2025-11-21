@@ -5,19 +5,29 @@ import {
   FaxTemplate,
   FaxPage,
   FaxContent,
-  TiffGenerationOptions,
+  FaxGenerationOptions,
   BarcodeData,
   CircleOption
 } from '../types/fax.js';
 
-export class TiffGenerator {
-  private static readonly DEFAULT_OPTIONS: TiffGenerationOptions = {
+/**
+ * Fax Document Generator
+ *
+ * Generates PDF documents for fax transmission via Telnyx API.
+ * Also generates PNG format for AI vision model processing (Gemini).
+ *
+ * Primary methods:
+ * - generatePdf() - Creates PDF format for Telnyx API
+ * - generatePng() - Creates PNG format for Gemini vision processing
+ */
+export class FaxGenerator {
+  private static readonly DEFAULT_OPTIONS: FaxGenerationOptions = {
     dpi: 204, // Standard fax resolution
     width: 1728, // 8.5 inches at 204 DPI
     height: 2200, // ~10.8 inches at 204 DPI (allows for margins)
     backgroundColor: '#FFFFFF',
     textColor: '#000000',
-    defaultFontSize: 12,
+    defaultFontSize: 20, // Increased from 12 for elderly readability
     margins: {
       top: 60,
       bottom: 60,
@@ -27,16 +37,16 @@ export class TiffGenerator {
   };
 
   /**
-   * Generate TIFF images from a fax template
+   * Generate PDF from a fax template (for Telnyx API)
    */
-  static async generateTiff(template: FaxTemplate, options?: Partial<TiffGenerationOptions>): Promise<Buffer[]> {
+  static async generatePdf(template: FaxTemplate, options?: Partial<FaxGenerationOptions>): Promise<Buffer> {
     const opts = { ...this.DEFAULT_OPTIONS, ...options };
-    const tiffBuffers: Buffer[] = [];
+    const pageBuffers: Buffer[] = [];
 
     for (const page of template.pages) {
       const canvas = createCanvas(opts.width, opts.height);
       const ctx = canvas.getContext('2d');
-      
+
       // Set up canvas
       ctx.fillStyle = opts.backgroundColor;
       ctx.fillRect(0, 0, opts.width, opts.height);
@@ -44,29 +54,31 @@ export class TiffGenerator {
       ctx.textBaseline = 'top';
 
       let currentY = opts.margins.top;
-      
+
       // Render each content element
       for (const content of page.content) {
         currentY = await this.renderContent(ctx, content, currentY, opts);
       }
 
-      // Convert canvas to TIFF
+      // Convert canvas to PNG buffer for PDF conversion
       const pngBuffer = canvas.toBuffer('image/png');
-      // Convert to TIFF with LZW compression (more compatible than CCITT)
-      const tiffBuffer = await sharp(pngBuffer)
-        .greyscale() // Convert to grayscale first
-        .tiff({
-          compression: 'lzw', // Use LZW compression instead of CCITT
-          xres: opts.dpi,
-          yres: opts.dpi,
-          resolutionUnit: 'inch'
-        })
-        .toBuffer();
-
-      tiffBuffers.push(tiffBuffer);
+      pageBuffers.push(pngBuffer);
     }
 
-    return tiffBuffers;
+    // Convert all pages to a single PDF
+    // Start with the first page
+    let pdfPipeline = sharp(pageBuffers[0])
+      .png() // Keep as PNG for quality
+      .toFormat('pdf', {
+        compressionLevel: 6
+      });
+
+    // For multi-page PDFs, we'll need to use a different approach
+    // Since sharp doesn't support multi-page PDFs directly, we'll create a single-page PDF
+    // TODO: For multi-page support, consider using pdf-lib or pdfkit
+    const pdfBuffer = await pdfPipeline.toBuffer();
+
+    return pdfBuffer;
   }
 
   /**
@@ -76,7 +88,7 @@ export class TiffGenerator {
     ctx: CanvasRenderingContext2D,
     content: FaxContent,
     currentY: number,
-    options: TiffGenerationOptions
+    options: FaxGenerationOptions
   ): Promise<number> {
     const { margins, width } = options;
     const contentWidth = width - margins.left - margins.right;
@@ -127,8 +139,8 @@ export class TiffGenerator {
     content: FaxContent,
     y: number,
     contentWidth: number,
-    margins: TiffGenerationOptions['margins'],
-    options: TiffGenerationOptions
+    margins: FaxGenerationOptions['margins'],
+    options: FaxGenerationOptions
   ): number {
     if (!content.text) return y;
 
@@ -166,18 +178,19 @@ export class TiffGenerator {
     content: FaxContent,
     y: number,
     contentWidth: number,
-    margins: TiffGenerationOptions['margins'],
-    options: TiffGenerationOptions
+    margins: FaxGenerationOptions['margins'],
+    options: FaxGenerationOptions
   ): number {
     if (!content.options) return y;
 
     const fontSize = content.fontSize || options.defaultFontSize;
     const lineHeight = fontSize * 1.8;
-    const circleRadius = 8;
+    const circleRadius = 14; // Increased from 8 for better visibility with larger fonts
     const circleMargin = 20;
 
     ctx.font = `normal ${fontSize}px Arial, sans-serif`;
     ctx.textAlign = 'left';
+    ctx.lineWidth = 3; // Thicker lines for better visibility
 
     content.options.forEach((option, index) => {
       const lineY = y + (index * lineHeight);
@@ -213,18 +226,19 @@ export class TiffGenerator {
     content: FaxContent,
     y: number,
     contentWidth: number,
-    margins: TiffGenerationOptions['margins'],
-    options: TiffGenerationOptions
+    margins: FaxGenerationOptions['margins'],
+    options: FaxGenerationOptions
   ): number {
     if (!content.options) return y;
 
     const fontSize = content.fontSize || options.defaultFontSize;
     const lineHeight = fontSize * 1.8;
-    const boxSize = 12;
+    const boxSize = 20; // Increased from 12 for better visibility with larger fonts
     const boxMargin = 20;
 
     ctx.font = `normal ${fontSize}px Arial, sans-serif`;
     ctx.textAlign = 'left';
+    ctx.lineWidth = 3; // Thicker lines for better visibility
 
     content.options.forEach((option, index) => {
       const lineY = y + (index * lineHeight);
@@ -258,8 +272,8 @@ export class TiffGenerator {
     content: FaxContent,
     y: number,
     contentWidth: number,
-    margins: TiffGenerationOptions['margins'],
-    options: TiffGenerationOptions
+    margins: FaxGenerationOptions['margins'],
+    options: FaxGenerationOptions
   ): Promise<number> {
     if (!content.barcodeData) return y;
 
@@ -328,45 +342,77 @@ export class TiffGenerator {
   }
 
   /**
-   * Generate a single page TIFF for testing
+   * Generate PNG from a fax template (for Gemini AI vision processing)
    */
-  static async generateTestTiff(text: string): Promise<Buffer> {
-    const options = this.DEFAULT_OPTIONS;
-    const canvas = createCanvas(options.width, options.height);
+  static async generatePng(template: FaxTemplate, options?: Partial<FaxGenerationOptions>): Promise<Buffer> {
+    const opts = { ...this.DEFAULT_OPTIONS, ...options };
+
+    // For now, just return the first page as PNG
+    // TODO: For multi-page support, consider returning an array of PNG buffers
+    if (template.pages.length === 0) {
+      throw new Error('Template has no pages');
+    }
+
+    const page = template.pages[0];
+    const canvas = createCanvas(opts.width, opts.height);
     const ctx = canvas.getContext('2d');
 
     // Set up canvas
-    ctx.fillStyle = options.backgroundColor;
-    ctx.fillRect(0, 0, options.width, options.height);
-    ctx.fillStyle = options.textColor;
-    ctx.font = `normal ${options.defaultFontSize}px Arial, sans-serif`;
-    ctx.textAlign = 'left';
+    ctx.fillStyle = opts.backgroundColor;
+    ctx.fillRect(0, 0, opts.width, opts.height);
+    ctx.fillStyle = opts.textColor;
     ctx.textBaseline = 'top';
 
-    // Render test text
-    const lines = this.wrapText(ctx, text, options.width - options.margins.left - options.margins.right);
-    const lineHeight = options.defaultFontSize * 1.2;
+    let currentY = opts.margins.top;
 
-    lines.forEach((line, index) => {
-      ctx.fillText(
-        line,
-        options.margins.left,
-        options.margins.top + (index * lineHeight)
-      );
-    });
+    // Render each content element
+    for (const content of page.content) {
+      currentY = await this.renderContent(ctx, content, currentY, opts);
+    }
 
-    // Convert to TIFF
-    const pngBuffer = canvas.toBuffer('image/png');
-    const tiffBuffer = await sharp(pngBuffer)
-      .greyscale() // Convert to grayscale
-      .tiff({
-        compression: 'lzw',
-        xres: options.dpi,
-        yres: options.dpi,
-        resolutionUnit: 'inch'
-      })
-      .toBuffer();
+    // Convert canvas to PNG buffer
+    return canvas.toBuffer('image/png');
+  }
 
-    return tiffBuffer;
+  /**
+   * Generate a test PDF with simple message
+   */
+  static async generateTestPdf(message: string): Promise<Buffer> {
+    const template: FaxTemplate = {
+      type: 'confirmation',
+      referenceId: 'TEST-2025-000000',
+      pages: [
+        {
+          content: [
+            {
+              type: 'header',
+              text: 'Faxi - Test Fax',
+              fontSize: 20,
+              alignment: 'center',
+              bold: true,
+              marginBottom: 30
+            },
+            {
+              type: 'text',
+              text: message,
+              fontSize: 18,
+              marginBottom: 20
+            },
+            {
+              type: 'footer',
+              text: 'Test fax generated by Faxi system',
+              fontSize: 14,
+              alignment: 'center',
+              marginTop: 20
+            }
+          ],
+          pageNumber: 1,
+          totalPages: 1
+        }
+      ],
+      contextData: { test: true }
+    };
+
+    return await this.generatePdf(template);
   }
 }

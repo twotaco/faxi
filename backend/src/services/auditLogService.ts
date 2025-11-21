@@ -546,11 +546,16 @@ export class AuditLogService {
     operation: string;
     details?: any;
   }): Promise<void> {
+    // Only set userId if entityType is not 'system' and entityId looks like a UUID
+    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(data.entityId);
+    
     await auditLogRepository.create({
-      userId: data.entityId !== 'system' ? data.entityId : undefined,
+      userId: data.entityType !== 'system' && isUUID ? data.entityId : undefined,
+      faxJobId: data.entityType === 'fax_job' && isUUID ? data.entityId : undefined,
       eventType: `${data.entityType}.${data.operation}`,
       eventData: {
         ...data.details,
+        entityId: data.entityId, // Store the actual entity ID in event data
         timestamp: new Date().toISOString(),
       },
     });

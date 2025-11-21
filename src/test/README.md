@@ -33,7 +33,7 @@ npm run dev
 
 ### 3. Access the Test UI
 
-Open your browser to: http://localhost:3000/test
+Open your browser to: http://localhost:4000/test
 
 ### 4. Generate Test Fixtures (Optional)
 

@@ -280,7 +280,7 @@ deploy_application() {
             --desired-count 2 \
             --launch-type FARGATE \
             --network-configuration "awsvpcConfiguration={subnets=[subnet-xxx,subnet-yyy],securityGroups=[sg-xxx],assignPublicIp=ENABLED}" \
-            --load-balancers "targetGroupArn=$TARGET_GROUP_ARN,containerName=faxi-app,containerPort=3000" \
+            --load-balancers "targetGroupArn=$TARGET_GROUP_ARN,containerName=faxi-app,containerPort=4000" \
             --region $REGION
     fi
     

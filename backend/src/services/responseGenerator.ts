@@ -4,7 +4,7 @@ import { PaymentBarcodeFaxGenerator } from './paymentBarcodeFaxGenerator.js';
 import { ConfirmationFaxGenerator } from './confirmationFaxGenerator.js';
 import { ClarificationFaxGenerator } from './clarificationFaxGenerator.js';
 import { WelcomeFaxGenerator } from './welcomeFaxGenerator.js';
-import { TiffGenerator } from './tiffGenerator.js';
+import { FaxGenerator } from './faxGenerator.js';
 import {
   FaxTemplate,
   EmailReplyData,
@@ -23,7 +23,7 @@ export interface ResponseGeneratorRequest {
 }
 
 export interface ResponseGeneratorResult {
-  tiffBuffers: Buffer[];
+  pdfBuffer: Buffer;
   template: FaxTemplate;
   referenceId: string;
 }
@@ -33,13 +33,13 @@ export class ResponseGenerator {
    * Generate fax response based on request type
    */
   static async generateResponse(request: ResponseGeneratorRequest): Promise<ResponseGeneratorResult> {
-    let tiffBuffers: Buffer[];
+    let pdfBuffer: Buffer;
     let template: FaxTemplate;
     const referenceId = request.referenceId || this.generateReferenceId();
 
     switch (request.type) {
       case 'email_reply':
-        tiffBuffers = await EmailFaxGenerator.generateEmailFax(
+        pdfBuffer = await EmailFaxGenerator.generateEmailFax(
           request.data as EmailReplyData,
           request.options,
           referenceId
@@ -55,7 +55,7 @@ export class ResponseGenerator {
 
       case 'product_selection':
         const productData = request.data as ProductSelectionData;
-        tiffBuffers = await ProductSelectionFaxGenerator.generateProductSelectionFax(
+        pdfBuffer = await ProductSelectionFaxGenerator.generateProductSelectionFax(
           productData.products,
           productData.complementaryItems,
           productData.hasPaymentMethod,
@@ -73,7 +73,7 @@ export class ResponseGenerator {
 
       case 'payment_barcodes':
         const barcodeData = request.data as PaymentBarcodeData;
-        tiffBuffers = await PaymentBarcodeFaxGenerator.generatePaymentBarcodeFax(
+        pdfBuffer = await PaymentBarcodeFaxGenerator.generatePaymentBarcodeFax(
           barcodeData.products,
           barcodeData.barcodes,
           request.options,
@@ -90,17 +90,17 @@ export class ResponseGenerator {
       case 'confirmation':
         const confirmationData = request.data as ConfirmationData;
         if (confirmationData.type === 'order') {
-          tiffBuffers = await ConfirmationFaxGenerator.generateOrderConfirmationFax(
+          pdfBuffer = await ConfirmationFaxGenerator.generateOrderConfirmationFax(
             request.data,
             referenceId
           );
         } else if (confirmationData.type === 'email') {
-          tiffBuffers = await ConfirmationFaxGenerator.generateEmailConfirmationFax(
+          pdfBuffer = await ConfirmationFaxGenerator.generateEmailConfirmationFax(
             request.data,
             referenceId
           );
         } else {
-          tiffBuffers = await ConfirmationFaxGenerator.generateGeneralConfirmationFax(
+          pdfBuffer = await ConfirmationFaxGenerator.generateGeneralConfirmationFax(
             request.data,
             referenceId
           );
@@ -115,7 +115,7 @@ export class ResponseGenerator {
 
       case 'clarification':
         const clarificationData = request.data as ClarificationData;
-        tiffBuffers = await ClarificationFaxGenerator.generateClarificationFax(
+        pdfBuffer = await ClarificationFaxGenerator.generateClarificationFax(
           clarificationData.question,
           clarificationData.requiredInfo,
           clarificationData.recentConversations,
@@ -131,7 +131,7 @@ export class ResponseGenerator {
         break;
 
       case 'welcome':
-        tiffBuffers = await WelcomeFaxGenerator.generateWelcomeFax(
+        pdfBuffer = await WelcomeFaxGenerator.generateWelcomeFax(
           {
             phoneNumber: request.data.phoneNumber,
             emailAddress: request.data.emailAddress,
@@ -156,7 +156,7 @@ export class ResponseGenerator {
           result: 'Success',
           nextSteps: multiActionData.nextSteps || []
         };
-        tiffBuffers = await ConfirmationFaxGenerator.generateGeneralConfirmationFax(
+        pdfBuffer = await ConfirmationFaxGenerator.generateGeneralConfirmationFax(
           generalActionDetails,
           referenceId
         );
@@ -173,7 +173,7 @@ export class ResponseGenerator {
     }
 
     return {
-      tiffBuffers,
+      pdfBuffer,
       template,
       referenceId
     };
@@ -318,7 +318,7 @@ export class ResponseGenerator {
    * Generate test fax for debugging
    */
   static async generateTestFax(message: string): Promise<Buffer> {
-    return await TiffGenerator.generateTestTiff(message);
+    return await FaxGenerator.generateTestPdf(message);
   }
 
   /**
@@ -331,15 +331,12 @@ export class ResponseGenerator {
   }
 
   /**
-   * Validate TIFF buffers
+   * Validate PDF buffer
    */
-  static validateTiffBuffers(buffers: Buffer[]): boolean {
-    return buffers.every(buffer => 
-      buffer instanceof Buffer && 
+  static validatePdfBuffer(buffer: Buffer): boolean {
+    return buffer instanceof Buffer &&
       buffer.length > 0 &&
-      buffer.subarray(0, 4).toString('hex').toLowerCase().includes('4949') || // Little-endian TIFF
-      buffer.subarray(0, 4).toString('hex').toLowerCase().includes('4d4d')    // Big-endian TIFF
-    );
+      buffer.subarray(0, 4).toString('hex').toLowerCase().includes('25504446'); // PDF magic bytes: %PDF
   }
 
   /**

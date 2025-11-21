@@ -151,7 +151,7 @@ function buildConfig(): Config {
     },
     app: {
       env: (process.env.NODE_ENV as any) || 'development',
-      port: parseInt(process.env.PORT || '3000', 10),
+      port: parseInt(process.env.PORT || '4000', 10),
       logLevel: (process.env.LOG_LEVEL as any) || 'info',
       testMode: process.env.TEST_MODE === 'true',
     },
@@ -190,7 +190,7 @@ function buildConfig(): Config {
       publishableKey: process.env.STRIPE_PUBLISHABLE_KEY || '',
       webhookSecret: process.env.STRIPE_WEBHOOK_SECRET || '',
     },
-    baseUrl: process.env.BASE_URL || 'http://localhost:3000',
+    baseUrl: process.env.BASE_URL || 'http://localhost:4000',
     worker: {
       concurrency: parseInt(process.env.WORKER_CONCURRENCY || '1', 10),
       maxStalledCount: parseInt(process.env.WORKER_MAX_STALLED_COUNT || '1', 10),

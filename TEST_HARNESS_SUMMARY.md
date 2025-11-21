@@ -22,7 +22,7 @@ Successfully implemented a comprehensive test harness for the Faxi core system t
 
 ### ✅ 17.2 Test UI for Fax Simulation
 - **File**: `src/test/testUI.html`
-- **URL**: `http://localhost:3000/test` (when TEST_MODE=true)
+- **URL**: `http://localhost:4000/test` (when TEST_MODE=true)
 - **Features**:
   - Drag-and-drop file upload interface
   - Real-time processing status monitoring
@@ -114,7 +114,7 @@ npm run dev
 ```
 
 ### 4. Access Test UI
-Open browser to: `http://localhost:3000/test`
+Open browser to: `http://localhost:4000/test`
 
 ### 5. Test Scenarios
 1. **Load Fixtures**: Click "Load Test Fixtures" to see available samples

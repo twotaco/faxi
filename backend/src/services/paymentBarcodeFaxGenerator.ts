@@ -1,5 +1,5 @@
 import { FaxTemplateEngine } from './faxTemplateEngine.js';
-import { TiffGenerator } from './tiffGenerator.js';
+import { FaxGenerator } from './faxGenerator.js';
 import { PaymentBarcodeData, PaymentBarcode, ProductOption, FaxTemplate } from '../types/fax.js';
 
 export interface PaymentBarcodeOptions {
@@ -21,7 +21,7 @@ export class PaymentBarcodeFaxGenerator {
     barcodes: PaymentBarcode[],
     options: PaymentBarcodeOptions = {},
     referenceId?: string
-  ): Promise<Buffer[]> {
+  ): Promise<Buffer> {
     const opts = {
       includeProductDetails: true,
       includeBundleOptions: true,
@@ -46,7 +46,7 @@ export class PaymentBarcodeFaxGenerator {
     };
 
     const template = FaxTemplateEngine.createPaymentBarcodeTemplate(barcodeData, referenceId);
-    return await TiffGenerator.generateTiff(template);
+    return await FaxGenerator.generatePdf(template);
   }
 
   /**
@@ -57,7 +57,7 @@ export class PaymentBarcodeFaxGenerator {
     barcode: PaymentBarcode,
     options: PaymentBarcodeOptions = {},
     referenceId?: string
-  ): Promise<Buffer[]> {
+  ): Promise<Buffer> {
     return await this.generatePaymentBarcodeFax([product], [barcode], options, referenceId);
   }
 
@@ -70,7 +70,7 @@ export class PaymentBarcodeFaxGenerator {
     barcode: PaymentBarcode,
     nextBillingDate: Date,
     referenceId?: string
-  ): Promise<Buffer[]> {
+  ): Promise<Buffer> {
     const subscriptionProduct: ProductOption = {
       id: 'subscription',
       name: `${subscriptionName} - Monthly Subscription`,
@@ -99,7 +99,7 @@ export class PaymentBarcodeFaxGenerator {
     dueDate: Date,
     barcode: PaymentBarcode,
     referenceId?: string
-  ): Promise<Buffer[]> {
+  ): Promise<Buffer> {
     const billProduct: ProductOption = {
       id: 'bill_payment',
       name: `${billType} Bill Payment`,
@@ -131,7 +131,7 @@ export class PaymentBarcodeFaxGenerator {
       description: string;
     }>,
     referenceId?: string
-  ): Promise<Buffer[]> {
+  ): Promise<Buffer> {
     const products: ProductOption[] = paymentOptions.map((option, index) => ({
       id: `${baseProduct.id}_option_${index}`,
       name: `${baseProduct.name} - ${option.name}`,
@@ -166,7 +166,7 @@ export class PaymentBarcodeFaxGenerator {
     newBarcodes: PaymentBarcode[],
     daysUntilExpiration: number,
     referenceId?: string
-  ): Promise<Buffer[]> {
+  ): Promise<Buffer> {
     const reminderData: PaymentBarcodeData = {
       products: originalProducts,
       barcodes: newBarcodes,
@@ -194,7 +194,7 @@ export class PaymentBarcodeFaxGenerator {
       });
     }
 
-    return await TiffGenerator.generateTiff(template);
+    return await FaxGenerator.generatePdf(template);
   }
 
   /**
@@ -207,7 +207,7 @@ export class PaymentBarcodeFaxGenerator {
     orderNumber?: string,
     trackingNumber?: string,
     referenceId?: string
-  ): Promise<Buffer[]> {
+  ): Promise<Buffer> {
     const confirmationText = `Payment confirmed! Thank you for your purchase.
 
 Transaction ID: ${transactionId}
@@ -269,7 +269,7 @@ Thank you for using Faxi!`;
       }
     };
 
-    return await TiffGenerator.generateTiff(template);
+    return await FaxGenerator.generatePdf(template);
   }
 
   /**
@@ -319,7 +319,7 @@ Thank you for using Faxi!`;
     failureReason: string,
     newBarcodes: PaymentBarcode[],
     referenceId?: string
-  ): Promise<Buffer[]> {
+  ): Promise<Buffer> {
     const failureData: PaymentBarcodeData = {
       products,
       barcodes: newBarcodes,
@@ -347,6 +347,6 @@ Thank you for using Faxi!`;
       });
     }
 
-    return await TiffGenerator.generateTiff(template);
+    return await FaxGenerator.generatePdf(template);
   }
 }

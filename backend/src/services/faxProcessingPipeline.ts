@@ -63,12 +63,12 @@ export class FaxProcessingPipeline {
       
       // Step 6: Generate Response Fax
       await onProgress?.(70);
-      const responseTiffs = await this.generateResponseFaxWithErrorHandling(agentResponse, faxData);
-      
+      const responsePdf = await this.generateResponseFaxWithErrorHandling(agentResponse, faxData);
+
       // Step 7: Send Response Fax
       await onProgress?.(90);
       const sendResult = await this.sendResponseFaxWithErrorHandling(
-        responseTiffs,
+        responsePdf,
         faxData,
         agentResponse.faxTemplate.referenceId
       );
@@ -159,8 +159,14 @@ export class FaxProcessingPipeline {
    */
   private async downloadFaxImage(faxData: FaxJobData): Promise<Buffer> {
     try {
+      // Detect file extension from media URL or use pdf as default
+      const urlPath = new URL(faxData.mediaUrl).pathname;
+      const fileExt = urlPath.split('.').pop()?.toLowerCase() || 'pdf';
+      const validExts = ['pdf', 'tiff', 'tif', 'png', 'jpg', 'jpeg'];
+      const extension = validExts.includes(fileExt) ? fileExt : 'pdf';
+      
       // Check if image is already stored in S3
-      const s3Key = s3Storage.generateFaxKey(faxData.faxId, 'tiff');
+      const s3Key = s3Storage.generateFaxKey(faxData.faxId, extension);
       
       try {
         const existingImage = await s3Storage.downloadFile(s3Key);
@@ -183,8 +189,11 @@ export class FaxProcessingPipeline {
       
       const imageBuffer = Buffer.from(await response.arrayBuffer());
       
+      // Detect MIME type from response or extension
+      const contentType = response.headers.get('content-type') || `image/${extension}`;
+      
       // Store in S3 for future reference
-      await s3Storage.uploadFile(s3Key, imageBuffer, 'image/tiff');
+      await s3Storage.uploadFile(s3Key, imageBuffer, contentType);
       
       // Log successful download
       await auditLogService.logOperation({
@@ -512,7 +521,7 @@ export class FaxProcessingPipeline {
   private async generateResponseFaxWithErrorHandling(
     agentResponse: AgentResponse,
     faxData: FaxJobData
-  ): Promise<Buffer[]> {
+  ): Promise<Buffer> {
     try {
       return await this.generateResponseFax(agentResponse);
     } catch (error) {
@@ -522,7 +531,7 @@ export class FaxProcessingPipeline {
         stage: 'response_generation',
         originalError: error instanceof Error ? error : new Error('Response generation failed'),
       };
-      
+
       await faxProcessingErrorHandler.handleError(errorContext);
       throw error;
     }
@@ -531,7 +540,7 @@ export class FaxProcessingPipeline {
   /**
    * Generate response fax using Response Generator
    */
-  private async generateResponseFax(agentResponse: AgentResponse): Promise<Buffer[]> {
+  private async generateResponseFax(agentResponse: AgentResponse): Promise<Buffer> {
     try {
       console.log('Generating response fax', {
         templateType: agentResponse.faxTemplate.type,
@@ -546,10 +555,10 @@ export class FaxProcessingPipeline {
       
       console.log('Response fax generated', {
         referenceId: responseResult.referenceId,
-        pageCount: responseResult.tiffBuffers.length,
+        format: 'PDF',
       });
       
-      return responseResult.tiffBuffers;
+      return responseResult.pdfBuffer;
       
     } catch (error) {
       console.error('Response fax generation failed:', error);
@@ -561,12 +570,12 @@ export class FaxProcessingPipeline {
    * Send response fax with error handling
    */
   private async sendResponseFaxWithErrorHandling(
-    tiffBuffers: Buffer[],
+    pdfBuffer: Buffer,
     faxData: FaxJobData,
     referenceId: string
   ): Promise<{ faxId: string }> {
     try {
-      return await this.sendResponseFax(tiffBuffers, faxData.fromNumber, referenceId);
+      return await this.sendResponseFax(pdfBuffer, faxData.fromNumber, referenceId);
     } catch (error) {
       const errorContext: ErrorContext = {
         faxJobId: faxData.faxId,
@@ -581,7 +590,7 @@ export class FaxProcessingPipeline {
         if (result.retryDelay) {
           await new Promise(resolve => setTimeout(resolve, result.retryDelay));
         }
-        return await this.sendResponseFax(tiffBuffers, faxData.fromNumber, referenceId);
+        return await this.sendResponseFax(pdfBuffer, faxData.fromNumber, referenceId);
       }
       
       throw error;
@@ -592,19 +601,15 @@ export class FaxProcessingPipeline {
    * Send response fax via Fax Sender Service
    */
   private async sendResponseFax(
-    tiffBuffers: Buffer[],
+    pdfBuffer: Buffer,
     toNumber: string,
     referenceId: string
   ): Promise<{ faxId: string }> {
     try {
-      // Combine multiple TIFF pages if needed
-      const combinedTiff = tiffBuffers.length === 1 
-        ? tiffBuffers[0] 
-        : await this.combineTiffPages(tiffBuffers);
-      
-      // Upload TIFF to publicly accessible URL
-      const mediaUrl = await faxSenderService.uploadTiffForFax(
-        combinedTiff,
+      // PDF is already a single buffer (Telnyx format)
+      // Upload PDF to publicly accessible URL
+      const mediaUrl = await faxSenderService.uploadPdfForFax(
+        pdfBuffer,
         `response_${referenceId}`
       );
       
@@ -633,14 +638,15 @@ export class FaxProcessingPipeline {
 
 
   /**
-   * Combine multiple TIFF pages into a single multi-page TIFF
+   * Combine multiple PDF pages into a single multi-page PDF
+   * @deprecated This method is no longer used as PDFs are generated as single buffers
    */
-  private async combineTiffPages(tiffBuffers: Buffer[]): Promise<Buffer> {
-    // For now, just return the first page
-    // In a full implementation, you would use a library like sharp or imagemagick
-    // to combine multiple TIFF pages into a single multi-page TIFF
-    console.warn('Multi-page TIFF combination not implemented, using first page only');
-    return tiffBuffers[0];
+  private async combinePdfPages(pdfBuffer: Buffer[]): Promise<Buffer> {
+    // For now, just return the first PDF buffer
+    // In a full implementation, you would use a library like pdf-lib
+    // to combine multiple PDF documents into a single multi-page PDF
+    console.warn('Multi-page PDF combination not implemented, using first buffer only');
+    return pdfBuffer[0];
   }
 
   /**
@@ -658,7 +664,7 @@ export class FaxProcessingPipeline {
     if (message.includes('agent') || message.includes('mcp') || message.includes('tool')) {
       return 'agent_processing';
     }
-    if (message.includes('response') || message.includes('generation') || message.includes('tiff')) {
+    if (message.includes('response') || message.includes('generation') || message.includes('pdf')) {
       return 'response_generation';
     }
     if (message.includes('send') || message.includes('fax') || message.includes('telnyx')) {
@@ -695,9 +701,9 @@ export class FaxProcessingPipeline {
         user.emailAddress
       );
       
-      // Upload TIFF for fax sending
-      const mediaUrl = await faxSenderService.uploadTiffForFax(
-        welcomeFaxResult.tiffBuffers[0],
+      // Upload PDF for fax sending
+      const mediaUrl = await faxSenderService.uploadPdfForFax(
+        welcomeFaxResult.pdfBuffer,
         `welcome_${userId}_${Date.now()}`
       );
       
@@ -791,7 +797,7 @@ export class FaxProcessingPipeline {
           topic as 'email' | 'shopping' | 'payment' | 'ai' | 'address_book'
         );
         
-        const mediaUrl = await faxSenderService.uploadTiffForFax(
+        const mediaUrl = await faxSenderService.uploadPdfForFax(
           helpFaxBuffers[0],
           `help_${topic}_${userId}_${Date.now()}`
         );
@@ -849,7 +855,7 @@ export class FaxProcessingPipeline {
       // Generate payment registration instructions fax
       const instructionsFaxBuffers = await WelcomeFaxGenerator.generatePaymentRegistrationInstructionsFax();
       
-      const mediaUrl = await faxSenderService.uploadTiffForFax(
+      const mediaUrl = await faxSenderService.uploadPdfForFax(
         instructionsFaxBuffers[0],
         `payment_instructions_${userId}_${Date.now()}`
       );

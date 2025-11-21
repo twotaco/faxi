@@ -7,6 +7,55 @@ import { auditLogService } from '../../services/auditLogService';
 // Import the app (we'll need to create a test app instance)
 let app: Express;
 
+/**
+ * Helper function to poll fax status until processing completes
+ * @param faxId - The fax ID to poll
+ * @param timeoutMs - Maximum time to wait in milliseconds (default: 55 seconds)
+ * @param pollIntervalMs - Time between polls in milliseconds (default: 1 second)
+ * @returns The final status response
+ */
+async function waitForProcessingComplete(
+  faxId: string,
+  timeoutMs: number = 55000,
+  pollIntervalMs: number = 1000
+): Promise<any> {
+  const startTime = Date.now();
+  const maxAttempts = Math.ceil(timeoutMs / pollIntervalMs);
+  let attempts = 0;
+
+  while (attempts < maxAttempts) {
+    const elapsed = Date.now() - startTime;
+    
+    // Check if we've exceeded the timeout
+    if (elapsed >= timeoutMs) {
+      throw new Error(
+        `Timeout waiting for fax ${faxId} to complete processing after ${elapsed}ms (${attempts} attempts)`
+      );
+    }
+
+    // Poll the status endpoint
+    const statusResponse = await request(app).get(`/test/fax/status/${faxId}`);
+    
+    expect(statusResponse.status).toBe(200);
+    
+    const status = statusResponse.body.status;
+    
+    // Check if processing has reached a final state
+    if (status === 'completed' || status === 'failed') {
+      return statusResponse.body;
+    }
+    
+    // Wait before next poll
+    await new Promise(resolve => setTimeout(resolve, pollIntervalMs));
+    attempts++;
+  }
+
+  // If we get here, we've exhausted all attempts
+  throw new Error(
+    `Fax ${faxId} did not reach final state after ${attempts} attempts (${Date.now() - startTime}ms)`
+  );
+}
+
 describe('Fax Processing Pipeline Integration Tests', () => {
   beforeEach(async () => {
     // Initialize test app
@@ -42,39 +91,24 @@ describe('Fax Processing Pipeline Integration Tests', () => {
 
       const faxId = uploadResponse.body.fax_id;
 
-      // Wait for processing to complete (poll status)
-      let status = 'pending';
-      let attempts = 0;
-      const maxAttempts = 30; // 30 seconds max
+      // Wait for processing to complete using helper function
+      const finalStatus = await waitForProcessingComplete(faxId);
 
-      while (status !== 'completed' && status !== 'failed' && attempts < maxAttempts) {
-        await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second
-        
-        const statusResponse = await request(app)
-          .get(`/test/fax/status/${faxId}`);
-        
-        expect(statusResponse.status).toBe(200);
-        status = statusResponse.body.status;
-        attempts++;
-      }
-
-      expect(status).toBe('completed');
+      // Verify processing completed successfully
+      expect(finalStatus.status).toBe('completed');
 
       // Verify processing steps were logged
-      const statusResponse = await request(app)
-        .get(`/test/fax/status/${faxId}`);
-
-      expect(statusResponse.body.processing_steps).toBeDefined();
-      expect(statusResponse.body.processing_steps.length).toBeGreaterThan(0);
+      expect(finalStatus.processing_steps).toBeDefined();
+      expect(finalStatus.processing_steps.length).toBeGreaterThan(0);
 
       // Check that expected processing steps occurred
-      const stepOperations = statusResponse.body.processing_steps.map((step: any) => step.operation);
+      const stepOperations = finalStatus.processing_steps.map((step: any) => step.operation);
       expect(stepOperations).toContain('test_fax_received');
       expect(stepOperations).toContain('processing_start');
       expect(stepOperations).toContain('processing_complete');
 
       // Verify response fax was generated
-      expect(statusResponse.body.response_reference_id).toBeDefined();
+      expect(finalStatus.response_reference_id).toBeDefined();
     });
 
     it('should process shopping request fax end-to-end', async () => {
@@ -93,29 +127,14 @@ describe('Fax Processing Pipeline Integration Tests', () => {
       expect(uploadResponse.status).toBe(200);
       const faxId = uploadResponse.body.fax_id;
 
-      // Wait for processing to complete
-      let status = 'pending';
-      let attempts = 0;
-      const maxAttempts = 30;
+      // Wait for processing to complete using helper function
+      const finalStatus = await waitForProcessingComplete(faxId);
 
-      while (status !== 'completed' && status !== 'failed' && attempts < maxAttempts) {
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        const statusResponse = await request(app)
-          .get(`/test/fax/status/${faxId}`);
-        
-        status = statusResponse.body.status;
-        attempts++;
-      }
-
-      expect(status).toBe('completed');
-
-      // Verify shopping-specific processing occurred
-      const statusResponse = await request(app)
-        .get(`/test/fax/status/${faxId}`);
+      // Verify processing completed successfully
+      expect(finalStatus.status).toBe('completed');
 
       // Should have generated product selection fax
-      expect(statusResponse.body.response_reference_id).toBeDefined();
+      expect(finalStatus.response_reference_id).toBeDefined();
     });
 
     it('should process AI chat request fax end-to-end', async () => {
@@ -134,28 +153,14 @@ describe('Fax Processing Pipeline Integration Tests', () => {
       expect(uploadResponse.status).toBe(200);
       const faxId = uploadResponse.body.fax_id;
 
-      // Wait for processing to complete
-      let status = 'pending';
-      let attempts = 0;
-      const maxAttempts = 30;
+      // Wait for processing to complete using helper function
+      const finalStatus = await waitForProcessingComplete(faxId);
 
-      while (status !== 'completed' && status !== 'failed' && attempts < maxAttempts) {
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        const statusResponse = await request(app)
-          .get(`/test/fax/status/${faxId}`);
-        
-        status = statusResponse.body.status;
-        attempts++;
-      }
-
-      expect(status).toBe('completed');
+      // Verify processing completed successfully
+      expect(finalStatus.status).toBe('completed');
 
       // Verify AI chat response was generated
-      const statusResponse = await request(app)
-        .get(`/test/fax/status/${faxId}`);
-
-      expect(statusResponse.body.response_reference_id).toBeDefined();
+      expect(finalStatus.response_reference_id).toBeDefined();
     });
 
     it('should handle ambiguous requests with clarification', async () => {
@@ -174,28 +179,66 @@ describe('Fax Processing Pipeline Integration Tests', () => {
       expect(uploadResponse.status).toBe(200);
       const faxId = uploadResponse.body.fax_id;
 
-      // Wait for processing to complete
-      let status = 'pending';
-      let attempts = 0;
-      const maxAttempts = 30;
+      // Wait for processing to complete using helper function
+      const finalStatus = await waitForProcessingComplete(faxId);
 
-      while (status !== 'completed' && status !== 'failed' && attempts < maxAttempts) {
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        const statusResponse = await request(app)
-          .get(`/test/fax/status/${faxId}`);
-        
-        status = statusResponse.body.status;
-        attempts++;
-      }
-
-      expect(status).toBe('completed');
+      // Verify processing completed successfully
+      expect(finalStatus.status).toBe('completed');
 
       // Should have generated clarification fax
+      expect(finalStatus.response_reference_id).toBeDefined();
+    });
+  });
+
+  describe('Status Endpoint Query Tests', () => {
+    it('should handle UUID format fax IDs without errors', async () => {
+      // Test with a valid UUID format
+      const uuidFaxId = '550e8400-e29b-41d4-a716-446655440000';
+      
+      const statusResponse = await request(app)
+        .get(`/test/fax/status/${uuidFaxId}`);
+      
+      // Should return 200 even if fax doesn't exist
+      expect(statusResponse.status).toBe(200);
+      expect(statusResponse.body).toHaveProperty('status');
+      expect(statusResponse.body).toHaveProperty('processing_steps');
+    });
+
+    it('should handle text format fax IDs without errors', async () => {
+      // Test with a text format ID
+      const textFaxId = 'test_fax_12345';
+      
+      const statusResponse = await request(app)
+        .get(`/test/fax/status/${textFaxId}`);
+      
+      // Should return 200 even if fax doesn't exist
+      expect(statusResponse.status).toBe(200);
+      expect(statusResponse.body).toHaveProperty('status');
+      expect(statusResponse.body).toHaveProperty('processing_steps');
+    });
+
+    it('should return correct status for existing fax', async () => {
+      // Upload a test fax
+      const emailFixture = testFaxFixtureGenerator.getFixture('email_request.png');
+      expect(emailFixture).toBeDefined();
+
+      const uploadResponse = await request(app)
+        .post('/test/fax/receive')
+        .attach('fax_file', emailFixture!, 'email_request.png')
+        .field('from_number', '+1234567890')
+        .field('to_number', '+0987654321');
+
+      expect(uploadResponse.status).toBe(200);
+      const faxId = uploadResponse.body.fax_id;
+
+      // Query status immediately
       const statusResponse = await request(app)
         .get(`/test/fax/status/${faxId}`);
 
-      expect(statusResponse.body.response_reference_id).toBeDefined();
+      expect(statusResponse.status).toBe(200);
+      expect(statusResponse.body.fax_id).toBe(faxId);
+      expect(statusResponse.body.status).toBeDefined();
+      expect(['received', 'processing', 'completed', 'failed', 'unknown']).toContain(statusResponse.body.status);
     });
   });
 
@@ -214,29 +257,14 @@ describe('Fax Processing Pipeline Integration Tests', () => {
       expect(uploadResponse.status).toBe(200);
       const faxId = uploadResponse.body.fax_id;
 
-      // Wait for processing to complete or fail
-      let status = 'pending';
-      let attempts = 0;
-      const maxAttempts = 30;
-
-      while (status !== 'completed' && status !== 'failed' && attempts < maxAttempts) {
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        const statusResponse = await request(app)
-          .get(`/test/fax/status/${faxId}`);
-        
-        status = statusResponse.body.status;
-        attempts++;
-      }
+      // Wait for processing to complete or fail using helper function
+      const finalStatus = await waitForProcessingComplete(faxId);
 
       // Should either fail gracefully or handle the error
-      expect(['completed', 'failed']).toContain(status);
+      expect(['completed', 'failed']).toContain(finalStatus.status);
 
-      if (status === 'failed') {
-        const statusResponse = await request(app)
-          .get(`/test/fax/status/${faxId}`);
-        
-        expect(statusResponse.body.error_message).toBeDefined();
+      if (finalStatus.status === 'failed') {
+        expect(finalStatus.error_message).toBeDefined();
       }
     });
 

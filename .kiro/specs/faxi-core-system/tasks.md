@@ -95,7 +95,7 @@ The Faxi Core System implementation is **COMPLETE** and ready for production dep
 
 - [x] 11. **Response Generator and Templates**
   - Comprehensive fax template system for all response types
-  - TIFF generation at 204x196 DPI with proper fonts and formatting
+  - PDF generation at 204 DPI with proper fonts and formatting
   - Email fax templates with smart reply options
   - Product selection forms with pricing and payment options
   - Payment barcode fax generation with convenience store instructions
@@ -110,7 +110,7 @@ The Faxi Core System implementation is **COMPLETE** and ready for production dep
   - Telnyx API integration for fax transmission
   - Retry logic with exponential backoff (up to 3 attempts)
   - Delivery status tracking with webhook handling
-  - Public URL generation for TIFF documents
+  - Public URL generation for PDF documents
   - Mock fax sender for development testing
   - _Requirements: 7.4, 7.5, 9.2, 10.4_
 

@@ -6,47 +6,84 @@ A modern fax-to-internet bridge service powered by AI, enabling offline users to
 
 This repository uses npm workspaces to manage two applications:
 
-- **backend/** - Express.js API server (port 3000)
-- **admin-dashboard/** - Next.js admin interface (port 3001)
+- **backend/** - Express.js API server (port 4000)
+- **admin-dashboard/** - Next.js admin interface (port 4001)
 
 See [MONOREPO.md](./MONOREPO.md) for detailed information about the monorepo structure.
 
 ## Prerequisites
 
 - Node.js 20+ and npm
-- PostgreSQL 14+
-- Redis 6+
-- S3-compatible object storage (AWS S3, MinIO, etc.)
+- Docker Desktop (for Postgres, Redis, MinIO)
 
 ## 🚀 Quick Start
 
-### 1. Install Dependencies
+### Option 1: Automated Startup (Recommended)
 
+```bash
+./start-dev.sh
+```
+
+This script will:
+1. Check if Docker is running
+2. Start Postgres, Redis, and MinIO
+3. Wait for all services to be healthy
+4. Optionally start the backend server
+
+### Option 2: Manual Startup
+
+**Step 1: Check what's running**
+```bash
+./scripts/check-services.sh
+```
+
+**Step 2: Start infrastructure services**
+```bash
+docker-compose up -d postgres redis minio
+```
+
+**Step 3: Install dependencies (first time only)**
 ```bash
 npm install
 ```
 
-This installs dependencies for both workspaces.
-
-### 2. Development
-
-Run both applications concurrently:
+**Step 4: Start the backend**
 ```bash
-npm run dev:all
+cd backend && npm run dev
 ```
 
-Or run individually:
+**Step 5: Start the admin dashboard (in another terminal)**
 ```bash
-npm run dev          # Backend only (port 3000)
-npm run dev:admin    # Admin dashboard only (port 3001)
+cd admin-dashboard && npm run dev
 ```
 
-### 3. Configure Environment
+### Service URLs
 
-Copy the example environment file and configure your settings:
+Once running, you can access:
+- **Backend API**: http://localhost:4000
+- **Admin Dashboard**: http://localhost:4001
+- **MinIO Console**: http://localhost:9001 (minioadmin/minioadmin)
+- **Postgres**: localhost:5432
+- **Redis**: localhost:6379
 
+### Troubleshooting
+
+**Backend won't start?**
 ```bash
-cp .env.example .env
+# Check if all services are running
+./scripts/check-services.sh
+
+# Restart infrastructure
+docker-compose restart postgres redis minio
+```
+
+**Port already in use?**
+```bash
+# Check what's using port 4000
+lsof -i :4000
+
+# Kill the process if needed
+kill -9 <PID>
 ```
 
 Edit `.env` with your database, Redis, and S3 credentials.
@@ -102,7 +139,7 @@ src/
 Once running, check the health endpoint:
 
 ```bash
-curl http://localhost:3000/health
+curl http://localhost:4000/health
 ```
 
 ## Configuration

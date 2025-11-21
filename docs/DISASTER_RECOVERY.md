@@ -133,7 +133,7 @@ This document provides step-by-step procedures for recovering the Faxi system fr
 7. **Verify System Recovery**
    ```bash
    # Check health endpoint
-   curl http://localhost:3000/health
+   curl http://localhost:4000/health
    
    # Check logs
    kubectl logs -l app=faxi-app --tail=50
@@ -300,10 +300,10 @@ This document provides step-by-step procedures for recovering the Faxi system fr
    ```bash
    # Check all services
    kubectl get pods
-   curl http://localhost:3000/health
+   curl http://localhost:4000/health
    
    # Test fax processing
-   curl -X POST http://localhost:3000/test/fax/receive \
+   curl -X POST http://localhost:4000/test/fax/receive \
      -H "Content-Type: application/json" \
      -d '{"test": true}'
    ```
@@ -362,7 +362,7 @@ After any recovery, perform these validation steps:
 
 ```bash
 # Health check
-curl http://localhost:3000/health
+curl http://localhost:4000/health
 
 # Database connectivity
 kubectl exec -it postgres-pod -- psql -U faxi_user -d faxi -c "SELECT COUNT(*) FROM users;"
@@ -374,10 +374,10 @@ kubectl exec -it redis-pod -- redis-cli ping
 aws s3 ls s3://faxi-fax-images/ | head -5
 
 # Queue processing
-curl http://localhost:3000/monitoring/stats
+curl http://localhost:4000/monitoring/stats
 
 # Test fax processing pipeline
-curl -X POST http://localhost:3000/test/fax/receive \
+curl -X POST http://localhost:4000/test/fax/receive \
   -H "Content-Type: application/json" \
   -d '{"from": "+1234567890", "test": true}'
 ```
@@ -406,7 +406,7 @@ LIMIT 10;
 
 ```bash
 # Monitor system performance for 30 minutes
-watch -n 30 'curl -s http://localhost:3000/health | jq .'
+watch -n 30 'curl -s http://localhost:4000/health | jq .'
 
 # Check resource usage
 kubectl top pods

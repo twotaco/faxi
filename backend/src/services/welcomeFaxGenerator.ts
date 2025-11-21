@@ -1,5 +1,5 @@
 import { FaxTemplateEngine } from './faxTemplateEngine.js';
-import { TiffGenerator } from './tiffGenerator.js';
+import { FaxGenerator } from './faxGenerator.js';
 import { FaxTemplate, FaxContent, CircleOption } from '../types/fax.js';
 
 export interface WelcomeFaxData {
@@ -15,9 +15,9 @@ export class WelcomeFaxGenerator {
   static async generateWelcomeFax(
     data: WelcomeFaxData,
     referenceId?: string
-  ): Promise<Buffer[]> {
+  ): Promise<Buffer> {
     const template = this.createWelcomeTemplate(data, referenceId);
-    return await TiffGenerator.generateTiff(template);
+    return await FaxGenerator.generatePdf(template);
   }
 
   /**
@@ -239,9 +239,9 @@ export class WelcomeFaxGenerator {
   static async generateDetailedHelpFax(
     topic: 'email' | 'shopping' | 'payment' | 'ai' | 'address_book',
     referenceId?: string
-  ): Promise<Buffer[]> {
+  ): Promise<Buffer> {
     const template = this.createDetailedHelpTemplate(topic, referenceId);
-    return await TiffGenerator.generateTiff(template);
+    return await FaxGenerator.generatePdf(template);
   }
 
   /**
@@ -441,7 +441,7 @@ export class WelcomeFaxGenerator {
    */
   static async generatePaymentRegistrationInstructionsFax(
     referenceId?: string
-  ): Promise<Buffer[]> {
+  ): Promise<Buffer> {
     const refId = referenceId || FaxTemplateEngine.generateReferenceId();
     
     const content: FaxContent[] = [
@@ -564,6 +564,6 @@ export class WelcomeFaxGenerator {
       }
     };
 
-    return await TiffGenerator.generateTiff(template);
+    return await FaxGenerator.generatePdf(template);
   }
 }

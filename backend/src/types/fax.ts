@@ -103,7 +103,7 @@ export interface RecentConversation {
   daysAgo: number;
 }
 
-export interface TiffGenerationOptions {
+export interface FaxGenerationOptions {
   dpi: number;
   width: number;
   height: number;

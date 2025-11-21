@@ -1,6 +1,6 @@
 import { EmailReplyData } from '../types/fax';
 import { EmailFaxGenerator } from './emailFaxGenerator';
-import { TiffGenerator } from './tiffGenerator';
+import { FaxGenerator } from './faxGenerator';
 import { FaxTemplateEngine } from './faxTemplateEngine';
 
 export interface EmailToFaxOptions {
@@ -10,7 +10,7 @@ export interface EmailToFaxOptions {
 }
 
 export interface ConvertedEmailFax {
-  tiffPages: Buffer[];
+  pdfBuffer: Buffer;
   referenceId: string;
   pageCount: number;
   hasAttachments: boolean;
@@ -58,16 +58,16 @@ export class EmailToFaxConverter {
       emailReplyData.body += this.generateAttachmentNotification(emailData.attachments);
     }
 
-    // Generate fax pages
-    const tiffPages = await EmailFaxGenerator.generateEmailFax(emailReplyData, {
+    // Generate fax PDF
+    const pdfBuffer = await EmailFaxGenerator.generateEmailFax(emailReplyData, {
       includeQuickReplies: false,
       minimizePages: true
     }, referenceId);
 
     return {
-      tiffPages,
+      pdfBuffer,
       referenceId,
-      pageCount: tiffPages.length,
+      pageCount: 1, // Single PDF file
       hasAttachments: (emailData.attachments?.length || 0) > 0,
       attachmentCount: emailData.attachments?.length || 0
     };
@@ -294,16 +294,16 @@ export class EmailToFaxConverter {
       hasQuickReplies: false
     };
 
-    // Generate fax pages
-    const tiffPages = await EmailFaxGenerator.generateEmailFax(emailReplyData, {
+    // Generate fax PDF
+    const pdfBuffer = await EmailFaxGenerator.generateEmailFax(emailReplyData, {
       includeQuickReplies: false,
       minimizePages: true
     }, referenceId);
 
     return {
-      tiffPages,
+      pdfBuffer,
       referenceId,
-      pageCount: tiffPages.length,
+      pageCount: 1, // Single PDF file
       hasAttachments: false,
       attachmentCount: 0
     };
@@ -317,17 +317,17 @@ export class EmailToFaxConverter {
     timeframe: string = '24 hours'
   ): Promise<ConvertedEmailFax> {
     const referenceId = this.generateReferenceId();
-    
-    const tiffPages = await EmailFaxGenerator.generateSpamNotificationFax(
+
+    const pdfBuffer = await EmailFaxGenerator.generateSpamNotificationFax(
       spamCount,
       timeframe,
       referenceId
     );
 
     return {
-      tiffPages,
+      pdfBuffer,
       referenceId,
-      pageCount: tiffPages.length,
+      pageCount: 1, // Single PDF file
       hasAttachments: false,
       attachmentCount: 0
     };
@@ -342,8 +342,8 @@ export class EmailToFaxConverter {
     originalSubject: string
   ): Promise<ConvertedEmailFax> {
     const referenceId = this.generateReferenceId();
-    
-    const tiffPages = await EmailFaxGenerator.generateEmailFailureFax(
+
+    const pdfBuffer = await EmailFaxGenerator.generateEmailFailureFax(
       recipientEmail,
       errorMessage,
       originalSubject,
@@ -351,9 +351,9 @@ export class EmailToFaxConverter {
     );
 
     return {
-      tiffPages,
+      pdfBuffer,
       referenceId,
-      pageCount: tiffPages.length,
+      pageCount: 1, // Single PDF file
       hasAttachments: false,
       attachmentCount: 0
     };

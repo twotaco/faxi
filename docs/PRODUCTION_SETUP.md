@@ -434,7 +434,7 @@ S3_SECRET_ACCESS_KEY=your_secret_access_key_here
 
 # Application Configuration
 NODE_ENV=production
-PORT=3000
+PORT=4000
 LOG_LEVEL=info
 TEST_MODE=false
 

@@ -71,7 +71,7 @@ export class TestWebhookController {
 
           // Create a temporary URL for the uploaded file
           // In a real implementation, this would be uploaded to S3 or similar
-          const mockMediaUrl = `http://localhost:${process.env.PORT || 3000}/test/fax/media/${mockFaxId}`;
+          const mockMediaUrl = `http://localhost:${process.env.PORT || 4000}/test/fax/media/${mockFaxId}`;
 
           // Store the file temporarily (in memory for this test implementation)
           // In production, you'd want to store this in a proper location

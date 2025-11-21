@@ -326,7 +326,7 @@
                     <div class="form-group">
                         <label for="faxFile">Fax File (PDF, TIFF, PNG, JPEG):</label>
                         <div class="file-upload" id="fileUpload">
-                            <input type="file" id="faxFile" accept=".pdf,.tiff,.tif,.png,.jpeg,.jpg" required style="display: none;">
+                            <input type="file" id="faxFile" accept=".pdf,.tiff,.tif,.png,.jpeg,.jpg" style="display: none;">
                             <div id="fileUploadText">
                                 📁 Click to select file or drag and drop<br>
                                 <small>Supported: PDF, TIFF, PNG, JPEG (max 10MB)</small>
@@ -444,6 +444,7 @@
         async function handleFormSubmit(e) {
             e.preventDefault();
             
+            const form = document.getElementById('faxForm');
             const submitBtn = document.getElementById('submitBtn');
             const statusDiv = document.getElementById('uploadStatus');
             
@@ -681,37 +682,78 @@
         }
 
         // Update response faxes
-        function updateResponseFaxes() {
-            // This would query for generated response faxes
-            // For now, just show a placeholder
+        async function updateResponseFaxes() {
             const responseFaxesDiv = document.getElementById('responseFaxes');
             
-            // Check if we have any completed faxes with response references
-            const completedFaxes = currentFaxes.filter(fax => 
-                fax.details?.status === 'completed' && fax.details?.responseReferenceId
-            );
+            try {
+                // Fetch mock sent faxes (response faxes)
+                const response = await fetch('/test/fax/responses');
+                if (!response.ok) {
+                    responseFaxesDiv.innerHTML = '<p class="text-gray-500">No response faxes yet.</p>';
+                    return;
+                }
+                
+                const responseFaxes = await response.json();
+                
+                if (responseFaxes.length === 0) {
+                    responseFaxesDiv.innerHTML = '<p class="text-gray-500">No response faxes yet.</p>';
+                    return;
+                }
 
-            if (completedFaxes.length > 0) {
-                const responseHtml = completedFaxes.map(fax => `
-                    <div class="response-fax">
-                        <h4>Response for ${fax.fax_id}</h4>
-                        <p><strong>Reference ID:</strong> ${fax.details.responseReferenceId}</p>
-                        <p>Response fax generated and would be sent to ${fax.details.fromNumber}</p>
-                        <a href="#" class="download-link" onclick="downloadResponseFax('${fax.fax_id}')">
-                            📄 Download Response TIFF
-                        </a>
-                        <a href="#" class="download-link" onclick="downloadResponsePDF('${fax.fax_id}')">
-                            📄 Download Response PDF
-                        </a>
+                const responseHtml = responseFaxes.map(fax => `
+                    <div class="response-fax" style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; margin-bottom: 12px;">
+                        <div style="display: flex; justify-between; align-items: start; margin-bottom: 8px;">
+                            <div>
+                                <h4 style="margin: 0 0 4px 0; font-size: 16px; font-weight: 600;">📤 ${fax.referenceId || fax.faxId}</h4>
+                                <p style="margin: 0; font-size: 14px; color: #6b7280;">To: ${fax.toNumber}</p>
+                            </div>
+                            <span style="background: #10b981; color: white; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 500;">
+                                ${fax.status || 'sent'}
+                            </span>
+                        </div>
+                        <p style="margin: 8px 0; font-size: 13px; color: #4b5563;">
+                            <strong>Sent:</strong> ${new Date(fax.timestamp).toLocaleString()}
+                        </p>
+                        <div style="display: flex; gap: 8px; margin-top: 12px;">
+                            <a href="/test/fax/download/${fax.faxId}" target="_blank" 
+                               style="display: inline-flex; align-items: center; gap: 4px; padding: 6px 12px; background: #3b82f6; color: white; text-decoration: none; border-radius: 6px; font-size: 13px; font-weight: 500;">
+                                📄 Download TIFF
+                            </a>
+                        </div>
                     </div>
                 `).join('');
 
                 responseFaxesDiv.innerHTML = responseHtml;
+            } catch (error) {
+                console.error('Failed to fetch response faxes:', error);
+                responseFaxesDiv.innerHTML = '<p class="text-red-500">Failed to load response faxes.</p>';
             }
         }
 
-        function downloadResponseFax(faxId) {
-            // This would download the generated response fax
+        async function downloadResponseFax(faxId) {
+            try {
+                // Get the response fax ID from the completed fax
+                const response = await fetch(`/test/fax/responses`);
+                const responseFaxes = await response.json();
+                
+                // Find the response for this fax
+                const responseFax = responseFaxes.find(r => r.originalFaxId === faxId);
+                
+                if (responseFax) {
+                    window.open(`/test/fax/download/${responseFax.faxId}`, '_blank');
+                } else {
+                    showStatus('Response fax not found', 'error');
+                }
+            } catch (error) {
+                console.error('Download error:', error);
+                showStatus('Failed to download response fax', 'error');
+            }
+            return false;
+        }
+
+        async function downloadResponsePDF(faxId) {
+            // Same as TIFF for now since we generate TIFF
+            return downloadResponseFax(faxId);
             alert(`Download response fax for ${faxId} - This feature requires backend implementation`);
         }
 

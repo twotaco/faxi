@@ -1,5 +1,5 @@
 import { FaxTemplateEngine } from './faxTemplateEngine.js';
-import { TiffGenerator } from './tiffGenerator.js';
+import { FaxGenerator } from './faxGenerator.js';
 import { ClarificationData, RecentConversation, FaxTemplate } from '../types/fax.js';
 
 export interface ClarificationOptions {
@@ -21,7 +21,7 @@ export class ClarificationFaxGenerator {
     recentConversations: RecentConversation[] = [],
     options: ClarificationOptions = {},
     referenceId?: string
-  ): Promise<Buffer[]> {
+  ): Promise<Buffer> {
     const opts = {
       includeRecentConversations: true,
       maxRecentConversations: 5,
@@ -48,7 +48,7 @@ export class ClarificationFaxGenerator {
       this.addExamples(template, question);
     }
 
-    return await TiffGenerator.generateTiff(template);
+    return await FaxGenerator.generatePdf(template);
   }
 
   /**
@@ -58,7 +58,7 @@ export class ClarificationFaxGenerator {
     originalRequest: string,
     possibleInterpretations: string[],
     referenceId?: string
-  ): Promise<Buffer[]> {
+  ): Promise<Buffer> {
     const question = `We received your fax but need clarification on what you'd like us to do.
 
 Your request: "${originalRequest}"
@@ -85,7 +85,7 @@ Please circle the letter for what you meant, or write a clearer request below.`;
     missingFields: string[],
     partialData?: any,
     referenceId?: string
-  ): Promise<Buffer[]> {
+  ): Promise<Buffer> {
     const actionMessages = {
       email: 'We understand you want to send an email, but we need more information.',
       shopping: 'We understand you want to shop, but we need more details.',
@@ -123,7 +123,7 @@ Please circle the letter for what you meant, or write a clearer request below.`;
   static async generateContextRecoveryFax(
     recentConversations: RecentConversation[],
     referenceId?: string
-  ): Promise<Buffer[]> {
+  ): Promise<Buffer> {
     const question = `We received your fax but couldn't determine which conversation it relates to.
 
 Please tell us which topic you're responding to, or start a new request.`;
@@ -143,7 +143,7 @@ Please tell us which topic you're responding to, or start a new request.`;
   static async generateHandwritingUnclearFax(
     unclearParts: string[],
     referenceId?: string
-  ): Promise<Buffer[]> {
+  ): Promise<Buffer> {
     const question = `We received your fax but some parts were difficult to read.
 
 Please write more clearly or use printed letters for:
@@ -170,7 +170,7 @@ You can also try:
     totalAmount: number,
     currency: string = 'JPY',
     referenceId?: string
-  ): Promise<Buffer[]> {
+  ): Promise<Buffer> {
     const question = `Your order total is ¥${totalAmount}. How would you like to pay?
 
 We don't have a payment method on file for you.`;
@@ -197,7 +197,7 @@ We don't have a payment method on file for you.`;
     detectedAddress: string,
     orderItems: string[],
     referenceId?: string
-  ): Promise<Buffer[]> {
+  ): Promise<Buffer> {
     const question = `Please confirm your delivery address for this order:
 
 Items to deliver:
@@ -232,7 +232,7 @@ Is this address correct?`;
     alternatives: string[] = [],
     estimatedRestoreTime?: string,
     referenceId?: string
-  ): Promise<Buffer[]> {
+  ): Promise<Buffer> {
     let question = `The ${serviceName} service is temporarily unavailable.
 
 Reason: ${reason}`;
@@ -271,7 +271,7 @@ ${alternatives.map(alt => `• ${alt}`).join('\n')}`;
     bestGuess: string,
     confidence: number,
     referenceId?: string
-  ): Promise<Buffer[]> {
+  ): Promise<Buffer> {
     const question = `We're not completely sure what you're asking for.
 
 Your request: "${originalRequest}"
@@ -354,7 +354,7 @@ Is our guess correct?`;
     userFriendlyMessage: string,
     suggestedActions: string[],
     referenceId?: string
-  ): Promise<Buffer[]> {
+  ): Promise<Buffer> {
     const question = `We encountered a technical issue while processing your request.
 
 Error: ${userFriendlyMessage}

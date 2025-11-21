@@ -8,7 +8,7 @@ services:
       dockerfile: Dockerfile
       target: production
     ports:
-      - "3000:3000"
+      - "4000:4000"
     environment:
       # Production environment variables (use secrets in real deployment)
       - NODE_ENV=production

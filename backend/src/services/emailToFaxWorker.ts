@@ -109,11 +109,11 @@ export class EmailToFaxWorker {
         hasAttachments: convertedFax.hasAttachments
       });
 
-      // Combine all TIFF pages into a single buffer
-      const combinedTiff = this.combineTiffPages(convertedFax.tiffPages);
+      // Get PDF buffer (already a single buffer)
+      const pdfBuffer = convertedFax.pdfBuffer;
 
-      // Upload TIFF to publicly accessible URL
-      const mediaUrl = await faxSenderService.uploadTiffForFax(combinedTiff, faxJob.id);
+      // Upload PDF to publicly accessible URL
+      const mediaUrl = await faxSenderService.uploadPdfForFax(pdfBuffer, faxJob.id);
 
       // Send fax with retry logic
       const sendResult = await faxSenderService.sendFaxWithRetry({
@@ -184,18 +184,18 @@ export class EmailToFaxWorker {
   }
 
   /**
-   * Combine multiple TIFF pages into a single multi-page TIFF
+   * Combine multiple PDF pages into a single multi-page PDF
    */
-  private combineTiffPages(tiffPages: Buffer[]): Buffer {
-    if (tiffPages.length === 1) {
-      return tiffPages[0];
+  private combinePdfPages(pdfPages: Buffer[]): Buffer {
+    if (pdfPages.length === 1) {
+      return pdfPages[0];
     }
 
     // For now, return the first page
-    // In a production system, you would use a library like sharp or imagemagick
-    // to properly combine multiple TIFF pages into a single multi-page TIFF
-    console.warn('Multi-page TIFF combination not implemented, using first page only');
-    return tiffPages[0];
+    // In a production system, you would use a library like pdf-lib
+    // to properly combine multiple PDF pages into a single multi-page PDF
+    console.warn('Multi-page PDF combination not implemented, using first page only');
+    return pdfPages[0];
   }
 
   /**

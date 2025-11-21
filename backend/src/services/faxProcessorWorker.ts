@@ -97,6 +97,7 @@ export class FaxProcessorWorker {
         await faxJobRepository.updateStatus(data.faxId, 'completed', {
           responseReferenceId: result.responseReferenceId,
           responseFaxId: result.responseFaxId,
+          interpretationResult: result.interpretation,
         });
       } else {
         await faxJobRepository.updateStatus(data.faxId, 'failed', {
@@ -114,6 +115,8 @@ export class FaxProcessorWorker {
           responseReferenceId: result.responseReferenceId,
           responseFaxId: result.responseFaxId,
           errorMessage: result.errorMessage,
+          agentResponse: result.agentResponse,
+          interpretation: result.interpretation,
         },
       });
 

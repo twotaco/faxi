@@ -33,7 +33,7 @@ npm run dev
 
 ### 3. Access the Test UI
 
-Open your browser to: http://localhost:3000/test
+Open your browser to: http://localhost:4000/test
 
 ### 4. Generate Test Fixtures (Optional)
 
@@ -49,7 +49,7 @@ POST /test/fax/receive
 Content-Type: multipart/form-data
 
 Form fields:
-- fax_file: File (PDF, TIFF, PNG, JPEG)
+- fax_file: File (PDF, PNG, JPEG)
 - from_number: Phone number (default: +1234567890)
 - to_number: Phone number (default: +0987654321)
 - test_user_phone: Phone number (default: from_number)
@@ -72,7 +72,7 @@ GET /test/fax/responses
 
 ### Download Response Fax
 ```
-GET /test/fax/download/:fax_id?format=tiff|pdf
+GET /test/fax/download/:fax_id?format=pdf
 ```
 
 ### Test Fixtures
@@ -129,7 +129,7 @@ The test harness includes pre-generated sample fax images for common scenarios:
 ### 3. View Response Faxes
 
 - Generated response faxes appear in the "Response Faxes" section
-- Download responses as TIFF or PDF files
+- Download responses as PDF files
 - View mock delivery status and statistics
 
 ### 4. Conversation History

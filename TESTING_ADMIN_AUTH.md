@@ -35,7 +35,7 @@ This will create all tables including the new admin tables and insert a default 
 npm run dev
 ```
 
-The backend will start on `http://localhost:3000`
+The backend will start on `http://localhost:4000`
 
 ### 4. Test Authentication
 
@@ -49,7 +49,7 @@ Or test manually with curl:
 
 #### Login
 ```bash
-curl -X POST http://localhost:3000/admin/auth/login \
+curl -X POST http://localhost:4000/admin/auth/login \
   -H "Content-Type: application/json" \
   -d '{
     "email": "admin@faxi.jp",
@@ -74,14 +74,14 @@ Expected response:
 
 #### Refresh Token
 ```bash
-curl -X POST http://localhost:3000/admin/auth/refresh \
+curl -X POST http://localhost:4000/admin/auth/refresh \
   -b cookies.txt \
   -c cookies.txt
 ```
 
 #### Logout
 ```bash
-curl -X POST http://localhost:3000/admin/auth/logout \
+curl -X POST http://localhost:4000/admin/auth/logout \
   -b cookies.txt
 ```
 
@@ -96,7 +96,7 @@ curl -X POST http://localhost:3000/admin/auth/logout \
 
 1. **Login:**
    - Method: POST
-   - URL: `http://localhost:3000/admin/auth/login`
+   - URL: `http://localhost:4000/admin/auth/login`
    - Body (JSON):
      ```json
      {
@@ -112,7 +112,7 @@ curl -X POST http://localhost:3000/admin/auth/logout \
 
 3. **Refresh Token:**
    - Method: POST
-   - URL: `http://localhost:3000/admin/auth/refresh`
+   - URL: `http://localhost:4000/admin/auth/refresh`
    - Cookies are automatically handled by Postman/Insomnia
 
 ## Troubleshooting

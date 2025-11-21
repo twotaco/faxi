@@ -197,7 +197,7 @@ function buildConfig(): Config {
       publishableKey: process.env.STRIPE_PUBLISHABLE_KEY || '',
       webhookSecret: process.env.STRIPE_WEBHOOK_SECRET || '',
     },
-    baseUrl: process.env.BASE_URL || 'http://localhost:3000',
+    baseUrl: process.env.BASE_URL || 'http://localhost:4000',
     jwt: {
       secret: process.env.JWT_SECRET || 'faxi-admin-secret-change-in-production',
       accessTokenExpiry: process.env.JWT_ACCESS_TOKEN_EXPIRY || '15m',

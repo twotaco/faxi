@@ -511,7 +511,7 @@ S3_SECRET_ACCESS_KEY=CHANGE_ME_SECRET_ACCESS_KEY
 # APPLICATION CONFIGURATION
 # =============================================================================
 NODE_ENV=production
-PORT=3000
+PORT=4000
 LOG_LEVEL=info
 TEST_MODE=false
 

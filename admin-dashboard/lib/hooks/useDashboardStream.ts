@@ -20,12 +20,11 @@ export function useDashboardStream() {
       return null;
     }
 
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
     
-    // Note: EventSource doesn't support custom headers
-    // We'll need to pass the token as a query parameter or use a different approach
-    // For now, we'll rely on cookies for authentication
-    const eventSource = new EventSource(`${apiUrl}/admin/dashboard/stream`, {
+    // EventSource doesn't support custom headers, so pass token as query parameter
+    const streamUrl = `${apiUrl}/admin/dashboard/stream?token=${encodeURIComponent(token)}`;
+    const eventSource = new EventSource(streamUrl, {
       withCredentials: true,
     });
 

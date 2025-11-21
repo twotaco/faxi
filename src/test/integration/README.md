@@ -232,7 +232,7 @@ DEBUG=faxi:* npm run test:integration
 Use the test UI for manual testing and debugging:
 ```bash
 npm run dev
-# Open http://localhost:3000/test
+# Open http://localhost:4000/test
 ```
 
 ## Continuous Integration

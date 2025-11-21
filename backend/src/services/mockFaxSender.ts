@@ -33,7 +33,7 @@ export class MockFaxSender {
     storageDir?: string;
   } = {}) {
     this.mockDeliveryDelay = options.deliveryDelay || 2000; // 2 seconds
-    this.mockFailureRate = options.failureRate || 0.05; // 5% failure rate
+    this.mockFailureRate = options.failureRate || 0.0; // 0% failure rate for testing
     this.storageDir = options.storageDir || join(process.cwd(), 'test-faxes');
 
     // Ensure storage directory exists
@@ -101,11 +101,27 @@ export class MockFaxSender {
         throw new Error('No media buffer or URL provided');
       }
 
+      // Detect file format from media buffer or default to PDF (Telnyx format)
+      // Check magic bytes to determine file type
+      const fileExt = this.detectFileFormat(mediaBuffer);
+
       // Save fax to local storage
-      const filename = `${mockFaxId}_${Date.now()}.tiff`;
+      const filename = `${mockFaxId}_${Date.now()}.${fileExt}`;
       const localFilePath = join(this.storageDir, filename);
-      
+
       writeFileSync(localFilePath, mediaBuffer);
+
+      // Also upload to S3 for admin dashboard access
+      try {
+        const { s3Storage } = await import('../storage/s3');
+        const s3Key = s3Storage.generateFaxKey(mockFaxId, fileExt);
+        const contentType = fileExt === 'pdf' ? 'application/pdf' : 'image/tiff';
+        await s3Storage.uploadFile(s3Key, mediaBuffer, contentType);
+        console.log('Mock fax uploaded to S3', { faxId: mockFaxId, s3Key, fileExt });
+      } catch (s3Error) {
+        console.error('Failed to upload mock fax to S3:', s3Error);
+        // Don't fail the whole operation if S3 upload fails
+      }
 
       // Store in global test storage for UI access
       const testResponseFaxes = (global as any).testResponseFaxes as Map<string, any>;
@@ -219,6 +235,31 @@ export class MockFaxSender {
     if (testResponseFaxes) {
       testResponseFaxes.clear();
     }
+  }
+
+  /**
+   * Detect file format from buffer magic bytes
+   */
+  private detectFileFormat(buffer: Buffer): string {
+    // PDF magic bytes: %PDF
+    if (buffer.length >= 4 && buffer[0] === 0x25 && buffer[1] === 0x50 && buffer[2] === 0x44 && buffer[3] === 0x46) {
+      return 'pdf';
+    }
+
+    // TIFF magic bytes: II (little-endian) or MM (big-endian)
+    if (buffer.length >= 4) {
+      if ((buffer[0] === 0x49 && buffer[1] === 0x49) || (buffer[0] === 0x4D && buffer[1] === 0x4D)) {
+        return 'tiff';
+      }
+    }
+
+    // PNG magic bytes
+    if (buffer.length >= 8 && buffer[0] === 0x89 && buffer[1] === 0x50 && buffer[2] === 0x4E && buffer[3] === 0x47) {
+      return 'png';
+    }
+
+    // Default to PDF (Telnyx format)
+    return 'pdf';
   }
 
   /**

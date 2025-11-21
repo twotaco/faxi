@@ -3,7 +3,7 @@
 # Test script for admin authentication endpoints
 # Make sure the backend is running before executing this script
 
-BASE_URL="http://localhost:3000"
+BASE_URL="http://localhost:4000"
 
 echo "🧪 Testing Admin Authentication Endpoints"
 echo "=========================================="

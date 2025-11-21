@@ -150,27 +150,28 @@ export class FaxSenderService {
   }
 
   /**
-   * Upload TIFF file to publicly accessible URL
+   * Upload PDF file to publicly accessible URL for Telnyx
    */
-  async uploadTiffForFax(tiffBuffer: Buffer, faxJobId: string): Promise<string> {
+  async uploadPdfForFax(pdfBuffer: Buffer, faxJobId: string): Promise<string> {
     try {
-      // Generate unique key for the TIFF file
-      const key = s3Storage.generateFaxKey(`outbound-${faxJobId}`, 'tiff');
+      // Generate unique key for the PDF file
+      const key = s3Storage.generateFaxKey(`outbound-${faxJobId}`, 'pdf');
 
       // Upload to S3 with public read access
-      await s3Storage.uploadFile(key, tiffBuffer, 'image/tiff');
+      await s3Storage.uploadFile(key, pdfBuffer, 'application/pdf');
 
       // Generate presigned URL with 24 hour expiration
       // This gives Telnyx enough time to download the file
       const publicUrl = await s3Storage.getPresignedUrl(key, 24 * 60 * 60);
 
-      console.log('TIFF uploaded for fax sending', { key, faxJobId });
+      console.log('PDF uploaded for fax sending', { key, faxJobId });
       return publicUrl;
     } catch (error) {
-      console.error('Error uploading TIFF for fax:', error);
-      throw new Error(`Failed to upload TIFF file: ${this.getErrorMessage(error)}`);
+      console.error('Error uploading PDF for fax:', error);
+      throw new Error(`Failed to upload PDF file: ${this.getErrorMessage(error)}`);
     }
   }
+
 
   /**
    * Send fax with retry logic

@@ -22,6 +22,7 @@ class S3Storage {
         accessKeyId: config.s3.accessKeyId,
         secretAccessKey: config.s3.secretAccessKey,
       },
+      forcePathStyle: true, // Required for MinIO
     });
     this.bucket = config.s3.bucket;
   }
@@ -161,14 +162,22 @@ class S3Storage {
         Key: 'health-check',
       });
 
-      await this.client.send(command);
+      // Add a timeout to prevent hanging
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(() => reject(new Error('S3 health check timeout')), 3000);
+      });
+
+      await Promise.race([
+        this.client.send(command),
+        timeoutPromise
+      ]);
       return true;
     } catch (error: any) {
       // NotFound is acceptable for health check
       if (error.name === 'NotFound') {
         return true;
       }
-      console.error('S3 health check failed:', error);
+      console.error('S3 health check failed:', error.message || error);
       return false;
     }
   }

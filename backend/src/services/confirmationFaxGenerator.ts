@@ -1,5 +1,5 @@
 import { FaxTemplateEngine } from './faxTemplateEngine.js';
-import { TiffGenerator } from './tiffGenerator.js';
+import { FaxGenerator } from './faxGenerator.js';
 import { ConfirmationData, FaxTemplate, ProductOption } from '../types/fax.js';
 
 export interface OrderConfirmationDetails {
@@ -34,7 +34,7 @@ export class ConfirmationFaxGenerator {
   static async generateOrderConfirmationFax(
     orderDetails: OrderConfirmationDetails,
     referenceId?: string
-  ): Promise<Buffer[]> {
+  ): Promise<Buffer> {
     const itemsList = orderDetails.items
       .map(item => `• ${item.name} - ¥${item.price}`)
       .join('\n');
@@ -71,7 +71,7 @@ Thank you for your order!`;
     };
 
     const template = FaxTemplateEngine.createConfirmationTemplate(confirmationData, referenceId);
-    return await TiffGenerator.generateTiff(template);
+    return await FaxGenerator.generatePdf(template);
   }
 
   /**
@@ -80,7 +80,7 @@ Thank you for your order!`;
   static async generateEmailConfirmationFax(
     emailDetails: EmailConfirmationDetails,
     referenceId?: string
-  ): Promise<Buffer[]> {
+  ): Promise<Buffer> {
     const confirmationMessage = `Your email has been sent successfully!
 
 Email Details:
@@ -105,7 +105,7 @@ If you receive a reply, we'll fax it to you automatically.`;
     };
 
     const template = FaxTemplateEngine.createConfirmationTemplate(confirmationData, referenceId);
-    return await TiffGenerator.generateTiff(template);
+    return await FaxGenerator.generatePdf(template);
   }
 
   /**
@@ -114,7 +114,7 @@ If you receive a reply, we'll fax it to you automatically.`;
   static async generateGeneralConfirmationFax(
     actionDetails: GeneralActionDetails,
     referenceId?: string
-  ): Promise<Buffer[]> {
+  ): Promise<Buffer> {
     let confirmationMessage = `Action completed successfully!
 
 Action: ${actionDetails.actionType}
@@ -132,7 +132,7 @@ Result: ${actionDetails.result}`;
     };
 
     const template = FaxTemplateEngine.createConfirmationTemplate(confirmationData, referenceId);
-    return await TiffGenerator.generateTiff(template);
+    return await FaxGenerator.generatePdf(template);
   }
 
   /**
@@ -142,7 +142,7 @@ Result: ${actionDetails.result}`;
     paymentMethodType: 'credit_card' | 'bank_account',
     maskedDetails: string,
     referenceId?: string
-  ): Promise<Buffer[]> {
+  ): Promise<Buffer> {
     const actionDetails: GeneralActionDetails = {
       actionType: 'Payment Method Registration',
       description: `Registered new ${paymentMethodType.replace('_', ' ')}`,
@@ -165,7 +165,7 @@ Result: ${actionDetails.result}`;
     contactName: string,
     contactEmail?: string,
     referenceId?: string
-  ): Promise<Buffer[]> {
+  ): Promise<Buffer> {
     const actionMap = {
       added: 'Added new contact',
       updated: 'Updated contact',
@@ -195,7 +195,7 @@ Result: ${actionDetails.result}`;
     nextBillingDate: Date,
     features: string[],
     referenceId?: string
-  ): Promise<Buffer[]> {
+  ): Promise<Buffer> {
     const confirmationMessage = `Subscription activated successfully!
 
 Subscription: ${subscriptionName}
@@ -221,7 +221,7 @@ To cancel or modify your subscription, fax us: "Cancel ${subscriptionName} subsc
     };
 
     const template = FaxTemplateEngine.createConfirmationTemplate(confirmationData, referenceId);
-    return await TiffGenerator.generateTiff(template);
+    return await FaxGenerator.generatePdf(template);
   }
 
   /**
@@ -232,7 +232,7 @@ To cancel or modify your subscription, fax us: "Cancel ${subscriptionName} subsc
     cancellationDate: Date,
     refundAmount?: number,
     referenceId?: string
-  ): Promise<Buffer[]> {
+  ): Promise<Buffer> {
     let confirmationMessage = `Service cancellation confirmed.
 
 Service: ${serviceName}
@@ -258,7 +258,7 @@ Thank you for using our service. You can reactivate anytime by faxing us.`;
     };
 
     const template = FaxTemplateEngine.createConfirmationTemplate(confirmationData, referenceId);
-    return await TiffGenerator.generateTiff(template);
+    return await FaxGenerator.generatePdf(template);
   }
 
   /**
@@ -271,7 +271,7 @@ Thank you for using our service. You can reactivate anytime by faxing us.`;
       result: string;
     }>,
     referenceId?: string
-  ): Promise<Buffer[]> {
+  ): Promise<Buffer> {
     const confirmationMessage = `Multiple actions completed successfully!
 
 Completed Actions:
@@ -290,7 +290,7 @@ All requested actions have been processed.`;
     };
 
     const template = FaxTemplateEngine.createConfirmationTemplate(confirmationData, referenceId);
-    return await TiffGenerator.generateTiff(template);
+    return await FaxGenerator.generatePdf(template);
   }
 
   /**
@@ -302,7 +302,7 @@ All requested actions have been processed.`;
     deliveryStatus: 'shipped' | 'out_for_delivery' | 'delivered',
     estimatedDelivery?: string,
     referenceId?: string
-  ): Promise<Buffer[]> {
+  ): Promise<Buffer> {
     const statusMessages = {
       shipped: 'Your order has been shipped!',
       out_for_delivery: 'Your order is out for delivery!',
@@ -335,6 +335,6 @@ Thank you for your order!`;
     };
 
     const template = FaxTemplateEngine.createConfirmationTemplate(confirmationData, referenceId);
-    return await TiffGenerator.generateTiff(template);
+    return await FaxGenerator.generatePdf(template);
   }
 }

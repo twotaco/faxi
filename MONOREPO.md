@@ -109,12 +109,12 @@ npm run <script> --workspaces
 - See backend/.env.example for required variables
 
 ### Admin Dashboard (admin-dashboard/.env.local)
-- `NEXT_PUBLIC_API_URL` - Backend API URL (e.g., http://localhost:3000)
+- `NEXT_PUBLIC_API_URL` - Backend API URL (e.g., http://localhost:4000)
 
 ## Ports
 
-- Backend API: `http://localhost:3000`
-- Admin Dashboard: `http://localhost:3001`
+- Backend API: `http://localhost:4000`
+- Admin Dashboard: `http://localhost:4001`
 
 ## Migration from Single Project
 

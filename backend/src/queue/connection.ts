@@ -11,7 +11,7 @@ class RedisConnection {
       port: config.redis.port,
       password: config.redis.password,
       db: config.redis.db,
-      maxRetriesPerRequest: 3,
+      maxRetriesPerRequest: null, // Required by BullMQ for blocking operations
       retryStrategy: (times: number) => {
         const delay = Math.min(times * 50, 2000);
         return delay;

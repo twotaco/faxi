@@ -237,8 +237,8 @@ export class FaxProcessingErrorHandler {
         suggestedActions
       );
 
-      const mediaUrl = await faxSenderService.uploadTiffForFax(
-        errorFaxResult.tiffBuffers[0],
+      const mediaUrl = await faxSenderService.uploadPdfForFax(
+        errorFaxResult.pdfBuffer,
         `user_error_${faxData.faxId}`
       );
 
@@ -278,8 +278,8 @@ export class FaxProcessingErrorHandler {
         ]
       );
 
-      const mediaUrl = await faxSenderService.uploadTiffForFax(
-        errorFaxResult.tiffBuffers[0],
+      const mediaUrl = await faxSenderService.uploadPdfForFax(
+        errorFaxResult.pdfBuffer,
         `system_error_${faxData.faxId}`
       );
 

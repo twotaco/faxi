@@ -1,5 +1,5 @@
 import { FaxTemplateEngine } from './faxTemplateEngine.js';
-import { TiffGenerator } from './tiffGenerator.js';
+import { FaxGenerator } from './faxGenerator.js';
 import { EmailReplyData, FaxTemplate } from '../types/fax.js';
 
 export interface EmailFaxOptions {
@@ -16,7 +16,7 @@ export class EmailFaxGenerator {
     emailData: EmailReplyData,
     options: EmailFaxOptions = {},
     referenceId?: string
-  ): Promise<Buffer[]> {
+  ): Promise<Buffer> {
     const opts = {
       includeQuickReplies: true,
       maxQuickReplies: 3,
@@ -30,8 +30,8 @@ export class EmailFaxGenerator {
     // Create template
     const template = FaxTemplateEngine.createEmailReplyTemplate(processedEmailData, referenceId);
 
-    // Generate TIFF
-    return await TiffGenerator.generateTiff(template);
+    // Generate PDF
+    return await FaxGenerator.generatePdf(template);
   }
 
   /**
@@ -132,7 +132,7 @@ export class EmailFaxGenerator {
     userPhoneNumber: string,
     userEmailAddress: string,
     referenceId?: string
-  ): Promise<Buffer[]> {
+  ): Promise<Buffer> {
     const emailData: EmailReplyData = {
       from: 'Faxi System <welcome@faxi.jp>',
       subject: 'Welcome to Faxi!',
@@ -164,7 +164,7 @@ Need help? Contact us anytime at help@faxi.jp or +81-3-1234-5678.`,
     };
 
     const template = FaxTemplateEngine.createEmailReplyTemplate(emailData, referenceId);
-    return await TiffGenerator.generateTiff(template);
+    return await FaxGenerator.generatePdf(template);
   }
 
   /**
@@ -173,7 +173,7 @@ Need help? Contact us anytime at help@faxi.jp or +81-3-1234-5678.`,
   static async generateEmailThreadFax(
     emails: EmailReplyData[],
     referenceId?: string
-  ): Promise<Buffer[]> {
+  ): Promise<Buffer> {
     if (emails.length === 0) {
       throw new Error('No emails provided for thread fax');
     }
@@ -201,7 +201,7 @@ ${email.body}
       };
 
       const template = FaxTemplateEngine.createEmailReplyTemplate(threadData, referenceId);
-      return await TiffGenerator.generateTiff(template);
+      return await FaxGenerator.generatePdf(template);
     }
 
     // Single email - use standard email fax generation
@@ -215,7 +215,7 @@ ${email.body}
     spamCount: number,
     timeframe: string,
     referenceId?: string
-  ): Promise<Buffer[]> {
+  ): Promise<Buffer> {
     const emailData: EmailReplyData = {
       from: 'Faxi Spam Filter <system@faxi.jp>',
       subject: 'Spam Emails Filtered',
@@ -239,7 +239,7 @@ Your spam filter helps save paper and fax costs by only sending you important pe
     };
 
     const template = FaxTemplateEngine.createEmailReplyTemplate(emailData, referenceId);
-    return await TiffGenerator.generateTiff(template);
+    return await FaxGenerator.generatePdf(template);
   }
 
   /**
@@ -250,7 +250,7 @@ Your spam filter helps save paper and fax costs by only sending you important pe
     errorMessage: string,
     originalSubject: string,
     referenceId?: string
-  ): Promise<Buffer[]> {
+  ): Promise<Buffer> {
     const emailData: EmailReplyData = {
       from: 'Faxi System <system@faxi.jp>',
       subject: 'Email Delivery Failed',
@@ -273,6 +273,6 @@ You can try resending by faxing us your message again, or contact us for help.`,
     };
 
     const template = FaxTemplateEngine.createEmailReplyTemplate(emailData, referenceId);
-    return await TiffGenerator.generateTiff(template);
+    return await FaxGenerator.generatePdf(template);
   }
 }

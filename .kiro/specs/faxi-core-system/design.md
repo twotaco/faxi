@@ -403,7 +403,7 @@ Body:
         "direction": "inbound",
         "from": "+1234567890",
         "to": "+0987654321",
-        "media_url": "<url_to_fax_tiff>",
+        "media_url": "<url_to_fax_pdf>",
         "page_count": 2,
         "status": "received"
       }
@@ -1053,7 +1053,7 @@ interface GenerateResponseRequest {
 }
 
 interface FaxDocument {
-  pages: Buffer[]; // TIFF format
+  pdfBuffer: Buffer; // PDF format for Telnyx
   pageCount: number;
 }
 ```
@@ -1067,7 +1067,7 @@ interface FaxDocument {
 - Error/clarification request
 
 **Implementation Notes**:
-- Generate TIFF images at 204x196 DPI (standard fax resolution)
+- Generate PDF documents at 204 DPI (standard fax resolution)
 - Use clear, large fonts (minimum 12pt)
 - Include Faxi branding and support contact
 - Add page numbers for multi-page documents
@@ -1083,7 +1083,7 @@ interface FaxDocument {
 interface SendFaxRequest {
   to: string;
   from: string; // Faxi fax number
-  mediaUrl: string; // URL to TIFF document
+  mediaUrl: string; // URL to PDF document
   retryCount?: number;
 }
 
@@ -1095,14 +1095,14 @@ Body:
     "connection_id": "<connection_id>",
     "to": "+1234567890",
     "from": "+0987654321",
-    "media_url": "https://faxi.jp/fax-documents/<doc_id>.tiff",
+    "media_url": "https://faxi.jp/fax-documents/<doc_id>.pdf",
     "quality": "high",
     "store_media": true
   }
 ```
 
 **Implementation Notes**:
-- Upload generated TIFF to publicly accessible URL before sending
+- Upload generated PDF to publicly accessible URL before sending
 - Implement retry logic (up to 3 attempts with exponential backoff)
 - Handle Telnyx webhook for delivery status
 - Log all delivery attempts and outcomes
@@ -1609,13 +1609,13 @@ CREATE TABLE audit_logs (
 s3://faxi-storage/
   fax-images/
     inbound/
-      {year}/{month}/{day}/{fax_id}.tiff
+      {year}/{month}/{day}/{fax_id}.pdf   # Incoming faxes from Telnyx (PDF)
     outbound/
-      {year}/{month}/{day}/{doc_id}.tiff
+      {year}/{month}/{day}/{doc_id}.pdf   # Outgoing faxes (PDF for Telnyx)
   product-images/
     {product_id}.jpg
   generated-documents/
-    {doc_id}.tiff
+    {doc_id}.pdf                          # Generated response PDFs
 ```
 
 ## Error Handling

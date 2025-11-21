@@ -47,7 +47,7 @@ The integration tests cover all major requirements from the specification:
 
 #### Response Generation (Requirement 7)
 - ✅ Fax-compatible response formatting
-- ✅ TIFF generation and delivery
+- ✅ PDF generation and delivery
 - ✅ Retry logic for failed deliveries
 
 #### User Management (Requirements 8, 11)
@@ -232,7 +232,7 @@ DEBUG=faxi:* npm run test:integration
 Use the test UI for manual testing and debugging:
 ```bash
 npm run dev
-# Open http://localhost:3000/test
+# Open http://localhost:4000/test
 ```
 
 ## Continuous Integration
