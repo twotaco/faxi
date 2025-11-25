@@ -5,6 +5,8 @@ import { ConfirmationFaxGenerator } from './confirmationFaxGenerator.js';
 import { ClarificationFaxGenerator } from './clarificationFaxGenerator.js';
 import { WelcomeFaxGenerator } from './welcomeFaxGenerator.js';
 import { FaxGenerator } from './faxGenerator.js';
+import { PdfFaxGenerator } from './pdfFaxGenerator.js';
+import { FaxTemplateEngine } from './faxTemplateEngine.js';
 import {
   FaxTemplate,
   EmailReplyData,
@@ -39,18 +41,9 @@ export class ResponseGenerator {
 
     switch (request.type) {
       case 'email_reply':
-        pdfBuffer = await EmailFaxGenerator.generateEmailFax(
-          request.data as EmailReplyData,
-          request.options,
-          referenceId
-        );
-        // Create a minimal template for tracking
-        template = {
-          type: 'email_reply',
-          referenceId,
-          pages: [],
-          contextData: request.data
-        };
+        // Use new PDF generator for text-based PDFs
+        template = FaxTemplateEngine.createEmailReplyTemplate(request.data as EmailReplyData, referenceId);
+        pdfBuffer = await PdfFaxGenerator.generatePdf(template);
         break;
 
       case 'product_selection':

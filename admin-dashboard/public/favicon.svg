@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <!-- Faxi Admin Dashboard Favicon - Fax machine with admin badge -->
+  <defs>
+    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#3B82F6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1D4ED8;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Background circle -->
+  <circle cx="16" cy="16" r="15" fill="url(#grad)"/>
+  
+  <!-- Fax machine body -->
+  <rect x="8" y="14" width="16" height="10" rx="1" fill="white" opacity="0.95"/>
+  
+  <!-- Paper coming out -->
+  <rect x="10" y="8" width="12" height="8" rx="0.5" fill="white" opacity="0.9"/>
+  <line x1="12" y1="10" x2="20" y2="10" stroke="#3B82F6" stroke-width="0.5"/>
+  <line x1="12" y1="12" x2="20" y2="12" stroke="#3B82F6" stroke-width="0.5"/>
+  <line x1="12" y1="14" x2="18" y2="14" stroke="#3B82F6" stroke-width="0.5"/>
+  
+  <!-- Control panel -->
+  <rect x="10" y="16" width="12" height="3" rx="0.5" fill="#1D4ED8" opacity="0.3"/>
+  
+  <!-- Buttons -->
+  <circle cx="12" cy="17.5" r="0.8" fill="#10B981"/>
+  <circle cx="14.5" cy="17.5" r="0.8" fill="#EF4444"/>
+  <rect x="17" y="17" width="3" height="1" rx="0.3" fill="#3B82F6"/>
+  
+  <!-- Admin badge -->
+  <circle cx="24" cy="24" r="4" fill="#10B981"/>
+  <text x="24" y="26.5" font-family="Arial, sans-serif" font-size="5" font-weight="bold" fill="white" text-anchor="middle">A</text>
+</svg>

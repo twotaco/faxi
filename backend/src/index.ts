@@ -1,6 +1,7 @@
 import express, { Request, Response } from 'express';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
+import path from 'path';
 import { config } from './config';
 import { db } from './database/connection';
 import { redis } from './queue/connection';
@@ -14,6 +15,7 @@ import { emailToFaxWorker } from './services/emailToFaxWorker';
 import { faxProcessorWorker } from './services/faxProcessorWorker';
 import { monitoringService } from './services/monitoringService';
 import { loggingService } from './services/loggingService';
+import { mockFaxSender } from './services/mockFaxSender';
 
 const app = express();
 
@@ -38,6 +40,9 @@ app.use('/webhooks/stripe', express.raw({ type: 'application/json' }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
+
+// Serve static files (favicon, etc.)
+app.use('/public', express.static(path.join(__dirname, '../public')));
 
 // Enhanced health check endpoint
 app.get('/health', async (req: Request, res: Response) => {
@@ -278,7 +283,7 @@ app.post('/admin/auth/login', async (req: Request, res: Response) => {
     // Return access token and user info
     res.json({
       accessToken,
-      expiresIn: 15 * 60, // 15 minutes in seconds
+      expiresIn: 60 * 60, // 1 hour in seconds
       user: {
         id: user.id,
         email: user.email,
@@ -408,7 +413,7 @@ app.post('/admin/auth/refresh', async (req: Request, res: Response) => {
     // Return new access token
     res.json({
       accessToken,
-      expiresIn: 15 * 60, // 15 minutes in seconds
+      expiresIn: 60 * 60, // 1 hour in seconds
       user: {
         id: user.id,
         email: user.email,
@@ -833,8 +838,8 @@ app.post('/admin/jobs/:id/retry', requireAdminAuth, requirePermission('jobs:retr
     });
 
     // Re-enqueue the job
-    const { faxQueue } = await import('./queue/faxQueue');
-    await faxQueue.add('process-fax', {
+    const { faxProcessingQueue } = await import('./queue/faxQueue');
+    await faxProcessingQueue.add('process-fax', {
       faxJobId: id,
       faxId: job.faxId,
       userId: job.userId,
@@ -986,17 +991,40 @@ app.get('/admin/jobs/:id/fax-image', requireAdminAuth, requirePermission('jobs:v
         imageBuffer = await s3Storage.downloadFile(s3Key);
       }
 
-      // Convert PDF to PNG for browser compatibility
-      // Browsers display PNG better than embedded PDFs
-      const sharp = await import('sharp');
-      const pngBuffer = await sharp.default(imageBuffer)
-        .png()
-        .toBuffer();
+      // Check if the file is a PDF and convert to PNG for browser compatibility
+      let displayBuffer: Buffer;
+      let contentType: string;
+      
+      // Check if it's a PDF by looking at the magic bytes
+      const isPdf = imageBuffer.slice(0, 4).toString() === '%PDF';
+      
+      if (isPdf) {
+        // Convert PDF to PNG using pdf-to-png-converter
+        const { pdfToPng } = await import('pdf-to-png-converter');
+        const pngPages = await pdfToPng(imageBuffer, {
+          disableFontFace: false,
+          useSystemFonts: false,
+          viewportScale: 2.0,
+          outputFolder: undefined, // Return buffer instead of saving
+        });
+        
+        // Use the first page
+        if (pngPages.length > 0) {
+          displayBuffer = pngPages[0].content;
+          contentType = 'image/png';
+        } else {
+          throw new Error('PDF conversion resulted in no pages');
+        }
+      } else {
+        // Already an image, just serve it
+        displayBuffer = imageBuffer;
+        contentType = 'image/png';
+      }
 
       // Set appropriate headers
-      res.setHeader('Content-Type', 'image/png');
+      res.setHeader('Content-Type', contentType);
       res.setHeader('Content-Disposition', `inline; filename="${type}_${job.faxId}.png"`);
-      res.send(pngBuffer);
+      res.send(displayBuffer);
     } catch (downloadError) {
       console.error('Failed to download fax image from S3:', downloadError);
       return res.status(404).json({
@@ -1009,6 +1037,86 @@ app.get('/admin/jobs/:id/fax-image', requireAdminAuth, requirePermission('jobs:v
     res.status(500).json({
       error: 'Failed to fetch image',
       message: 'An error occurred while fetching the fax image',
+    });
+  }
+});
+
+// Download original fax PDF (inbound or response)
+app.get('/admin/jobs/:id/fax-download', requireAdminAuth, requirePermission('jobs:view'), async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { type = 'inbound' } = req.query; // 'inbound' or 'response'
+
+    const job = await faxJobRepository.findById(id);
+
+    if (!job) {
+      return res.status(404).json({
+        error: 'Job not found',
+        message: `Fax job with ID ${id} not found`,
+      });
+    }
+
+    let s3Key: string;
+    let filename: string;
+    
+    if (type === 'response' && job.actionResults?.responseFaxId) {
+      // Get response fax PDF
+      s3Key = s3Storage.generateFaxKey(job.actionResults.responseFaxId, 'pdf');
+      filename = `response_${job.actionResults.responseFaxId}.pdf`;
+    } else {
+      // Get inbound fax PDF
+      if (!job.storageKey) {
+        s3Key = s3Storage.generateFaxKey(job.faxId, 'pdf');
+      } else {
+        s3Key = job.storageKey;
+      }
+      filename = `inbound_${job.faxId}.pdf`;
+    }
+
+    try {
+      let pdfBuffer: Buffer;
+
+      // In test mode, try to load from local test-faxes directory first
+      if (config.app.testMode && type === 'response' && job.actionResults?.responseFaxId) {
+        try {
+          const fs = await import('fs/promises');
+          const path = await import('path');
+          const testFaxesDir = path.join(process.cwd(), 'test-faxes');
+
+          const files = await fs.readdir(testFaxesDir);
+          const matchingFile = files.find(f => f.startsWith(job.actionResults.responseFaxId));
+
+          if (matchingFile) {
+            const filePath = path.join(testFaxesDir, matchingFile);
+            pdfBuffer = await fs.readFile(filePath);
+            console.log(`Loaded test fax from local storage: ${filePath}`);
+          } else {
+            pdfBuffer = await s3Storage.downloadFile(s3Key);
+          }
+        } catch (localError) {
+          console.log('Failed to load from local storage, trying S3:', localError);
+          pdfBuffer = await s3Storage.downloadFile(s3Key);
+        }
+      } else {
+        pdfBuffer = await s3Storage.downloadFile(s3Key);
+      }
+
+      // Serve the original PDF file
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      res.send(pdfBuffer);
+    } catch (downloadError) {
+      console.error('Failed to download fax PDF from S3:', downloadError);
+      return res.status(404).json({
+        error: 'PDF not found',
+        message: `Fax PDF not found in storage`,
+      });
+    }
+  } catch (error) {
+    loggingService.error('Failed to fetch fax PDF', error as Error);
+    res.status(500).json({
+      error: 'Failed to fetch PDF',
+      message: 'An error occurred while fetching the fax PDF',
     });
   }
 });
@@ -1225,6 +1333,11 @@ app.post('/webhooks/email/received', (req: Request, res: Response) => {
 
 // Test endpoints (only available in test mode)
 if (config.app.testMode) {
+  // Serve favicon for test UI
+  app.get('/favicon.ico', (req: Request, res: Response) => {
+    res.sendFile(path.join(__dirname, '../public/favicon.svg'));
+  });
+  
   app.post('/test/fax/receive', (req: Request, res: Response) => {
     testWebhookController.handleTestFaxReceive(req, res);
   });
@@ -1267,6 +1380,34 @@ if (config.app.testMode) {
 
   app.post('/test/fax/fixtures/generate', (req: Request, res: Response) => {
     testWebhookController.generateTestFixtures(req, res);
+  });
+
+  // Control mock fax failure rate
+  app.post('/test/fax/failure-rate', (req: Request, res: Response) => {
+    try {
+      const { rate } = req.body;
+      
+      if (typeof rate !== 'number' || rate < 0 || rate > 1) {
+        return res.status(400).json({
+          error: 'Invalid failure rate',
+          message: 'Rate must be a number between 0 and 1'
+        });
+      }
+
+      mockFaxSender.setFailureRate(rate);
+      
+      res.json({
+        success: true,
+        message: `Mock fax failure rate set to ${(rate * 100).toFixed(0)}%`,
+        failureRate: rate
+      });
+    } catch (error) {
+      console.error('Failed to set failure rate:', error);
+      res.status(500).json({
+        error: 'Failed to set failure rate',
+        message: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
   });
 
   // Serve test UI

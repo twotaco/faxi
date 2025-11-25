@@ -1,6 +1,7 @@
 import { createCanvas, Canvas, CanvasRenderingContext2D, registerFont } from 'canvas';
 import JsBarcode from 'jsbarcode';
 import sharp from 'sharp';
+import PDFDocument from 'pdfkit';
 import {
   FaxTemplate,
   FaxPage,
@@ -24,10 +25,10 @@ export class FaxGenerator {
   private static readonly DEFAULT_OPTIONS: FaxGenerationOptions = {
     dpi: 204, // Standard fax resolution
     width: 1728, // 8.5 inches at 204 DPI
-    height: 2200, // ~10.8 inches at 204 DPI (allows for margins)
+    height: 2800, // ~13.7 inches at 204 DPI (taller to accommodate longer responses)
     backgroundColor: '#FFFFFF',
     textColor: '#000000',
-    defaultFontSize: 20, // Increased from 12 for elderly readability
+    defaultFontSize: 45, // 16pt at 204 DPI - ideal for elderly users
     margins: {
       top: 60,
       bottom: 60,
@@ -43,7 +44,9 @@ export class FaxGenerator {
     const opts = { ...this.DEFAULT_OPTIONS, ...options };
     const pageBuffers: Buffer[] = [];
 
+    console.log(`Generating PDF with ${template.pages.length} pages`);
     for (const page of template.pages) {
+      console.log(`Page ${page.pageNumber} has ${page.content.length} content elements`);
       const canvas = createCanvas(opts.width, opts.height);
       const ctx = canvas.getContext('2d');
 
@@ -56,29 +59,45 @@ export class FaxGenerator {
       let currentY = opts.margins.top;
 
       // Render each content element
+      console.log('Starting page render at Y:', currentY);
       for (const content of page.content) {
-        currentY = await this.renderContent(ctx, content, currentY, opts);
+        console.log(`Rendering ${content.type} at Y: ${currentY}`);
+        const newY = await this.renderContent(ctx, content, currentY, opts);
+        console.log(`After rendering ${content.type}, Y moved from ${currentY} to ${newY}`);
+        currentY = newY;
       }
+      console.log('Final Y position:', currentY);
 
       // Convert canvas to PNG buffer for PDF conversion
       const pngBuffer = canvas.toBuffer('image/png');
       pageBuffers.push(pngBuffer);
     }
 
-    // Convert all pages to a single PDF
-    // Start with the first page
-    let pdfPipeline = sharp(pageBuffers[0])
-      .png() // Keep as PNG for quality
-      .toFormat('pdf', {
-        compressionLevel: 6
+    // Convert PNG pages to PDF using pdfkit
+    return new Promise<Buffer>((resolve, reject) => {
+      const doc = new PDFDocument({
+        size: [opts.width * 72 / opts.dpi, opts.height * 72 / opts.dpi], // Convert pixels to points
+        margins: { top: 0, bottom: 0, left: 0, right: 0 }
       });
 
-    // For multi-page PDFs, we'll need to use a different approach
-    // Since sharp doesn't support multi-page PDFs directly, we'll create a single-page PDF
-    // TODO: For multi-page support, consider using pdf-lib or pdfkit
-    const pdfBuffer = await pdfPipeline.toBuffer();
+      const chunks: Buffer[] = [];
+      doc.on('data', (chunk) => chunks.push(chunk));
+      doc.on('end', () => resolve(Buffer.concat(chunks)));
+      doc.on('error', reject);
 
-    return pdfBuffer;
+      // Add each page as an image
+      pageBuffers.forEach((buffer, index) => {
+        if (index > 0) {
+          doc.addPage();
+        }
+        doc.image(buffer, 0, 0, {
+          width: opts.width * 72 / opts.dpi,
+          height: opts.height * 72 / opts.dpi
+        });
+      });
+
+      doc.end();
+    });
   }
 
   /**
@@ -163,11 +182,17 @@ export class FaxGenerator {
     const lines = this.wrapText(ctx, content.text, contentWidth);
     const lineHeight = fontSize * 1.2;
 
+    console.log(`  Text: "${content.text?.substring(0, 50)}..." - ${lines.length} lines, lineHeight: ${lineHeight}`);
+
     lines.forEach((line, index) => {
-      ctx.fillText(line, x, y + (index * lineHeight));
+      const lineY = y + (index * lineHeight);
+      console.log(`    Line ${index} at Y: ${lineY}`);
+      ctx.fillText(line, x, lineY);
     });
 
-    return y + (lines.length * lineHeight);
+    const finalY = y + (lines.length * lineHeight);
+    console.log(`  Text final Y: ${finalY}`);
+    return finalY;
   }
 
   /**

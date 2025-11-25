@@ -186,15 +186,19 @@ export class AIChatMCPServer implements MCPServer {
       };
       conversationHistory.push(userMessage);
 
-      // Create system prompt for fax-optimized responses
-      const systemPrompt = this.createSystemPrompt();
+      // Create system prompt for fax-optimized responses with insights extraction
+      const systemPrompt = this.createSystemPromptWithInsights();
       
-      // Prepare conversation for Gemini with system instruction
+      // Prepare conversation for Gemini with system instruction and JSON schema
       const model = this.genAI.getGenerativeModel({ 
         model: config.gemini.model,
         systemInstruction: {
           role: 'system',
           parts: [{ text: systemPrompt }]
+        },
+        generationConfig: {
+          responseMimeType: 'application/json',
+          responseSchema: this.getQAResponseSchema()
         }
       });
       
@@ -214,10 +218,27 @@ export class AIChatMCPServer implements MCPServer {
       // Send message and get response
       const result = await chat.sendMessage(message);
       const response = result.response;
-      const aiResponse = response.text();
+      const aiResponseText = response.text();
 
-      // Format response for fax readability
-      const formattedResponse = this.formatResponseForFax(aiResponse);
+      // Parse JSON response
+      let parsedResponse: any;
+      try {
+        parsedResponse = JSON.parse(aiResponseText);
+      } catch (parseError) {
+        console.error('Failed to parse JSON response from Gemini:', parseError);
+        // Fallback to plain text
+        parsedResponse = {
+          response: aiResponseText,
+          requiresContinuation: false,
+          metadata: { confidence: 'low' }
+        };
+      }
+
+      // Extract the main response text
+      const formattedResponse = this.formatResponseForFax(parsedResponse.response);
+
+      // Extract insights for processing
+      const insights = parsedResponse.insights;
 
       // Add AI response to history
       const aiMessage = {
@@ -245,13 +266,24 @@ export class AIChatMCPServer implements MCPServer {
         referenceId: conversation.referenceId
       });
 
+      // Process insights (async, don't block response)
+      if (insights) {
+        // Import and process insights
+        const { userInsightsService } = await import('../services/userInsightsService.js');
+        userInsightsService.processInsights(userId, insights, conversation.id).catch(error => {
+          console.error('Failed to process insights:', error);
+        });
+      }
+
       return {
         success: true,
         response: formattedResponse,
         conversationId: conversation.id,
         referenceId: conversation.referenceId,
         messageCount: conversationHistory.length,
-        expiresAt: conversation.expiresAt
+        expiresAt: conversation.expiresAt,
+        // Include insights in response for debugging/testing
+        insights: insights || null
       };
       
     } catch (error) {
@@ -394,9 +426,155 @@ ${conversationText}`;
   }
 
   /**
-   * Create system prompt for fax-optimized AI responses
+   * Get Q&A response JSON schema for Gemini
    */
-  private createSystemPrompt(): string {
+  private getQAResponseSchema(): any {
+    return {
+      type: 'object',
+      properties: {
+        response: {
+          type: 'string',
+          description: 'The main response text, formatted for fax readability'
+        },
+        followUpSuggestions: {
+          type: 'array',
+          items: { type: 'string' },
+          description: 'Suggested follow-up questions'
+        },
+        requiresContinuation: {
+          type: 'boolean',
+          description: 'Whether this topic needs more conversation'
+        },
+        sources: {
+          type: 'array',
+          items: { type: 'string' },
+          description: 'Information sources if applicable'
+        },
+        metadata: {
+          type: 'object',
+          properties: {
+            confidence: {
+              type: 'string',
+              enum: ['high', 'medium', 'low'],
+              description: 'Confidence in the answer'
+            },
+            category: {
+              type: 'string',
+              description: 'Topic category'
+            }
+          },
+          required: ['confidence']
+        },
+        insights: {
+          type: 'object',
+          description: 'Strategic user insights extracted from interaction',
+          properties: {
+            demographics: {
+              type: 'object',
+              properties: {
+                ageRangeInferred: { type: 'string', enum: ['60-69', '70-79', '80+', 'unknown'] },
+                genderInferred: { type: 'string', enum: ['male', 'female', 'unknown'] },
+                regionInferred: { type: 'string' },
+                householdTypeInferred: { type: 'string', enum: ['single', 'couple', 'multi-gen', 'unknown'] }
+              }
+            },
+            lifeEvents: {
+              type: 'object',
+              properties: {
+                movingDetected: { type: 'boolean' },
+                newCaregiverDetected: { type: 'boolean' },
+                deathInFamilyDetected: { type: 'boolean' },
+                hospitalizationDetected: { type: 'boolean' },
+                retirementDetected: { type: 'boolean' }
+              }
+            },
+            intentSignals: {
+              type: 'object',
+              properties: {
+                commercialIntent: {
+                  type: 'array',
+                  items: {
+                    type: 'object',
+                    properties: {
+                      category: { type: 'string' },
+                      product: { type: 'string' },
+                      priceRange: {
+                        type: 'object',
+                        properties: {
+                          min: { type: 'number' },
+                          max: { type: 'number' }
+                        }
+                      },
+                      urgency: { type: 'string', enum: ['immediate', 'near-term', 'long-term'] }
+                    },
+                    required: ['category', 'urgency']
+                  }
+                },
+                healthIntent: {
+                  type: 'array',
+                  items: {
+                    type: 'object',
+                    properties: {
+                      type: { type: 'string', enum: ['appointment', 'medication', 'consultation', 'emergency'] },
+                      urgency: { type: 'string', enum: ['immediate', 'near-term', 'long-term'] }
+                    },
+                    required: ['type', 'urgency']
+                  }
+                },
+                govIntent: {
+                  type: 'array',
+                  items: {
+                    type: 'object',
+                    properties: {
+                      serviceType: { type: 'string' },
+                      urgency: { type: 'string', enum: ['immediate', 'near-term', 'long-term'] }
+                    },
+                    required: ['serviceType', 'urgency']
+                  }
+                }
+              }
+            },
+            behavioral: {
+              type: 'object',
+              properties: {
+                communicationStyle: { type: 'string', enum: ['short', 'long', 'polite', 'direct', 'detailed'] },
+                taskComplexity: { type: 'string', enum: ['simple', 'moderate', 'complex'] }
+              }
+            },
+            consumerProfile: {
+              type: 'object',
+              properties: {
+                spendSensitivity: { type: 'string', enum: ['value', 'normal', 'premium'] },
+                brandMentions: { type: 'array', items: { type: 'string' } },
+                categoryPreference: { type: 'string' }
+              }
+            },
+            digitalProfile: {
+              type: 'object',
+              properties: {
+                digitalExclusionScore: { type: 'number', minimum: 1, maximum: 5 },
+                aiAssistanceNeeded: { type: 'array', items: { type: 'string' } }
+              }
+            },
+            confidenceScores: {
+              type: 'object',
+              properties: {
+                demographics: { type: 'number', minimum: 0, maximum: 1 },
+                lifeEvents: { type: 'number', minimum: 0, maximum: 1 },
+                intent: { type: 'number', minimum: 0, maximum: 1 }
+              }
+            }
+          }
+        }
+      },
+      required: ['response', 'requiresContinuation', 'metadata']
+    };
+  }
+
+  /**
+   * Create system prompt for fax-optimized AI responses with insights extraction
+   */
+  private createSystemPromptWithInsights(): string {
     return `You are an AI assistant for Faxi, a fax-to-internet bridge service. Your responses will be converted to fax format and sent to users who prefer offline communication.
 
 CRITICAL FORMATTING REQUIREMENTS:
@@ -422,7 +600,52 @@ CONTENT GUIDELINES:
 - Keep explanations simple but not condescending
 - Focus on practical solutions and clear answers
 
-Remember: Your response will be printed on paper and faxed back to the user. Make it clear, helpful, and easy to read on paper.`;
+Remember: Your response will be printed on paper and faxed back to the user. Make it clear, helpful, and easy to read on paper.
+
+INSIGHTS EXTRACTION (CRITICAL):
+In addition to answering the question, extract strategic insights about the user:
+
+DEMOGRAPHICS:
+- Infer age range from language style, topics of interest, context clues
+- Infer gender from context (not assumptions)
+- Infer household type from questions (cooking for one vs. family)
+- Infer region from location mentions
+
+LIFE EVENTS:
+- Moving: questions about new area, services, neighborhoods
+- Caregiving: questions about helping elderly parent, responsibilities
+- Health changes: questions about accessibility, medical services
+- Retirement: questions about time management, hobbies, pensions
+- Family death: estate questions, funeral arrangements
+
+INTENT SIGNALS:
+- Commercial: product questions, price inquiries, shopping needs
+- Health: medical appointment questions, medication inquiries
+- Government: pension questions, certificate needs, tax inquiries
+- Note urgency level: immediate, near-term, or long-term
+
+BEHAVIORAL:
+- Communication style: short/long/polite/direct/detailed
+- Task complexity: simple/moderate/complex
+
+CONSUMER PROFILE:
+- Spend sensitivity: value-seeking, normal, or premium preferences
+- Brand mentions: specific brands mentioned
+- Category preferences: types of products interested in
+
+DIGITAL PROFILE:
+- Digital exclusion score (1-5): 1=digitally savvy, 5=completely excluded
+- AI assistance needed: what tasks require help (information-lookup, translation, etc.)
+
+IMPORTANT:
+- Only include insights with confidence > 0.6
+- Mark all inferences as "inferred" not "confirmed"
+- No medical diagnoses, only administrative signals
+- Respect privacy: focus on patterns, not sensitive details
+- If uncertain, omit the insight rather than guess
+
+OUTPUT FORMAT:
+Respond with valid JSON matching the provided schema, including both the response and insights fields.`;
   }
 
   /**

@@ -37,21 +37,21 @@ export class FaxTemplateEngine {
       {
         type: 'text',
         text: `Email from ${data.from}`,
-        fontSize: 20,
+        fontSize: 57, // 20pt header
         bold: true,
         marginBottom: 8
       },
       {
         type: 'text',
         text: `Subject: ${data.subject}`,
-        fontSize: 18,
+        fontSize: 57, // 20pt header
         bold: true,
         marginBottom: 12
       },
       {
         type: 'text',
         text: data.body,
-        fontSize: 18,
+        fontSize: 45, // 16pt body text
         marginBottom: 16
       }
     ];
@@ -61,13 +61,13 @@ export class FaxTemplateEngine {
       content.push({
         type: 'text',
         text: '─'.repeat(40),
-        fontSize: 18,
+        fontSize: 45, // 16pt body text
         marginBottom: 8
       });
       content.push({
         type: 'text',
         text: 'QUICK REPLIES (Circle one):',
-        fontSize: 18,
+        fontSize: 57, // 20pt header
         bold: true,
         marginBottom: 8
       });
@@ -85,17 +85,26 @@ export class FaxTemplateEngine {
       });
     }
 
-    // Add space for custom reply
-    content.push({
-      type: 'text',
-      text: 'Additional comments or write your own reply below:',
-      fontSize: 18,
-      marginBottom: 8
-    });
+    // Add space for custom reply (only if there are quick replies or it's an actual email)
+    if (data.hasQuickReplies || data.from !== 'Faxi Support') {
+      content.push({
+        type: 'text',
+        text: 'Additional comments or write your own reply below:',
+        fontSize: 45, // 16pt body text
+        marginBottom: 8
+      });
+      content.push({
+        type: 'blank_space',
+        height: 100,
+        marginBottom: 16
+      });
+    }
+
+    // Add extra margin before footer to prevent overlap
     content.push({
       type: 'blank_space',
-      height: 100,
-      marginBottom: 16
+      height: 40,
+      marginBottom: 0
     });
 
     content.push(this.createFooter(refId));
@@ -130,7 +139,7 @@ export class FaxTemplateEngine {
       {
         type: 'text',
         text: 'SHOPPING ORDER FORM',
-        fontSize: 24,
+        fontSize: 68, // 24pt page title
         bold: true,
         alignment: 'center',
         marginBottom: 16
@@ -142,7 +151,7 @@ export class FaxTemplateEngine {
       content.push({
         type: 'text',
         text: 'PRODUCT OPTIONS (Circle one):',
-        fontSize: 20,
+        fontSize: 57, // 20pt header
         bold: true,
         marginBottom: 12
       });
@@ -167,7 +176,7 @@ export class FaxTemplateEngine {
       content.push({
         type: 'text',
         text: 'SUGGESTED ADDITIONS (Optional):',
-        fontSize: 20,
+        fontSize: 57, // 20pt header
         bold: true,
         marginBottom: 12
       });
@@ -196,7 +205,7 @@ export class FaxTemplateEngine {
     content.push({
       type: 'text',
       text: paymentText,
-      fontSize: 18,
+      fontSize: 45, // 16pt body text
       marginBottom: 12
     });
 
@@ -204,7 +213,7 @@ export class FaxTemplateEngine {
       content.push({
         type: 'text',
         text: `Delivery to: ${data.deliveryAddress}`,
-        fontSize: 18,
+        fontSize: 45, // 16pt body text
         marginBottom: 16
       });
     }
@@ -326,7 +335,7 @@ export class FaxTemplateEngine {
       {
         type: 'text',
         text: 'CONFIRMATION',
-        fontSize: 24,
+        fontSize: 68, // 24pt page title
         bold: true,
         alignment: 'center',
         marginBottom: 16
@@ -334,14 +343,14 @@ export class FaxTemplateEngine {
       {
         type: 'text',
         text: '✓ COMPLETED',
-        fontSize: 20,
+        fontSize: 57, // 20pt header
         bold: true,
         marginBottom: 12
       },
       {
         type: 'text',
         text: data.message,
-        fontSize: 18,
+        fontSize: 45, // 16pt body text
         marginBottom: 16
       }
     ];
@@ -351,7 +360,7 @@ export class FaxTemplateEngine {
       content.push({
         type: 'text',
         text: `Order ID: ${data.orderId}`,
-        fontSize: 18,
+        fontSize: 45, // 16pt body text
         bold: true,
         marginBottom: 8
       });
@@ -359,7 +368,7 @@ export class FaxTemplateEngine {
         content.push({
           type: 'text',
           text: `Tracking: ${data.trackingNumber}`,
-          fontSize: 18,
+          fontSize: 45, // 16pt body text
           bold: true,
           marginBottom: 16
         });
@@ -368,7 +377,7 @@ export class FaxTemplateEngine {
       content.push({
         type: 'text',
         text: `Sent to: ${data.emailRecipient}`,
-        fontSize: 18,
+        fontSize: 45, // 16pt body text
         bold: true,
         marginBottom: 16
       });
@@ -402,7 +411,7 @@ export class FaxTemplateEngine {
       {
         type: 'text',
         text: 'CLARIFICATION NEEDED',
-        fontSize: 24,
+        fontSize: 68, // 24pt page title
         bold: true,
         alignment: 'center',
         marginBottom: 16
@@ -410,7 +419,7 @@ export class FaxTemplateEngine {
       {
         type: 'text',
         text: data.question,
-        fontSize: 18,
+        fontSize: 45, // 16pt body text
         marginBottom: 16
       }
     ];
@@ -420,7 +429,7 @@ export class FaxTemplateEngine {
       content.push({
         type: 'text',
         text: 'Please provide:',
-        fontSize: 18,
+        fontSize: 57, // 20pt header
         bold: true,
         marginBottom: 8
       });
@@ -428,7 +437,7 @@ export class FaxTemplateEngine {
         content.push({
           type: 'text',
           text: `• ${info}`,
-          fontSize: 18,
+          fontSize: 45, // 16pt body text
           marginBottom: 4
         });
       });
@@ -444,7 +453,7 @@ export class FaxTemplateEngine {
       content.push({
         type: 'text',
         text: 'Recent conversations:',
-        fontSize: 18,
+        fontSize: 57, // 20pt header
         bold: true,
         marginBottom: 8
       });
@@ -452,7 +461,7 @@ export class FaxTemplateEngine {
         content.push({
           type: 'text',
           text: `${conv.referenceId}: ${conv.topic} (${conv.daysAgo} days ago)`,
-          fontSize: 18,
+          fontSize: 45, // 16pt body text
           marginBottom: 4
         });
       });
@@ -467,7 +476,7 @@ export class FaxTemplateEngine {
     content.push({
       type: 'text',
       text: 'Your response:',
-      fontSize: 18,
+      fontSize: 57, // 20pt header
       bold: true,
       marginBottom: 8
     });
@@ -504,7 +513,7 @@ export class FaxTemplateEngine {
     return {
       type: 'header',
       text: this.FAXI_BRANDING,
-      fontSize: 14,
+      fontSize: 34, // 12pt header/footer
       alignment: 'center',
       marginBottom: 12
     };
@@ -517,7 +526,7 @@ export class FaxTemplateEngine {
     return {
       type: 'footer',
       text: `Reply via fax. Ref: ${referenceId} | ${this.SUPPORT_CONTACT}`,
-      fontSize: 14,
+      fontSize: 34, // 12pt header/footer
       alignment: 'center',
       marginTop: 16
     };

@@ -74,6 +74,37 @@ export default function JobDetailsPage() {
     }
   };
 
+  const downloadFaxPdf = async (type: 'inbound' | 'response') => {
+    try {
+      const token = localStorage.getItem('admin_access_token');
+      console.log(`Downloading ${type} fax PDF for job ${id}`);
+      const response = await fetch(`${apiUrl}/admin/jobs/${id}/fax-download?type=${type}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${type}_${type === 'response' ? job?.actionResults?.responseFaxId : job?.faxId}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      } else {
+        const errorText = await response.text();
+        console.error(`Failed to download ${type} fax PDF:`, response.status, errorText);
+        alert(`Failed to download ${type} fax PDF`);
+      }
+    } catch (error) {
+      console.error(`Failed to download ${type} fax PDF:`, error);
+      alert(`Failed to download ${type} fax PDF`);
+    }
+  };
+
   // Auto-load fax images when job data is available
   useEffect(() => {
     if (job && !inboundFaxUrl) {
@@ -343,13 +374,22 @@ export default function JobDetailsPage() {
             <div className="flex items-center justify-between mb-2">
               <h4 className="text-sm font-medium text-gray-700">Inbound Fax</h4>
               {inboundFaxUrl && (
-                <button
-                  onClick={() => setShowInboundFax(true)}
-                  className="flex items-center space-x-1 px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
-                >
-                  <Eye className="w-3 h-3" />
-                  <span>Full Size</span>
-                </button>
+                <div className="flex items-center space-x-2">
+                  <button
+                    onClick={() => downloadFaxPdf('inbound')}
+                    className="flex items-center space-x-1 px-2 py-1 text-xs bg-gray-600 text-white rounded hover:bg-gray-700 transition-colors"
+                  >
+                    <Download className="w-3 h-3" />
+                    <span>PDF</span>
+                  </button>
+                  <button
+                    onClick={() => setShowInboundFax(true)}
+                    className="flex items-center space-x-1 px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+                  >
+                    <Eye className="w-3 h-3" />
+                    <span>Full Size</span>
+                  </button>
+                </div>
               )}
             </div>
             <div className="bg-gray-100 rounded w-full max-h-[400px] flex items-center justify-center overflow-hidden">
@@ -378,13 +418,22 @@ export default function JobDetailsPage() {
               <div className="flex items-center justify-between mb-2">
                 <h4 className="text-sm font-medium text-gray-700">Response Fax</h4>
                 {responseFaxUrl && (
-                  <button
-                    onClick={() => setShowResponseFax(true)}
-                    className="flex items-center space-x-1 px-2 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
-                  >
-                    <Eye className="w-3 h-3" />
-                    <span>Full Size</span>
-                  </button>
+                  <div className="flex items-center space-x-2">
+                    <button
+                      onClick={() => downloadFaxPdf('response')}
+                      className="flex items-center space-x-1 px-2 py-1 text-xs bg-gray-600 text-white rounded hover:bg-gray-700 transition-colors"
+                    >
+                      <Download className="w-3 h-3" />
+                      <span>PDF</span>
+                    </button>
+                    <button
+                      onClick={() => setShowResponseFax(true)}
+                      className="flex items-center space-x-1 px-2 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
+                    >
+                      <Eye className="w-3 h-3" />
+                      <span>Full Size</span>
+                    </button>
+                  </div>
                 )}
               </div>
               <div className="bg-gray-100 rounded w-full max-h-[400px] flex items-center justify-center overflow-hidden">

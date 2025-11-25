@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import { MCPServer, MCPTool } from '../types/agent';
 import { addressBookRepository, AddressBookEntry } from '../repositories/addressBookRepository';
 import { userRepository } from '../repositories/userRepository';
@@ -22,13 +23,18 @@ export class EmailMCPServer implements MCPServer {
   name = 'email';
   description = 'Email management and communication tools';
   tools: MCPTool[] = [];
+  private genAI: GoogleGenerativeAI;
 
   constructor() {
+    // Initialize Google Gemini AI
+    this.genAI = new GoogleGenerativeAI(config.gemini.apiKey);
+    
     this.initializeTools();
   }
 
   private initializeTools(): void {
     this.tools = [
+      this.createEmailRequestTool(),
       this.createSendEmailTool(),
       this.createGetEmailThreadTool(),
       this.createSearchEmailsTool(),
@@ -39,6 +45,44 @@ export class EmailMCPServer implements MCPServer {
       this.createDeleteContactTool(),
       this.createGenerateSmartRepliesTool(),
     ];
+  }
+
+  /**
+   * Email request tool - High-level email assistant with structured outputs
+   */
+  private createEmailRequestTool(): MCPTool {
+    const inputSchema = {
+      type: 'object',
+      properties: {
+        userId: {
+          type: 'string',
+          description: 'User ID'
+        },
+        message: {
+          type: 'string',
+          description: 'User email request or message'
+        },
+        conversationHistory: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              role: { type: 'string' },
+              content: { type: 'string' }
+            }
+          },
+          description: 'Optional conversation history for context'
+        }
+      },
+      required: ['userId', 'message']
+    };
+
+    return {
+      name: 'email_request',
+      description: 'Process email request with AI assistance and structured outputs',
+      inputSchema,
+      handler: this.handleEmailRequest.bind(this)
+    };
   }
 
   /**
@@ -776,6 +820,418 @@ export class EmailMCPServer implements MCPServer {
         error: error instanceof Error ? error.message : 'Failed to delete contact'
       };
     }
+  }
+
+  /**
+   * Handle email request with AI assistance and structured outputs
+   */
+  private async handleEmailRequest(params: any): Promise<any> {
+    const { userId, message, conversationHistory = [] } = params;
+    
+    try {
+      // Verify user exists
+      const user = await userRepository.findById(userId);
+      if (!user) {
+        return {
+          success: false,
+          error: 'User not found'
+        };
+      }
+
+      // Get user's address book for context
+      const contacts = await addressBookRepository.findByUserId(userId);
+      const contactsContext = contacts.map(c => ({
+        name: c.name,
+        relationship: c.relationship,
+        email: c.emailAddress
+      }));
+
+      // Build system prompt with email guidelines
+      const systemPrompt = this.buildEmailSystemPrompt(contactsContext, user);
+      
+      // Create Gemini model with JSON schema
+      const model = this.genAI.getGenerativeModel({ 
+        model: config.gemini.model,
+        systemInstruction: {
+          role: 'system',
+          parts: [{ text: systemPrompt }]
+        },
+        generationConfig: {
+          responseMimeType: 'application/json',
+          responseSchema: this.getEmailResponseSchema()
+        }
+      });
+      
+      // Build conversation history for Gemini
+      const chatHistory = conversationHistory.map((msg: any) => ({
+        role: msg.role === 'user' ? 'user' : 'model',
+        parts: [{ text: msg.content }]
+      }));
+
+      // Start chat session with history
+      const chat = model.startChat({
+        history: chatHistory
+      });
+
+      // Send message and get response
+      const result = await chat.sendMessage(message);
+      const response = result.response;
+      const aiResponseText = response.text();
+
+      // Parse JSON response
+      let parsedResponse: any;
+      try {
+        parsedResponse = JSON.parse(aiResponseText);
+      } catch (parseError) {
+        console.error('Failed to parse JSON response from Gemini:', parseError);
+        return {
+          success: false,
+          error: 'Failed to parse AI response'
+        };
+      }
+
+      // Execute email actions based on intent
+      const executionResult = await this.executeEmailIntent(userId, parsedResponse);
+
+      // Extract insights for processing
+      const insights = parsedResponse.insights;
+
+      // Process insights (async, don't block response)
+      if (insights) {
+        const { userInsightsService } = await import('../services/userInsightsService.js');
+        userInsightsService.processInsights(userId, insights, `email-${Date.now()}`).catch(error => {
+          console.error('Failed to process email insights:', error);
+        });
+      }
+
+      // Log the email interaction
+      await auditLogService.logMCPToolCall({
+        userId,
+        faxJobId: `email-${Date.now()}`,
+        toolName: 'email_request',
+        toolServer: 'email',
+        input: { message },
+        output: parsedResponse,
+        success: true
+      });
+
+      return {
+        success: true,
+        intent: parsedResponse.intent,
+        response: parsedResponse.response,
+        recipient: parsedResponse.recipient,
+        subject: parsedResponse.subject,
+        body: parsedResponse.body,
+        tone: parsedResponse.tone,
+        requiresConfirmation: parsedResponse.requiresConfirmation,
+        nextAction: parsedResponse.nextAction,
+        metadata: parsedResponse.metadata,
+        executionResult,
+        insights: insights || null
+      };
+      
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to process email request'
+      };
+    }
+  }
+
+  /**
+   * Execute email intent (compose, send, lookup, etc.)
+   */
+  private async executeEmailIntent(userId: string, emailResponse: any): Promise<any> {
+    const { intent, recipient, subject, body } = emailResponse;
+    
+    try {
+      switch (intent) {
+        case 'compose':
+          // Email is composed and ready for preview
+          // No action needed, just return the composed email
+          return { 
+            action: 'email_composed', 
+            recipientIdentified: recipient.identified,
+            needsClarification: recipient.needsClarification
+          };
+
+        case 'send':
+          // Send the email if recipient is identified
+          if (recipient.identified && recipient.email && subject && body) {
+            // Get user to get their email address
+            const user = await userRepository.findById(userId);
+            if (!user) {
+              return { action: 'send_failed', error: 'User not found' };
+            }
+            
+            const emailMessage: EmailMessage = {
+              to: recipient.email,
+              from: user.emailAddress,
+              subject: subject,
+              body: body
+            };
+            
+            const result = await emailService.sendEmail(emailMessage, userId);
+            
+            if (result.success) {
+              await auditLogService.logEmailSent({
+                userId: userId,
+                faxJobId: `email-${Date.now()}`,
+                from: user.emailAddress,
+                to: recipient.email,
+                subject: subject,
+                messageId: result.messageId || emailService.generateMessageId()
+              });
+              
+              return { 
+                action: 'email_sent', 
+                messageId: result.messageId,
+                sentAt: new Date().toISOString()
+              };
+            } else {
+              return { 
+                action: 'send_failed', 
+                error: result.error 
+              };
+            }
+          }
+          return { action: 'send_pending', message: 'Missing required information' };
+
+        case 'lookup':
+          // Lookup contact in address book
+          if (recipient.name) {
+            const contacts = await addressBookRepository.searchByNameOrRelationship(userId, recipient.name);
+            return { 
+              action: 'contact_lookup', 
+              found: contacts.length > 0,
+              contacts: contacts.map(c => ({
+                name: c.name,
+                email: c.emailAddress,
+                relationship: c.relationship
+              }))
+            };
+          }
+          return { action: 'lookup_failed', message: 'No name provided' };
+
+        case 'clarify':
+          // Need more information from user
+          return { action: 'clarification_needed' };
+
+        default:
+          return { action: 'unknown_intent' };
+      }
+    } catch (error) {
+      console.error('Failed to execute email intent:', error);
+      return { 
+        action: 'execution_failed', 
+        error: error instanceof Error ? error.message : 'Unknown error' 
+      };
+    }
+  }
+
+  /**
+   * Build email system prompt with context
+   */
+  private buildEmailSystemPrompt(contacts: any[], user: any): string {
+    const contactsList = contacts.length > 0 
+      ? contacts.map(c => `- ${c.name}${c.relationship ? ` (${c.relationship})` : ''}: ${c.email}`).join('\n')
+      : 'No contacts in address book.';
+
+    return `You are an AI email assistant for Faxi, helping elderly users in Japan compose and send emails via fax.
+
+CRITICAL: You must respond with valid JSON matching the EmailResponseSchema.
+
+FAX FORMATTING RULES:
+- Keep responses concise (500-800 words max)
+- Use short paragraphs (2-3 sentences each)
+- Use bullet points for lists
+- Simple, respectful language appropriate for all ages
+- Clear, actionable information
+- Your response will be printed and faxed to the user
+
+EMAIL GUIDELINES:
+- Identify recipient from address book or ask for email address
+- Match tone to relationship (formal for doctors, casual for family)
+- Show email preview before sending
+- Never send without explicit user confirmation
+- Keep emails concise and clear
+
+USER'S ADDRESS BOOK:
+${contactsList}
+
+USER INFORMATION:
+- Name: ${user.name || 'User'}
+- Email: ${user.emailAddress}
+
+TONE MATCHING:
+- FORMAL: Doctors, government officials, business contacts
+- CASUAL: Family members, close friends
+- URGENT: Time-sensitive matters
+- FRIENDLY: Acquaintances, neighbors
+
+INSIGHTS EXTRACTION:
+Extract relationship and communication insights from every interaction:
+
+RELATIONSHIP PATTERNS:
+- Family relationships: son, daughter, spouse, etc.
+- Professional relationships: doctor, lawyer, etc.
+- Social relationships: friend, neighbor, etc.
+
+LIFE EVENTS:
+- Moving: address updates, new area questions
+- Family changes: gatherings, celebrations
+- Health events: medical appointments, doctor communications
+
+COMMUNICATION PATTERNS:
+- Email frequency and style
+- Support network (who they contact)
+- Digital literacy level
+
+DIGITAL PROFILE:
+- Email literacy: 5=needs full assistance, 1=digitally savvy
+- Assistance needs: composition, reply, formal-writing, tone-adjustment
+
+PRIVACY RULES:
+- NO email addresses in insights
+- NO names in insights (use relationships)
+- NO email content in insights
+- Only include insights with confidence > 0.6
+
+Your response must be valid JSON matching the EmailResponseSchema.`;
+  }
+
+  /**
+   * Get Email response JSON schema for Gemini
+   */
+  private getEmailResponseSchema(): any {
+    return {
+      type: 'object',
+      properties: {
+        intent: {
+          type: 'string',
+          enum: ['compose', 'send', 'clarify', 'lookup'],
+          description: "User's email intent"
+        },
+        recipient: {
+          type: 'object',
+          properties: {
+            identified: { type: 'boolean' },
+            name: { type: 'string' },
+            email: { type: 'string' },
+            relationship: { type: 'string' },
+            needsClarification: { type: 'boolean' }
+          },
+          required: ['identified', 'needsClarification']
+        },
+        subject: {
+          type: 'string',
+          description: 'Email subject line'
+        },
+        body: {
+          type: 'string',
+          description: 'Email body content'
+        },
+        tone: {
+          type: 'string',
+          enum: ['formal', 'casual', 'urgent', 'friendly']
+        },
+        response: {
+          type: 'string',
+          description: 'Human-readable response for fax'
+        },
+        requiresConfirmation: {
+          type: 'boolean',
+          description: 'Whether user needs to confirm before sending'
+        },
+        nextAction: {
+          type: 'string',
+          enum: ['show_preview', 'confirm_send', 'request_clarification', 'complete']
+        },
+        metadata: {
+          type: 'object',
+          properties: {
+            threadId: { type: 'string' },
+            isReply: { type: 'boolean' },
+            confidence: { type: 'string', enum: ['high', 'medium', 'low'] }
+          }
+        },
+        insights: {
+          type: 'object',
+          description: 'Strategic user insights',
+          properties: {
+            demographics: {
+              type: 'object',
+              properties: {
+                ageRangeInferred: { type: 'string', enum: ['60-69', '70-79', '80+', 'unknown'] },
+                genderInferred: { type: 'string', enum: ['male', 'female', 'unknown'] },
+                regionInferred: { type: 'string' },
+                householdTypeInferred: { type: 'string', enum: ['single', 'couple', 'multi-gen', 'unknown'] }
+              }
+            },
+            lifeEvents: {
+              type: 'object',
+              properties: {
+                movingDetected: { type: 'boolean' },
+                newCaregiverDetected: { type: 'boolean' },
+                deathInFamilyDetected: { type: 'boolean' },
+                hospitalizationDetected: { type: 'boolean' },
+                retirementDetected: { type: 'boolean' }
+              }
+            },
+            intentSignals: {
+              type: 'object',
+              properties: {
+                healthIntent: {
+                  type: 'array',
+                  items: {
+                    type: 'object',
+                    properties: {
+                      type: { type: 'string', enum: ['appointment', 'medication', 'consultation', 'emergency'] },
+                      urgency: { type: 'string', enum: ['immediate', 'near-term', 'long-term'] }
+                    },
+                    required: ['type', 'urgency']
+                  }
+                },
+                govIntent: {
+                  type: 'array',
+                  items: {
+                    type: 'object',
+                    properties: {
+                      serviceType: { type: 'string' },
+                      urgency: { type: 'string', enum: ['immediate', 'near-term', 'long-term'] }
+                    },
+                    required: ['serviceType', 'urgency']
+                  }
+                }
+              }
+            },
+            behavioral: {
+              type: 'object',
+              properties: {
+                communicationStyle: { type: 'string', enum: ['short', 'long', 'polite', 'direct', 'detailed'] },
+                taskComplexity: { type: 'string', enum: ['simple', 'moderate', 'complex'] }
+              }
+            },
+            digitalProfile: {
+              type: 'object',
+              properties: {
+                digitalExclusionScore: { type: 'number', minimum: 1, maximum: 5 },
+                aiAssistanceNeeded: { type: 'array', items: { type: 'string' } }
+              }
+            },
+            confidenceScores: {
+              type: 'object',
+              properties: {
+                demographics: { type: 'number', minimum: 0, maximum: 1 },
+                lifeEvents: { type: 'number', minimum: 0, maximum: 1 },
+                intent: { type: 'number', minimum: 0, maximum: 1 }
+              }
+            }
+          }
+        }
+      },
+      required: ['intent', 'recipient', 'response', 'requiresConfirmation']
+    };
   }
 }
 

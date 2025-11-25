@@ -1,3 +1,4 @@
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import { MCPServer, MCPTool } from '../types/agent';
 import { shoppingCartRepository, CartItem } from '../repositories/shoppingCartRepository';
 import { productCacheRepository } from '../repositories/productCacheRepository';
@@ -5,6 +6,7 @@ import { orderRepository } from '../repositories/orderRepository';
 import { userRepository } from '../repositories/userRepository';
 import { auditLogService } from '../services/auditLogService';
 import { ecommerceService, ProductSearchResult, ProductDetails } from '../services/ecommerceService';
+import { config } from '../config';
 
 /**
  * Shopping MCP Server - Provides e-commerce tools to the MCP Controller Agent
@@ -19,13 +21,18 @@ export class ShoppingMCPServer implements MCPServer {
   name = 'shopping';
   description = 'E-commerce and shopping tools';
   tools: MCPTool[] = [];
+  private genAI: GoogleGenerativeAI;
 
   constructor() {
+    // Initialize Google Gemini AI
+    this.genAI = new GoogleGenerativeAI(config.gemini.apiKey);
+    
     this.initializeTools();
   }
 
   private initializeTools(): void {
     this.tools = [
+      this.createShoppingRequestTool(),
       this.createSearchProductsTool(),
       this.createGetProductDetailsTool(),
       this.createAddToCartTool(),
@@ -36,6 +43,44 @@ export class ShoppingMCPServer implements MCPServer {
       this.createGetComplementaryProductsTool(),
       this.createGetBundleDealsTool(),
     ];
+  }
+
+  /**
+   * Shopping request tool - High-level shopping assistant with structured outputs
+   */
+  private createShoppingRequestTool(): MCPTool {
+    const inputSchema = {
+      type: 'object',
+      properties: {
+        userId: {
+          type: 'string',
+          description: 'User ID'
+        },
+        message: {
+          type: 'string',
+          description: 'User shopping request or message'
+        },
+        conversationHistory: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              role: { type: 'string' },
+              content: { type: 'string' }
+            }
+          },
+          description: 'Optional conversation history for context'
+        }
+      },
+      required: ['userId', 'message']
+    };
+
+    return {
+      name: 'shopping_request',
+      description: 'Process shopping request with AI assistance and structured outputs',
+      inputSchema,
+      handler: this.handleShoppingRequest.bind(this)
+    };
   }
 
   /**
@@ -785,6 +830,414 @@ export class ShoppingMCPServer implements MCPServer {
         error: error instanceof Error ? error.message : 'Failed to get bundle deals'
       };
     }
+  }
+
+  /**
+   * Handle shopping request with AI assistance and structured outputs
+   */
+  private async handleShoppingRequest(params: any): Promise<any> {
+    const { userId, message, conversationHistory = [] } = params;
+    
+    try {
+      // Verify user exists
+      const user = await userRepository.findById(userId);
+      if (!user) {
+        return {
+          success: false,
+          error: 'User not found'
+        };
+      }
+
+      // Get user's cart for context
+      const cart = await shoppingCartRepository.findByUserId(userId);
+      const cartContext = cart ? {
+        items: cart.items,
+        totalAmount: cart.totalAmount,
+        itemCount: cart.items.reduce((sum, item) => sum + item.quantity, 0)
+      } : null;
+
+      // Build system prompt with shopping guidelines
+      const systemPrompt = this.buildShoppingSystemPrompt(cartContext);
+      
+      // Create Gemini model with JSON schema
+      const model = this.genAI.getGenerativeModel({ 
+        model: config.gemini.model,
+        systemInstruction: {
+          role: 'system',
+          parts: [{ text: systemPrompt }]
+        },
+        generationConfig: {
+          responseMimeType: 'application/json',
+          responseSchema: this.getShoppingResponseSchema()
+        }
+      });
+      
+      // Build conversation history for Gemini
+      const chatHistory = conversationHistory.map((msg: any) => ({
+        role: msg.role === 'user' ? 'user' : 'model',
+        parts: [{ text: msg.content }]
+      }));
+
+      // Start chat session with history
+      const chat = model.startChat({
+        history: chatHistory
+      });
+
+      // Send message and get response
+      const result = await chat.sendMessage(message);
+      const response = result.response;
+      const aiResponseText = response.text();
+
+      // Parse JSON response
+      let parsedResponse: any;
+      try {
+        parsedResponse = JSON.parse(aiResponseText);
+      } catch (parseError) {
+        console.error('Failed to parse JSON response from Gemini:', parseError);
+        return {
+          success: false,
+          error: 'Failed to parse AI response'
+        };
+      }
+
+      // Execute shopping actions based on intent
+      const executionResult = await this.executeShoppingIntent(userId, parsedResponse);
+
+      // Extract insights for processing
+      const insights = parsedResponse.insights;
+
+      // Process insights (async, don't block response)
+      if (insights) {
+        const { userInsightsService } = await import('../services/userInsightsService.js');
+        userInsightsService.processInsights(userId, insights, `shopping-${Date.now()}`).catch(error => {
+          console.error('Failed to process shopping insights:', error);
+        });
+      }
+
+      // Log the shopping interaction
+      await auditLogService.logMCPToolCall({
+        userId,
+        faxJobId: `shopping-${Date.now()}`,
+        toolName: 'shopping_request',
+        toolServer: 'shopping',
+        input: { message },
+        output: parsedResponse,
+        success: true
+      });
+
+      return {
+        success: true,
+        intent: parsedResponse.intent,
+        response: parsedResponse.response,
+        products: parsedResponse.products,
+        nextAction: parsedResponse.nextAction,
+        metadata: parsedResponse.metadata,
+        executionResult,
+        insights: insights || null
+      };
+      
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to process shopping request'
+      };
+    }
+  }
+
+  /**
+   * Execute shopping intent (search, add to cart, checkout, etc.)
+   */
+  private async executeShoppingIntent(userId: string, shoppingResponse: any): Promise<any> {
+    const { intent, searchQuery, selectedProduct, products } = shoppingResponse;
+    
+    try {
+      switch (intent) {
+        case 'search':
+          // Products are already in the response from AI
+          // Optionally cache them for future reference
+          if (products && products.length > 0) {
+            for (const product of products) {
+              if (product.productId) {
+                try {
+                  await productCacheRepository.cache({
+                    externalProductId: product.productId,
+                    name: product.name,
+                    description: product.description,
+                    price: product.price,
+                    currency: 'JPY',
+                    imageUrl: '',
+                    availability: 'in_stock',
+                    estimatedDelivery: product.estimatedDelivery
+                  });
+                } catch (error) {
+                  console.warn('Failed to cache product:', error);
+                }
+              }
+            }
+          }
+          return { action: 'search_completed', productCount: products?.length || 0 };
+
+        case 'select':
+          // Add selected product to cart
+          if (selectedProduct) {
+            const product = products?.find((p: any) => p.productId === selectedProduct);
+            if (product) {
+              const cartItem: CartItem = {
+                productId: product.productId,
+                name: product.name,
+                price: product.price,
+                quantity: 1,
+                imageUrl: '',
+                estimatedDelivery: product.estimatedDelivery
+              };
+              const cart = await shoppingCartRepository.addItem(userId, cartItem);
+              return { 
+                action: 'added_to_cart', 
+                cartTotal: cart.totalAmount,
+                itemCount: cart.items.length 
+              };
+            }
+          }
+          return { action: 'select_pending' };
+
+        case 'order':
+          // Checkout flow - handled separately by checkout tool
+          return { action: 'order_pending', message: 'Awaiting user confirmation' };
+
+        case 'status':
+          // Order status check - would query order repository
+          return { action: 'status_checked' };
+
+        case 'clarify':
+          // Need more information from user
+          return { action: 'clarification_needed' };
+
+        default:
+          return { action: 'unknown_intent' };
+      }
+    } catch (error) {
+      console.error('Failed to execute shopping intent:', error);
+      return { 
+        action: 'execution_failed', 
+        error: error instanceof Error ? error.message : 'Unknown error' 
+      };
+    }
+  }
+
+  /**
+   * Build shopping system prompt with context
+   */
+  private buildShoppingSystemPrompt(cartContext: any): string {
+    const cartInfo = cartContext ? `
+CURRENT CART:
+- Items: ${cartContext.itemCount}
+- Total: ¥${cartContext.totalAmount}
+- Products: ${cartContext.items.map((item: any) => `${item.name} (¥${item.price} x ${item.quantity})`).join(', ')}
+` : 'Cart is empty.';
+
+    return `You are an AI shopping assistant for Faxi, helping elderly users in Japan shop on Amazon.co.jp via fax.
+
+CRITICAL: You must respond with valid JSON matching the ShoppingResponseSchema.
+
+FAX FORMATTING RULES:
+- Keep responses concise (500-800 words max)
+- Use short paragraphs (2-3 sentences each)
+- Use bullet points for lists
+- Simple, respectful language appropriate for all ages
+- Clear, actionable information
+- Your response will be printed and faxed to the user
+
+SHOPPING GUIDELINES:
+- Show 3-5 products maximum per search
+- All prices in Japanese Yen (¥)
+- Highlight Prime-eligible products with ★ Prime
+- Include estimated delivery times
+- Always confirm address and payment before ordering
+- Never order without explicit user confirmation
+
+${cartInfo}
+
+INSIGHTS EXTRACTION:
+Extract consumer behavior insights from every interaction:
+
+CONSUMER PROFILE:
+- Spend sensitivity: value (budget-conscious), normal, premium (quality-focused)
+- Brand preferences: specific brands mentioned
+- Category preferences: types of products interested in
+
+INTENT SIGNALS:
+- Commercial intent: what they're shopping for, urgency level
+- Price range: budget constraints or flexibility
+
+LIFE EVENTS:
+- Moving: furniture, appliances, home goods
+- Gift giving: birthday, celebration mentions
+- Health changes: assistive devices, medical supplies
+
+BEHAVIORAL:
+- Communication style: detailed vs. brief requests
+- Task complexity: simple product vs. complex comparison
+
+DIGITAL PROFILE:
+- Digital exclusion score (1-5): 5=cannot search online themselves
+- Assistance needs: product research, price comparison, ordering
+
+PRIVACY RULES:
+- NO specific product names in insights (use categories)
+- NO exact prices in insights (use ranges)
+- Only include insights with confidence > 0.6
+
+Your response must be valid JSON matching the ShoppingResponseSchema.`;
+  }
+
+  /**
+   * Get Shopping response JSON schema for Gemini
+   */
+  private getShoppingResponseSchema(): any {
+    return {
+      type: 'object',
+      properties: {
+        intent: {
+          type: 'string',
+          enum: ['search', 'select', 'order', 'status', 'clarify'],
+          description: "User's shopping intent"
+        },
+        searchQuery: {
+          type: 'string',
+          description: 'Product search query'
+        },
+        products: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              name: { type: 'string' },
+              price: { type: 'number' },
+              description: { type: 'string' },
+              productId: { type: 'string' },
+              isPrime: { type: 'boolean' },
+              estimatedDelivery: { type: 'string' }
+            },
+            required: ['name', 'price', 'description']
+          },
+          description: 'Product search results (3-5 products)'
+        },
+        selectedProduct: {
+          type: 'string',
+          description: 'Product ID if user selected a specific product'
+        },
+        deliveryAddress: {
+          type: 'object',
+          properties: {
+            needsConfirmation: { type: 'boolean' },
+            suggestedAddress: { type: 'string' }
+          }
+        },
+        paymentMethod: {
+          type: 'object',
+          properties: {
+            needsSelection: { type: 'boolean' },
+            availableMethods: { type: 'array', items: { type: 'string' } }
+          }
+        },
+        response: {
+          type: 'string',
+          description: 'Human-readable response for fax'
+        },
+        nextAction: {
+          type: 'string',
+          enum: ['show_products', 'confirm_order', 'request_payment', 'complete', 'clarify']
+        },
+        metadata: {
+          type: 'object',
+          properties: {
+            totalAmount: { type: 'number' },
+            itemCount: { type: 'number' },
+            orderReference: { type: 'string' }
+          }
+        },
+        insights: {
+          type: 'object',
+          description: 'Strategic user insights',
+          properties: {
+            demographics: {
+              type: 'object',
+              properties: {
+                ageRangeInferred: { type: 'string', enum: ['60-69', '70-79', '80+', 'unknown'] },
+                genderInferred: { type: 'string', enum: ['male', 'female', 'unknown'] },
+                regionInferred: { type: 'string' },
+                householdTypeInferred: { type: 'string', enum: ['single', 'couple', 'multi-gen', 'unknown'] }
+              }
+            },
+            lifeEvents: {
+              type: 'object',
+              properties: {
+                movingDetected: { type: 'boolean' },
+                newCaregiverDetected: { type: 'boolean' },
+                deathInFamilyDetected: { type: 'boolean' },
+                hospitalizationDetected: { type: 'boolean' },
+                retirementDetected: { type: 'boolean' }
+              }
+            },
+            intentSignals: {
+              type: 'object',
+              properties: {
+                commercialIntent: {
+                  type: 'array',
+                  items: {
+                    type: 'object',
+                    properties: {
+                      category: { type: 'string' },
+                      product: { type: 'string' },
+                      priceRange: {
+                        type: 'object',
+                        properties: {
+                          min: { type: 'number' },
+                          max: { type: 'number' }
+                        }
+                      },
+                      urgency: { type: 'string', enum: ['immediate', 'near-term', 'long-term'] }
+                    },
+                    required: ['category', 'urgency']
+                  }
+                }
+              }
+            },
+            behavioral: {
+              type: 'object',
+              properties: {
+                communicationStyle: { type: 'string', enum: ['short', 'long', 'polite', 'direct', 'detailed'] },
+                taskComplexity: { type: 'string', enum: ['simple', 'moderate', 'complex'] }
+              }
+            },
+            consumerProfile: {
+              type: 'object',
+              properties: {
+                spendSensitivity: { type: 'string', enum: ['value', 'normal', 'premium'] },
+                brandMentions: { type: 'array', items: { type: 'string' } },
+                categoryPreference: { type: 'string' }
+              }
+            },
+            digitalProfile: {
+              type: 'object',
+              properties: {
+                digitalExclusionScore: { type: 'number', minimum: 1, maximum: 5 },
+                aiAssistanceNeeded: { type: 'array', items: { type: 'string' } }
+              }
+            },
+            confidenceScores: {
+              type: 'object',
+              properties: {
+                demographics: { type: 'number', minimum: 0, maximum: 1 },
+                lifeEvents: { type: 'number', minimum: 0, maximum: 1 },
+                intent: { type: 'number', minimum: 0, maximum: 1 }
+              }
+            }
+          }
+        }
+      },
+      required: ['intent', 'response']
+    };
   }
 }
 

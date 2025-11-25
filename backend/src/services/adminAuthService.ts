@@ -4,7 +4,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { config } from '../config';
 
 const BCRYPT_ROUNDS = 12;
-const ACCESS_TOKEN_EXPIRY = '15m'; // 15 minutes
+const ACCESS_TOKEN_EXPIRY = '1h'; // 1 hour
 const REFRESH_TOKEN_EXPIRY_DAYS = 7; // 7 days
 
 export interface AdminUser {

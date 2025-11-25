@@ -17,6 +17,12 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Faxi Admin Dashboard",
   description: "Faxi Admin Dashboard - Operations and Management",
+  icons: {
+    icon: [
+      { url: '/favicon.svg', type: 'image/svg+xml' },
+      { url: '/favicon.ico', sizes: 'any' }
+    ],
+  },
 };
 
 export default function RootLayout({

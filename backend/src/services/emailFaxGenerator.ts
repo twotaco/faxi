@@ -41,6 +41,11 @@ export class EmailFaxGenerator {
     emailData: EmailReplyData,
     options: EmailFaxOptions
   ): EmailReplyData {
+    // If hasQuickReplies is explicitly set to false, respect that
+    if (emailData.hasQuickReplies === false) {
+      return { ...emailData, hasQuickReplies: false, quickReplies: [] };
+    }
+
     if (!options.includeQuickReplies) {
       return { ...emailData, hasQuickReplies: false };
     }

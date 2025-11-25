@@ -337,6 +337,6 @@ export class MockFaxSender {
 // Export singleton instance
 export const mockFaxSender = new MockFaxSender({
   deliveryDelay: config.app.testMode ? 1000 : 2000, // Faster in test mode
-  failureRate: 0.05, // 5% failure rate
+  failureRate: 0.0, // No random failures - use setFailureRate() to enable if needed
   storageDir: join(process.cwd(), 'test-faxes'),
 });
