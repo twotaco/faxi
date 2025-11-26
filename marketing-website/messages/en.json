@@ -1,0 +1,619 @@
+{
+  "common": {
+    "languageToggle": "Language",
+    "loading": "Loading...",
+    "error": "An error occurred"
+  },
+  "cta": {
+    "families": {
+      "signUp": "Sign Up for Beta",
+      "seeHowItWorks": "See How It Works",
+      "pricing": "View Pricing",
+      "getStarted": "Get Started",
+      "learnMore": "Learn More"
+    },
+    "partners": {
+      "partnerWithUs": "Partner With Us",
+      "requestDemo": "Request Demo",
+      "viewBenefits": "View Partner Benefits",
+      "contactUs": "Contact Us",
+      "getStarted": "Get Started"
+    },
+    "investors": {
+      "technicalDetails": "View Technical Details",
+      "seeDemo": "See Demo",
+      "viewGithub": "View on GitHub",
+      "readDocs": "Read Documentation",
+      "investmentOpportunity": "Investment Opportunity"
+    },
+    "general": {
+      "tryDemo": "Try Demo",
+      "learnMore": "Learn More",
+      "getStarted": "Get Started",
+      "contactUs": "Contact Us"
+    }
+  },
+  "navigation": {
+    "home": "Home",
+    "service": "Service",
+    "partnering": "Partnering",
+    "demo": "Demo",
+    "tech": "Technology",
+    "about": "About",
+    "privacy": "Privacy Policy",
+    "terms": "Terms of Service"
+  },
+  "home": {
+    "title": "Faxi - Connecting Fax to the Internet",
+    "description": "Bridging the digital divide with AI-powered fax technology",
+    "hero": {
+      "families": {
+        "headline": "Connect Your Parents' Fax Machine to the Internet",
+        "subheadline": "Help elderly parents access online services without learning computers. Book appointments, shop online, and pay bills—all through the fax machine they already know.",
+        "ctaPrimary": "Sign Up for Beta",
+        "ctaSecondary": "See How It Works"
+      },
+      "partners": {
+        "headline": "Reach 10 Million Elderly Customers Through Fax",
+        "subheadline": "Access the untapped elderly market in Japan. Increase service accessibility and gain valuable consumer insights through our AI-powered fax bridge.",
+        "ctaPrimary": "Partner With Us",
+        "ctaSecondary": "View Partner Benefits"
+      },
+      "investors": {
+        "headline": "Resurrecting Fax Technology with AI",
+        "subheadline": "The last untapped consumer market in Japan. 10M elderly users with fax machines, no internet. Proven AI technology with 90%+ accuracy.",
+        "ctaPrimary": "View Technical Details",
+        "ctaSecondary": "See Demo"
+      }
+    },
+    "problem": {
+      "title": "The Digital Divide in Japan",
+      "description": "Millions of elderly Japanese citizens are left behind as society moves online. They have fax machines but no internet access, cutting them off from essential services.",
+      "stats": {
+        "faxUsers": {
+          "value": "10M+",
+          "label": "Active fax machines in Japan",
+          "source": "Ministry of Internal Affairs"
+        },
+        "offlineSeniors": {
+          "value": "25%",
+          "label": "Seniors don't use internet",
+          "source": "Ministry of Internal Affairs"
+        },
+        "elderlyPopulation": {
+          "value": "29%",
+          "label": "Of Japan's population is 65+",
+          "source": "Statistics Bureau of Japan"
+        },
+        "noDigitalFootprint": {
+          "value": "9M",
+          "label": "Seniors with no digital footprint",
+          "source": "Estimated from MIC Internet Usage Survey"
+        }
+      }
+    },
+    "solution": {
+      "title": "AI-Powered Fax Bridge",
+      "description": "Faxi uses advanced AI to interpret handwritten faxes and connect them to modern internet services. No computer skills required—just send a fax like always.",
+      "features": {
+        "aiVision": {
+          "title": "Advanced AI Vision",
+          "description": "90%+ accuracy in handwriting recognition and intent detection"
+        },
+        "instantProcessing": {
+          "title": "Instant Processing",
+          "description": "Process faxes in under 5 seconds with real-time responses"
+        },
+        "multiService": {
+          "title": "Multiple Services",
+          "description": "Healthcare, shopping, payments, government services, and more"
+        },
+        "alwaysAvailable": {
+          "title": "24/7 Availability",
+          "description": "Automated processing with no human intervention needed"
+        }
+      }
+    },
+    "useCases": {
+      "title": "Real-World Use Cases",
+      "subtitle": "See how Faxi helps elderly users access essential services",
+      "healthcare": {
+        "title": "Healthcare Access",
+        "demographic": "Elderly patients",
+        "problem": "Difficulty booking doctor appointments online",
+        "solution": "Send a fax to book, reschedule, or cancel appointments"
+      },
+      "shopping": {
+        "title": "Online Shopping",
+        "demographic": "Seniors without internet",
+        "problem": "Cannot access e-commerce platforms",
+        "solution": "Browse products and place orders via fax"
+      },
+      "government": {
+        "title": "Government Services",
+        "demographic": "Rural residents",
+        "problem": "Limited access to public services",
+        "solution": "Submit forms and requests through fax"
+      },
+      "aiChat": {
+        "title": "AI Assistant",
+        "demographic": "Isolated seniors",
+        "problem": "Need information and companionship",
+        "solution": "Chat with AI assistant via fax for answers and support"
+      },
+      "viewDetails": "View Details"
+    },
+    "testimonials": {
+      "title": "Stories from Our Users",
+      "subtitle": "Real experiences from people using Faxi",
+      "items": {
+        "tanaka": {
+          "quote": "I can finally shop online without asking my grandchildren for help. I just send a fax like I always have.",
+          "author": "Tanaka-san",
+          "role": "Retired teacher",
+          "demographic": "Age 72, Tokyo"
+        },
+        "clinic": {
+          "quote": "Our elderly patients love it. No-shows have decreased by 40% since they can easily confirm appointments.",
+          "author": "Dr. Yamamoto",
+          "role": "Clinic Director",
+          "demographic": "Serving 500+ elderly patients"
+        },
+        "family": {
+          "quote": "My mother lives alone in the countryside. Faxi helps her stay connected and access services she needs.",
+          "author": "Kenji M.",
+          "role": "Family member",
+          "demographic": "Son of Faxi user"
+        }
+      }
+    },
+    "impact": {
+      "title": "Our Impact",
+      "subtitle": "Bridging the digital divide with proven technology and measurable results",
+      "stats": {
+        "faxUsers": {
+          "value": "10M+",
+          "label": "Active Fax Users in Japan",
+          "description": "Millions of elderly Japanese citizens still rely on fax machines for communication",
+          "source": "Ministry of Internal Affairs and Communications"
+        },
+        "offlineSeniors": {
+          "value": "25%",
+          "label": "Seniors Without Internet",
+          "description": "One quarter of Japanese seniors don't use the internet, creating a significant digital divide",
+          "source": "Ministry of Internal Affairs and Communications"
+        },
+        "elderlyPopulation": {
+          "value": "36M",
+          "label": "Elderly Population (65+)",
+          "description": "Japan has one of the world's largest elderly populations, representing 29% of total population",
+          "source": "Statistics Bureau of Japan"
+        },
+        "aiAccuracy": {
+          "value": "90%+",
+          "label": "AI Accuracy Rate",
+          "description": "Our advanced AI achieves over 90% accuracy in handwriting recognition and intent detection",
+          "source": "Faxi Internal Testing"
+        },
+        "processingTime": {
+          "value": "<5s",
+          "label": "Average Processing Time",
+          "description": "Faxes are processed in under 5 seconds with real-time responses to users",
+          "source": "Faxi Performance Metrics"
+        },
+        "useCases": {
+          "value": "10+",
+          "label": "Supported Use Cases",
+          "description": "From healthcare to shopping to government services, Faxi supports diverse needs",
+          "source": "Faxi Service Catalog"
+        }
+      }
+    },
+    "dataVisualization": {
+      "title": "Understanding the Digital Divide",
+      "subtitle": "Data-driven insights into Japan's elderly population and their access to digital services",
+      "internetUsage": {
+        "title": "Internet Usage by Age Group",
+        "description": "Percentage of elderly Japanese citizens using the internet regularly",
+        "barLabel": "Internet Usage %",
+        "source": "Source: Ministry of Internal Affairs and Communications, 2023",
+        "data": {
+          "60-64": {
+            "label": "60-64"
+          },
+          "65-69": {
+            "label": "65-69"
+          },
+          "70-74": {
+            "label": "70-74"
+          },
+          "75-79": {
+            "label": "75-79"
+          },
+          "80plus": {
+            "label": "80+"
+          }
+        }
+      },
+      "communicationMethods": {
+        "title": "Communication Methods Among Elderly",
+        "description": "How elderly Japanese citizens communicate (65+ population)",
+        "source": "Source: Japan Business Machine Association, 2023",
+        "data": {
+          "fax": {
+            "label": "Fax Users"
+          },
+          "internet": {
+            "label": "Internet Users"
+          },
+          "neither": {
+            "label": "Neither"
+          }
+        }
+      },
+      "accessibility": {
+        "title": "Service Accessibility Gap",
+        "description": "Comparison of service access rates between internet users and non-users",
+        "withInternetLabel": "With Internet",
+        "withoutInternetLabel": "Without Internet",
+        "source": "Source: Consumer Affairs Agency Survey, 2023",
+        "data": {
+          "healthcare": {
+            "label": "Healthcare"
+          },
+          "shopping": {
+            "label": "Shopping"
+          },
+          "government": {
+            "label": "Government"
+          },
+          "banking": {
+            "label": "Banking"
+          }
+        }
+      },
+      "insights": {
+        "title": "Key Insights",
+        "point1": "Internet usage drops dramatically after age 75, with only 25% of those 80+ using the internet regularly",
+        "point2": "10 million elderly Japanese still rely on fax machines as their primary communication method",
+        "point3": "Service accessibility drops by 50-60% for those without internet access across all categories",
+        "point4": "Faxi bridges this gap by connecting fax machines to modern internet services, making digital services accessible to all"
+      }
+    }
+  },
+  "service": {
+    "title": "Service for Families",
+    "subtitle": "How Faxi helps your elderly family members access modern services",
+    "overview": {
+      "title": "How Faxi Works",
+      "subtitle": "Simple steps to connect your fax machine to the internet",
+      "steps": {
+        "register": {
+          "title": "1. Register Your Fax Number",
+          "description": "Sign up online and register your fax machine number. We'll assign you a unique service number."
+        },
+        "send": {
+          "title": "2. Send a Fax",
+          "description": "Write your request on paper and send it to our service number. Use checkmarks, circles, or simple handwriting."
+        },
+        "process": {
+          "title": "3. AI Processes Your Request",
+          "description": "Our AI reads your fax, understands your intent, and connects to the appropriate service."
+        },
+        "receive": {
+          "title": "4. Receive Confirmation",
+          "description": "Get a confirmation fax back with details of your completed request."
+        }
+      },
+      "exampleTitle": "Example Fax Formats",
+      "exampleDescription": "Here are some examples of how to format your faxes for different services"
+    },
+    "useCases": {
+      "title": "What You Can Do with Faxi",
+      "subtitle": "Real-world examples of how Faxi helps with daily tasks",
+      "healthcare": {
+        "title": "Book Doctor Appointments",
+        "demographic": "For elderly patients",
+        "problem": "Calling clinics during business hours is difficult, and online booking systems are confusing",
+        "solution": "Send a fax anytime to book, reschedule, or cancel appointments. Receive confirmation by fax.",
+        "beforeLabel": "Before: Complex online form",
+        "afterLabel": "After: Simple fax request",
+        "technicalTitle": "How it works",
+        "technicalDetails": {
+          "accuracy": "95% intent detection accuracy",
+          "processingTime": "Average 4 seconds",
+          "intents": ["Book appointment", "Cancel appointment", "Reschedule appointment", "Check availability"]
+        }
+      },
+      "shopping": {
+        "title": "Shop Online Without Internet",
+        "demographic": "For seniors without computers",
+        "problem": "Cannot access e-commerce websites or mobile apps",
+        "solution": "Browse product catalogs by fax, select items with checkmarks, and place orders. Payment via registered card or cash on delivery.",
+        "beforeLabel": "Before: Complex e-commerce site",
+        "afterLabel": "After: Simple product selection",
+        "technicalTitle": "How it works",
+        "technicalDetails": {
+          "accuracy": "92% product selection accuracy",
+          "processingTime": "Average 5 seconds",
+          "intents": ["Browse products", "Add to cart", "Place order", "Check order status"]
+        }
+      },
+      "government": {
+        "title": "Access Government Services",
+        "demographic": "For rural residents",
+        "problem": "Government offices are far away and online portals are difficult to navigate",
+        "solution": "Submit forms, request documents, and check application status via fax.",
+        "beforeLabel": "Before: Complex government portal",
+        "afterLabel": "After: Simple form submission",
+        "technicalTitle": "How it works",
+        "technicalDetails": {
+          "accuracy": "94% form processing accuracy",
+          "processingTime": "Average 6 seconds",
+          "intents": ["Submit form", "Request document", "Check status", "Update information"]
+        }
+      },
+      "payment": {
+        "title": "Pay Bills Easily",
+        "demographic": "For seniors managing finances",
+        "problem": "Online banking is confusing and ATMs are inconvenient",
+        "solution": "Receive bills by fax, mark payment amount, and send back. Automatic payment from registered account.",
+        "beforeLabel": "Before: Online banking interface",
+        "afterLabel": "After: Simple payment form",
+        "technicalTitle": "How it works",
+        "technicalDetails": {
+          "accuracy": "96% payment processing accuracy",
+          "processingTime": "Average 3 seconds",
+          "intents": ["Pay bill", "Check balance", "View payment history", "Set up auto-pay"]
+        }
+      },
+      "aiChat": {
+        "title": "Chat with AI Assistant",
+        "demographic": "For isolated seniors",
+        "problem": "Need information, companionship, or help with questions",
+        "solution": "Write questions on paper and fax them. Receive detailed answers and helpful information by fax.",
+        "beforeLabel": "Before: No access to information",
+        "afterLabel": "After: AI-powered answers",
+        "technicalTitle": "How it works",
+        "technicalDetails": {
+          "accuracy": "91% question understanding accuracy",
+          "processingTime": "Average 7 seconds",
+          "intents": ["Ask question", "Get information", "Request advice", "General conversation"]
+        }
+      }
+    },
+    "faq": {
+      "title": "Frequently Asked Questions",
+      "subtitle": "Common questions about using Faxi",
+      "items": {
+        "cost": {
+          "question": "How much does Faxi cost?",
+          "answer": "Basic service is ¥980/month including unlimited fax processing. Premium features like priority processing and advanced services are ¥1,980/month."
+        },
+        "setup": {
+          "question": "Is it difficult to set up?",
+          "answer": "No setup required on your fax machine. Simply register online with your fax number and start sending faxes to our service number."
+        },
+        "accuracy": {
+          "question": "How accurate is the handwriting recognition?",
+          "answer": "Our AI achieves over 90% accuracy on handwritten text. If the AI is unsure, we'll send a clarification fax asking for confirmation."
+        },
+        "security": {
+          "question": "Is my information secure?",
+          "answer": "Yes. All faxes are encrypted during transmission and processing. We comply with Japanese privacy laws and never share your data without permission."
+        },
+        "support": {
+          "question": "What if I need help?",
+          "answer": "We offer phone support in Japanese during business hours (9am-6pm). You can also send a fax with your question and we'll respond by fax."
+        },
+        "services": {
+          "question": "What services are supported?",
+          "answer": "Currently we support healthcare appointments, online shopping, government services, bill payments, and AI chat. We're constantly adding new services based on user needs."
+        }
+      },
+      "contactTitle": "Still have questions?",
+      "contactDescription": "Contact us by phone or fax",
+      "contactPhone": "Phone: 03-1234-5678 (9am-6pm)",
+      "contactFax": "Fax: 03-1234-5679 (24/7)"
+    }
+  },
+  "partnering": {
+    "hero": {
+      "title": "Partner With Faxi",
+      "subtitle": "Reach 10 Million Elderly Customers Through Fax",
+      "description": "Access the untapped elderly market in Japan. Increase service accessibility and gain valuable consumer insights through our AI-powered fax bridge."
+    },
+    "marketOpportunity": {
+      "title": "Massive Market Opportunity",
+      "subtitle": "The elderly market in Japan represents a significant untapped opportunity",
+      "stats": {
+        "faxUsers": "Active fax users in Japan",
+        "elderlyPopulation": "Elderly population (65+)",
+        "offlineSeniors": "Seniors don't use internet"
+      }
+    },
+    "partnerTypesTitle": "Partner Types & Benefits",
+    "benefits": "Key Benefits",
+    "caseStudy": "Case Study",
+    "partnerTypes": {
+      "healthcare": {
+        "title": "Healthcare Providers",
+        "description": "Clinics, hospitals, and healthcare services looking to improve elderly patient access",
+        "benefits": {
+          "0": "Reduce no-shows by 40% with easy appointment confirmation",
+          "1": "Reach elderly patients who can't use online booking",
+          "2": "Improve patient satisfaction and accessibility"
+        },
+        "caseStudy": {
+          "title": "Tokyo Clinic Partnership",
+          "result": "Reduced no-shows from 25% to 15% in 3 months",
+          "metric": "40% reduction in missed appointments"
+        }
+      },
+      "ecommerce": {
+        "title": "E-Commerce Platforms",
+        "description": "Online retailers wanting to expand to the elderly demographic",
+        "benefits": {
+          "0": "Access 10M+ elderly consumers with purchasing power",
+          "1": "Increase market share in underserved demographic",
+          "2": "Gain insights into elderly shopping preferences"
+        }
+      },
+      "government": {
+        "title": "Government Services",
+        "description": "Public services aiming to improve accessibility for all citizens",
+        "benefits": {
+          "0": "Ensure digital inclusion for all citizens",
+          "1": "Reduce in-person visits to government offices",
+          "2": "Improve service delivery to rural areas"
+        }
+      },
+      "advertiser": {
+        "title": "Advertisers & Marketers",
+        "description": "Companies wanting to reach elderly consumers directly",
+        "benefits": {
+          "0": "Direct access to elderly demographic via fax",
+          "1": "High engagement rates (fax open rate >80%)",
+          "2": "Unique advertising channel with low competition"
+        }
+      },
+      "dataBuyer": {
+        "title": "Data & Insights Buyers",
+        "description": "Organizations seeking consumer behavior data on elderly demographics",
+        "benefits": {
+          "0": "Unique insights into elderly consumer behavior",
+          "1": "Anonymized, aggregated data on preferences and trends",
+          "2": "First-party data from underserved market segment"
+        }
+      }
+    },
+    "dataInsightsTitle": "Valuable Data Insights",
+    "dataInsightsSubtitle": "Access unique insights into elderly consumer behavior",
+    "dataInsights": {
+      "consumerBehavior": {
+        "category": "Consumer Behavior",
+        "description": "Purchase patterns, service preferences, and decision-making processes",
+        "value": "Shopping habits, timing, frequency"
+      },
+      "demographics": {
+        "category": "Demographics",
+        "description": "Age, location, household composition, and lifestyle data",
+        "value": "Detailed demographic profiles"
+      },
+      "preferences": {
+        "category": "Product Preferences",
+        "description": "What products and services elderly consumers want and need",
+        "value": "Category preferences, brand affinity"
+      },
+      "timing": {
+        "category": "Timing & Patterns",
+        "description": "When elderly consumers are most active and responsive",
+        "value": "Peak usage times, seasonal trends"
+      }
+    },
+    "marketStatsTitle": "Market Statistics",
+    "marketStatsSubtitle": "The elderly market in Japan by the numbers",
+    "marketStats": {
+      "elderlySpending": {
+        "label": "Annual elderly spending",
+        "description": "Japanese seniors control significant purchasing power",
+        "source": "Ministry of Economy, Trade and Industry"
+      },
+      "faxUsage": {
+        "label": "Businesses use fax",
+        "description": "Fax remains a trusted communication channel in Japan",
+        "source": "Japan Business Machine and Information System Industries Association"
+      },
+      "noDigitalFootprint": {
+        "label": "Seniors with no digital footprint",
+        "description": "Untapped market with zero online presence or purchase history",
+        "source": "Estimated from MIC Internet Usage Survey"
+      },
+      "agingPopulation": {
+        "label": "Population is 65+",
+        "description": "Japan has one of the world's oldest populations",
+        "source": "Statistics Bureau of Japan"
+      }
+    },
+    "revenueOpportunities": {
+      "title": "Revenue Opportunities",
+      "directRevenue": {
+        "title": "Direct Revenue",
+        "description": "Transaction fees, subscription revenue, and service charges from elderly users"
+      },
+      "dataMonetization": {
+        "title": "Data Monetization",
+        "description": "Anonymized insights and aggregated data products for market research"
+      },
+      "marketExpansion": {
+        "title": "Market Expansion",
+        "description": "Access to previously unreachable customer segment increases total addressable market"
+      }
+    },
+    "partnerTestimonialsTitle": "What Our Partners Say",
+    "testimonials": {
+      "healthcare": {
+        "quote": "Faxi has transformed how we serve our elderly patients. Appointment booking is now accessible to everyone, regardless of their technical skills.",
+        "author": "Dr. Yamamoto",
+        "role": "Clinic Director, Tokyo Medical Center"
+      },
+      "ecommerce": {
+        "quote": "We've seen a 30% increase in orders from elderly customers since partnering with Faxi. It's opened up an entirely new market segment for us.",
+        "author": "Tanaka Kenji",
+        "role": "E-Commerce Director, Online Retail Co."
+      }
+    },
+    "contactForm": {
+      "title": "Get in Touch",
+      "subtitle": "Interested in partnering with Faxi? Fill out the form below and we'll get back to you within 24 hours.",
+      "fields": {
+        "partnerType": {
+          "label": "Partner Type",
+          "placeholder": "Select your organization type",
+          "options": {
+            "healthcare": "Healthcare Provider",
+            "ecommerce": "E-Commerce Platform",
+            "government": "Government Service",
+            "advertiser": "Advertiser/Marketer",
+            "dataBuyer": "Data/Insights Buyer",
+            "other": "Other"
+          }
+        },
+        "companyName": {
+          "label": "Company Name",
+          "placeholder": "Your company name"
+        },
+        "contactName": {
+          "label": "Contact Name",
+          "placeholder": "Your full name"
+        },
+        "email": {
+          "label": "Email Address",
+          "placeholder": "your.email@company.com"
+        },
+        "phone": {
+          "label": "Phone Number",
+          "placeholder": "03-1234-5678"
+        },
+        "message": {
+          "label": "Message",
+          "placeholder": "Tell us about your organization and how you'd like to partner with Faxi..."
+        }
+      },
+      "submit": "Submit Partnership Inquiry",
+      "submitting": "Submitting...",
+      "successMessage": "Thank you for your interest! We'll get back to you within 24 hours.",
+      "errorMessage": "There was an error submitting your form. Please try again or contact us directly.",
+      "errors": {
+        "partnerTypeRequired": "Please select a partner type",
+        "companyNameRequired": "Company name is required",
+        "contactNameRequired": "Contact name is required",
+        "emailRequired": "Email address is required",
+        "emailInvalid": "Please enter a valid email address",
+        "phoneRequired": "Phone number is required",
+        "messageRequired": "Message is required",
+        "messageTooShort": "Message must be at least 10 characters"
+      }
+    }
+  }
+}

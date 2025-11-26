@@ -14,7 +14,24 @@ export class IntentExtractor {
     rawText: string,
     visualAnnotations: VisualAnnotation[],
     existingInterpretation?: Partial<InterpretationResult>
-  ): Promise<{ intent: string; confidence: number; parameters: IntentParameters }> {
+  ): Promise<{ 
+    intent: string; 
+    confidence: number; 
+    parameters: IntentParameters;
+    confidenceBreakdown?: {
+      overall: number;
+      byComponent: {
+        intentClassification: number;
+        parameterExtraction: number;
+        contextUnderstanding: number;
+      };
+    };
+    alternativeIntents?: Array<{
+      intent: string;
+      confidence: number;
+      reason: string;
+    }>;
+  }> {
     
     const text = rawText.toLowerCase();
     const results = await Promise.all([
@@ -30,6 +47,30 @@ export class IntentExtractor {
       current.confidence > best.confidence ? current : best
     );
 
+    // Get alternative intents (those with confidence > 0.3)
+    const alternativeIntents = results
+      .filter(r => r.intent !== bestMatch.intent && r.confidence > 0.3)
+      .sort((a, b) => b.confidence - a.confidence)
+      .slice(0, 2) // Top 2 alternatives
+      .map(r => ({
+        intent: r.intent,
+        confidence: r.confidence,
+        reason: this.getIntentReason(r.intent, r.confidence)
+      }));
+
+    // Calculate detailed confidence breakdown
+    const parameterCompleteness = this.assessParameterCompleteness(bestMatch.intent, bestMatch.parameters);
+    const contextQuality = visualAnnotations.length > 0 ? 0.8 : 0.5;
+    
+    const confidenceBreakdown = {
+      overall: bestMatch.confidence,
+      byComponent: {
+        intentClassification: bestMatch.confidence,
+        parameterExtraction: parameterCompleteness,
+        contextUnderstanding: contextQuality
+      }
+    };
+
     // Log the intent extraction
     await auditLogService.logOperation({
       entityType: 'intent_extraction',
@@ -38,11 +79,17 @@ export class IntentExtractor {
       details: {
         detectedIntent: bestMatch.intent,
         confidence: bestMatch.confidence,
+        confidenceBreakdown,
+        alternativeIntents: alternativeIntents.map(a => a.intent),
         allResults: results.map(r => ({ intent: r.intent, confidence: r.confidence }))
       }
     });
 
-    return bestMatch;
+    return {
+      ...bestMatch,
+      confidenceBreakdown,
+      alternativeIntents: alternativeIntents.length > 0 ? alternativeIntents : undefined
+    };
   }
 
   /**
@@ -453,6 +500,20 @@ export class IntentExtractor {
       default:
         return 0.1;
     }
+  }
+
+  /**
+   * Get reason for intent classification
+   */
+  private getIntentReason(intent: string, confidence: number): string {
+    const reasons: Record<string, string> = {
+      email: 'Contains email-related keywords or recipient information',
+      shopping: 'Contains product or purchase-related keywords',
+      ai_chat: 'Contains question patterns or inquiry keywords',
+      payment_registration: 'Contains payment or billing-related keywords',
+      reply: 'Contains circled options or reference to previous communication'
+    };
+    return reasons[intent] || 'Pattern match detected';
   }
 }
 

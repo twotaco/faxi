@@ -29,6 +29,10 @@ export interface InterpretationResult {
   referenceId?: string; // Extracted from fax
   contextRecovery?: ContextRecoveryResult;
   context?: ConversationContext; // Recovered conversation context
+  // Enhanced visualization data for demo
+  processingTime?: number; // Processing time in milliseconds
+  textRegions?: TextRegion[]; // Detected text regions with coordinates
+  visualizationData?: VisualizationData; // Complete visualization data
 }
 
 export interface IntentParameters {
@@ -67,6 +71,37 @@ export interface VisualAnnotation {
   };
   associatedText?: string;
   confidence: number;
+  color?: string; // Color code for visualization overlay
+}
+
+export interface TextRegion {
+  text: string;
+  boundingBox: {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  };
+  confidence: number;
+  type: 'printed' | 'handwritten';
+}
+
+export interface DetectedRegion {
+  type: 'text' | 'annotation' | 'form-field' | 'signature';
+  boundingBox: {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  };
+  label: string;
+  confidence: number;
+  color: string; // For overlay rendering
+}
+
+export interface VisualizationData {
+  annotatedImageUrl?: string; // Image with overlays (optional)
+  regions: DetectedRegion[];
 }
 
 export interface ContextRecoveryResult {

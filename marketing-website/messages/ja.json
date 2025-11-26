@@ -1,0 +1,619 @@
+{
+  "common": {
+    "languageToggle": "言語",
+    "loading": "読み込み中...",
+    "error": "エラーが発生しました"
+  },
+  "cta": {
+    "families": {
+      "signUp": "ベータ版に登録",
+      "seeHowItWorks": "使い方を見る",
+      "pricing": "料金を見る",
+      "getStarted": "始める",
+      "learnMore": "詳しく見る"
+    },
+    "partners": {
+      "partnerWithUs": "提携について",
+      "requestDemo": "デモを依頼",
+      "viewBenefits": "パートナーメリット",
+      "contactUs": "お問い合わせ",
+      "getStarted": "始める"
+    },
+    "investors": {
+      "technicalDetails": "技術詳細",
+      "seeDemo": "デモを見る",
+      "viewGithub": "GitHubで見る",
+      "readDocs": "ドキュメントを読む",
+      "investmentOpportunity": "投資機会"
+    },
+    "general": {
+      "tryDemo": "デモを試す",
+      "learnMore": "詳しく見る",
+      "getStarted": "始める",
+      "contactUs": "お問い合わせ"
+    }
+  },
+  "navigation": {
+    "home": "ホーム",
+    "service": "サービス",
+    "partnering": "提携",
+    "demo": "デモ",
+    "tech": "技術",
+    "about": "会社概要",
+    "privacy": "プライバシーポリシー",
+    "terms": "利用規約"
+  },
+  "home": {
+    "title": "Faxi - FAXをインターネットに接続",
+    "description": "AIを活用したFAX技術でデジタルデバイドを解消",
+    "hero": {
+      "families": {
+        "headline": "お年寄りのFAXを、インターネットに繋ぐ",
+        "subheadline": "高齢のご両親がコンピューターを学ばずにオンラインサービスにアクセスできるようサポート。予約、オンラインショッピング、請求書の支払い—すべて使い慣れたFAXで。",
+        "ctaPrimary": "ベータ版に登録",
+        "ctaSecondary": "使い方を見る"
+      },
+      "partners": {
+        "headline": "FAXで1000万人の高齢者顧客にリーチ",
+        "subheadline": "日本の未開拓の高齢者市場にアクセス。AIを活用したFAXブリッジを通じて、サービスのアクセシビリティを向上させ、貴重な消費者インサイトを獲得。",
+        "ctaPrimary": "提携について",
+        "ctaSecondary": "パートナーメリット"
+      },
+      "investors": {
+        "headline": "AIでFAX技術を復活させる",
+        "subheadline": "日本で最後の未開拓消費者市場。FAXを持つ1000万人の高齢者、インターネットなし。90%以上の精度を持つ実証済みのAI技術。",
+        "ctaPrimary": "技術詳細",
+        "ctaSecondary": "デモを見る"
+      }
+    },
+    "problem": {
+      "title": "日本のデジタルデバイド",
+      "description": "社会がオンライン化する中、何百万人もの日本の高齢者が取り残されています。彼らはFAXを持っていますが、インターネットアクセスがなく、必須サービスから切り離されています。",
+      "stats": {
+        "faxUsers": {
+          "value": "1000万台以上",
+          "label": "日本で稼働中のFAX",
+          "source": "総務省"
+        },
+        "offlineSeniors": {
+          "value": "25%",
+          "label": "高齢者がインターネットを使用していない",
+          "source": "総務省"
+        },
+        "elderlyPopulation": {
+          "value": "29%",
+          "label": "日本の人口が65歳以上",
+          "source": "統計局"
+        },
+        "noDigitalFootprint": {
+          "value": "900万人",
+          "label": "デジタル足跡のない高齢者",
+          "source": "総務省インターネット利用調査より推定"
+        }
+      }
+    },
+    "solution": {
+      "title": "AIを活用したFAXブリッジ",
+      "description": "Faxiは高度なAIを使用して手書きのFAXを解釈し、現代のインターネットサービスに接続します。コンピュータースキルは不要—いつものようにFAXを送るだけ。",
+      "features": {
+        "aiVision": {
+          "title": "高度なAIビジョン",
+          "description": "手書き認識と意図検出で90%以上の精度"
+        },
+        "instantProcessing": {
+          "title": "即座の処理",
+          "description": "5秒以内にFAXを処理し、リアルタイムで応答"
+        },
+        "multiService": {
+          "title": "複数のサービス",
+          "description": "医療、ショッピング、支払い、行政サービスなど"
+        },
+        "alwaysAvailable": {
+          "title": "24時間365日利用可能",
+          "description": "人の介入なしで自動処理"
+        }
+      }
+    },
+    "useCases": {
+      "title": "実際の使用例",
+      "subtitle": "Faxiが高齢者ユーザーの必須サービスへのアクセスをどのように支援するか",
+      "healthcare": {
+        "title": "医療アクセス",
+        "demographic": "高齢患者",
+        "problem": "オンラインで医師の予約が困難",
+        "solution": "FAXで予約、変更、キャンセルが可能"
+      },
+      "shopping": {
+        "title": "オンラインショッピング",
+        "demographic": "インターネットのない高齢者",
+        "problem": "Eコマースプラットフォームにアクセスできない",
+        "solution": "FAXで商品を閲覧し注文"
+      },
+      "government": {
+        "title": "行政サービス",
+        "demographic": "農村住民",
+        "problem": "公共サービスへのアクセスが限られている",
+        "solution": "FAXでフォームやリクエストを提出"
+      },
+      "aiChat": {
+        "title": "AIアシスタント",
+        "demographic": "孤立した高齢者",
+        "problem": "情報と交流が必要",
+        "solution": "FAXでAIアシスタントとチャットして回答とサポートを得る"
+      },
+      "viewDetails": "詳細を見る"
+    },
+    "testimonials": {
+      "title": "ユーザーの声",
+      "subtitle": "Faxiを使用している人々の実際の体験",
+      "items": {
+        "tanaka": {
+          "quote": "孫に助けを求めることなく、ついにオンラインショッピングができるようになりました。いつものようにFAXを送るだけです。",
+          "author": "田中さん",
+          "role": "元教師",
+          "demographic": "72歳、東京"
+        },
+        "clinic": {
+          "quote": "高齢の患者さんに大好評です。簡単に予約確認ができるようになってから、無断キャンセルが40%減少しました。",
+          "author": "山本医師",
+          "role": "クリニック院長",
+          "demographic": "500人以上の高齢患者にサービス提供"
+        },
+        "family": {
+          "quote": "母は田舎で一人暮らしです。Faxiは母が必要なサービスにアクセスし、つながりを保つのに役立っています。",
+          "author": "健二さん",
+          "role": "家族",
+          "demographic": "Faxiユーザーの息子"
+        }
+      }
+    },
+    "impact": {
+      "title": "私たちの影響",
+      "subtitle": "実証済みの技術と測定可能な結果でデジタルデバイドを解消",
+      "stats": {
+        "faxUsers": {
+          "value": "1000万台以上",
+          "label": "日本のアクティブなFAXユーザー",
+          "description": "何百万人もの日本の高齢者が今でもコミュニケーションにFAXを頼っています",
+          "source": "総務省"
+        },
+        "offlineSeniors": {
+          "value": "25%",
+          "label": "インターネットのない高齢者",
+          "description": "日本の高齢者の4分の1がインターネットを使用しておらず、大きなデジタルデバイドを生み出しています",
+          "source": "総務省"
+        },
+        "elderlyPopulation": {
+          "value": "3600万人",
+          "label": "高齢者人口（65歳以上）",
+          "description": "日本は世界最大級の高齢者人口を持ち、総人口の29%を占めています",
+          "source": "総務省統計局"
+        },
+        "aiAccuracy": {
+          "value": "90%以上",
+          "label": "AI精度率",
+          "description": "当社の高度なAIは、手書き認識と意図検出で90%以上の精度を達成しています",
+          "source": "Faxi内部テスト"
+        },
+        "processingTime": {
+          "value": "5秒未満",
+          "label": "平均処理時間",
+          "description": "FAXは5秒未満で処理され、ユーザーにリアルタイムで応答します",
+          "source": "Faxiパフォーマンス指標"
+        },
+        "useCases": {
+          "value": "10以上",
+          "label": "サポートされているユースケース",
+          "description": "医療からショッピング、行政サービスまで、Faxiは多様なニーズをサポートします",
+          "source": "Faxiサービスカタログ"
+        }
+      }
+    },
+    "dataVisualization": {
+      "title": "デジタルデバイドを理解する",
+      "subtitle": "日本の高齢者人口とデジタルサービスへのアクセスに関するデータ駆動型インサイト",
+      "internetUsage": {
+        "title": "年齢層別インターネット利用率",
+        "description": "定期的にインターネットを使用している日本の高齢者の割合",
+        "barLabel": "インターネット利用率 %",
+        "source": "出典：総務省、2023年",
+        "data": {
+          "60-64": {
+            "label": "60-64歳"
+          },
+          "65-69": {
+            "label": "65-69歳"
+          },
+          "70-74": {
+            "label": "70-74歳"
+          },
+          "75-79": {
+            "label": "75-79歳"
+          },
+          "80plus": {
+            "label": "80歳以上"
+          }
+        }
+      },
+      "communicationMethods": {
+        "title": "高齢者のコミュニケーション手段",
+        "description": "日本の高齢者のコミュニケーション方法（65歳以上の人口）",
+        "source": "出典：日本事務機械工業会、2023年",
+        "data": {
+          "fax": {
+            "label": "FAXユーザー"
+          },
+          "internet": {
+            "label": "インターネットユーザー"
+          },
+          "neither": {
+            "label": "どちらも使わない"
+          }
+        }
+      },
+      "accessibility": {
+        "title": "サービスアクセシビリティギャップ",
+        "description": "インターネットユーザーと非ユーザー間のサービスアクセス率の比較",
+        "withInternetLabel": "インターネットあり",
+        "withoutInternetLabel": "インターネットなし",
+        "source": "出典：消費者庁調査、2023年",
+        "data": {
+          "healthcare": {
+            "label": "医療"
+          },
+          "shopping": {
+            "label": "ショッピング"
+          },
+          "government": {
+            "label": "行政"
+          },
+          "banking": {
+            "label": "銀行"
+          }
+        }
+      },
+      "insights": {
+        "title": "主要なインサイト",
+        "point1": "75歳以降、インターネット利用率が劇的に低下し、80歳以上では定期的にインターネットを使用しているのはわずか25%",
+        "point2": "1000万人の日本の高齢者が今でもFAXを主要なコミュニケーション手段として使用",
+        "point3": "インターネットアクセスがない人のサービスアクセシビリティは、すべてのカテゴリーで50〜60%低下",
+        "point4": "FaxiはFAXを現代のインターネットサービスに接続することでこのギャップを埋め、すべての人がデジタルサービスにアクセスできるようにします"
+      }
+    }
+  },
+  "service": {
+    "title": "ご家族向けサービス",
+    "subtitle": "Faxiが高齢のご家族の現代サービスへのアクセスをどのように支援するか",
+    "overview": {
+      "title": "Faxiの仕組み",
+      "subtitle": "FAXをインターネットに接続する簡単なステップ",
+      "steps": {
+        "register": {
+          "title": "1. FAX番号を登録",
+          "description": "オンラインで登録し、FAX番号を登録します。専用のサービス番号をお知らせします。"
+        },
+        "send": {
+          "title": "2. FAXを送信",
+          "description": "紙にリクエストを書いて、サービス番号に送信します。チェックマーク、丸、または簡単な手書きを使用してください。"
+        },
+        "process": {
+          "title": "3. AIがリクエストを処理",
+          "description": "AIがFAXを読み取り、意図を理解し、適切なサービスに接続します。"
+        },
+        "receive": {
+          "title": "4. 確認を受信",
+          "description": "完了したリクエストの詳細を記載した確認FAXを受け取ります。"
+        }
+      },
+      "exampleTitle": "FAXフォーマットの例",
+      "exampleDescription": "さまざまなサービスのFAXのフォーマット例をご紹介します"
+    },
+    "useCases": {
+      "title": "Faxiでできること",
+      "subtitle": "Faxiが日常業務をどのように支援するかの実例",
+      "healthcare": {
+        "title": "医師の予約",
+        "demographic": "高齢患者向け",
+        "problem": "営業時間内にクリニックに電話するのは難しく、オンライン予約システムは複雑",
+        "solution": "いつでもFAXを送信して予約、変更、キャンセルができます。FAXで確認を受け取ります。",
+        "beforeLabel": "以前：複雑なオンラインフォーム",
+        "afterLabel": "現在：シンプルなFAXリクエスト",
+        "technicalTitle": "仕組み",
+        "technicalDetails": {
+          "accuracy": "95%の意図検出精度",
+          "processingTime": "平均4秒",
+          "intents": ["予約", "キャンセル", "変更", "空き状況確認"]
+        }
+      },
+      "shopping": {
+        "title": "インターネットなしでオンラインショッピング",
+        "demographic": "コンピューターのない高齢者向け",
+        "problem": "Eコマースウェブサイトやモバイルアプリにアクセスできない",
+        "solution": "FAXで商品カタログを閲覧し、チェックマークで商品を選択して注文します。登録カードまたは代金引換で支払い。",
+        "beforeLabel": "以前：複雑なEコマースサイト",
+        "afterLabel": "現在：シンプルな商品選択",
+        "technicalTitle": "仕組み",
+        "technicalDetails": {
+          "accuracy": "92%の商品選択精度",
+          "processingTime": "平均5秒",
+          "intents": ["商品閲覧", "カートに追加", "注文", "注文状況確認"]
+        }
+      },
+      "government": {
+        "title": "行政サービスへのアクセス",
+        "demographic": "農村住民向け",
+        "problem": "役所が遠く、オンラインポータルは操作が難しい",
+        "solution": "FAXでフォームを提出し、書類を請求し、申請状況を確認できます。",
+        "beforeLabel": "以前：複雑な行政ポータル",
+        "afterLabel": "現在：シンプルなフォーム提出",
+        "technicalTitle": "仕組み",
+        "technicalDetails": {
+          "accuracy": "94%のフォーム処理精度",
+          "processingTime": "平均6秒",
+          "intents": ["フォーム提出", "書類請求", "状況確認", "情報更新"]
+        }
+      },
+      "payment": {
+        "title": "簡単な請求書支払い",
+        "demographic": "財務管理をする高齢者向け",
+        "problem": "オンラインバンキングは複雑でATMは不便",
+        "solution": "FAXで請求書を受け取り、支払額をマークして送り返します。登録口座から自動支払い。",
+        "beforeLabel": "以前：オンラインバンキングインターフェース",
+        "afterLabel": "現在：シンプルな支払いフォーム",
+        "technicalTitle": "仕組み",
+        "technicalDetails": {
+          "accuracy": "96%の支払い処理精度",
+          "processingTime": "平均3秒",
+          "intents": ["請求書支払い", "残高確認", "支払い履歴表示", "自動支払い設定"]
+        }
+      },
+      "aiChat": {
+        "title": "AIアシスタントとチャット",
+        "demographic": "孤立した高齢者向け",
+        "problem": "情報、交流、または質問への助けが必要",
+        "solution": "紙に質問を書いてFAXで送信します。FAXで詳細な回答と役立つ情報を受け取ります。",
+        "beforeLabel": "以前：情報へのアクセスなし",
+        "afterLabel": "現在：AIによる回答",
+        "technicalTitle": "仕組み",
+        "technicalDetails": {
+          "accuracy": "91%の質問理解精度",
+          "processingTime": "平均7秒",
+          "intents": ["質問", "情報取得", "アドバイス依頼", "一般的な会話"]
+        }
+      }
+    },
+    "faq": {
+      "title": "よくある質問",
+      "subtitle": "Faxiの使用に関する一般的な質問",
+      "items": {
+        "cost": {
+          "question": "Faxiの料金はいくらですか？",
+          "answer": "基本サービスは月額980円で、無制限のFAX処理が含まれます。優先処理や高度なサービスなどのプレミアム機能は月額1,980円です。"
+        },
+        "setup": {
+          "question": "セットアップは難しいですか？",
+          "answer": "FAXでのセットアップは不要です。FAX番号でオンライン登録するだけで、サービス番号にFAXを送信できます。"
+        },
+        "accuracy": {
+          "question": "手書き認識の精度はどのくらいですか？",
+          "answer": "AIは手書きテキストで90%以上の精度を達成しています。AIが不確かな場合は、確認を求める明確化FAXを送信します。"
+        },
+        "security": {
+          "question": "情報は安全ですか？",
+          "answer": "はい。すべてのFAXは送信および処理中に暗号化されます。日本のプライバシー法に準拠しており、許可なくデータを共有することはありません。"
+        },
+        "support": {
+          "question": "助けが必要な場合はどうすればよいですか？",
+          "answer": "営業時間内（午前9時〜午後6時）に日本語で電話サポートを提供しています。質問をFAXで送信することもでき、FAXで返信します。"
+        },
+        "services": {
+          "question": "どのようなサービスがサポートされていますか？",
+          "answer": "現在、医療予約、オンラインショッピング、行政サービス、請求書支払い、AIチャットをサポートしています。ユーザーのニーズに基づいて新しいサービスを常に追加しています。"
+        }
+      },
+      "contactTitle": "まだ質問がありますか？",
+      "contactDescription": "電話またはFAXでお問い合わせください",
+      "contactPhone": "電話：03-1234-5678（午前9時〜午後6時）",
+      "contactFax": "FAX：03-1234-5679（24時間365日）"
+    }
+  },
+  "partnering": {
+    "hero": {
+      "title": "Faxiと提携する",
+      "subtitle": "FAXで1000万人の高齢者顧客にリーチ",
+      "description": "日本の未開拓の高齢者市場にアクセスできます。AIを活用したFAXブリッジを通じて、サービスのアクセシビリティを向上させ、貴重な消費者インサイトを獲得できます。"
+    },
+    "marketOpportunity": {
+      "title": "巨大な市場機会",
+      "subtitle": "日本の高齢者市場は、大きな未開拓の機会を表しています",
+      "stats": {
+        "faxUsers": "日本のアクティブなFAXユーザー",
+        "elderlyPopulation": "高齢者人口（65歳以上）",
+        "offlineSeniors": "インターネットを使わない高齢者"
+      }
+    },
+    "partnerTypesTitle": "パートナータイプとメリット",
+    "benefits": "主なメリット",
+    "caseStudy": "事例紹介",
+    "partnerTypes": {
+      "healthcare": {
+        "title": "医療機関",
+        "description": "高齢患者のアクセスを改善したいクリニック、病院、医療サービス",
+        "benefits": {
+          "0": "簡単な予約確認で無断キャンセルを40%削減",
+          "1": "オンライン予約ができない高齢患者にリーチ",
+          "2": "患者満足度とアクセシビリティの向上"
+        },
+        "caseStudy": {
+          "title": "東京クリニックとの提携",
+          "result": "3ヶ月で無断キャンセルが25%から15%に減少",
+          "metric": "予約キャンセル40%削減"
+        }
+      },
+      "ecommerce": {
+        "title": "Eコマースプラットフォーム",
+        "description": "高齢者層に拡大したいオンライン小売業者",
+        "benefits": {
+          "0": "購買力のある1000万人以上の高齢消費者にアクセス",
+          "1": "未開拓の人口層での市場シェア拡大",
+          "2": "高齢者の購買嗜好に関するインサイトを獲得"
+        }
+      },
+      "government": {
+        "title": "行政サービス",
+        "description": "すべての市民のアクセシビリティ向上を目指す公共サービス",
+        "benefits": {
+          "0": "すべての市民のデジタルインクルージョンを確保",
+          "1": "行政窓口への来訪を削減",
+          "2": "地方へのサービス提供を改善"
+        }
+      },
+      "advertiser": {
+        "title": "広告主・マーケター",
+        "description": "高齢消費者に直接リーチしたい企業",
+        "benefits": {
+          "0": "FAXを通じて高齢者層に直接アクセス",
+          "1": "高いエンゲージメント率（FAX開封率80%以上）",
+          "2": "競争の少ないユニークな広告チャネル"
+        }
+      },
+      "dataBuyer": {
+        "title": "データ・インサイト購入者",
+        "description": "高齢者層の消費者行動データを求める組織",
+        "benefits": {
+          "0": "高齢消費者行動に関するユニークなインサイト",
+          "1": "匿名化・集約された嗜好とトレンドのデータ",
+          "2": "未開拓市場セグメントからのファーストパーティデータ"
+        }
+      }
+    },
+    "dataInsightsTitle": "貴重なデータインサイト",
+    "dataInsightsSubtitle": "高齢消費者行動に関するユニークなインサイトにアクセス",
+    "dataInsights": {
+      "consumerBehavior": {
+        "category": "消費者行動",
+        "description": "購買パターン、サービス嗜好、意思決定プロセス",
+        "value": "購買習慣、タイミング、頻度"
+      },
+      "demographics": {
+        "category": "人口統計",
+        "description": "年齢、場所、世帯構成、ライフスタイルデータ",
+        "value": "詳細な人口統計プロファイル"
+      },
+      "preferences": {
+        "category": "製品嗜好",
+        "description": "高齢消費者が求める製品とサービス",
+        "value": "カテゴリー嗜好、ブランド親和性"
+      },
+      "timing": {
+        "category": "タイミングとパターン",
+        "description": "高齢消費者が最も活発で反応的な時間帯",
+        "value": "ピーク利用時間、季節トレンド"
+      }
+    },
+    "marketStatsTitle": "市場統計",
+    "marketStatsSubtitle": "数字で見る日本の高齢者市場",
+    "marketStats": {
+      "elderlySpending": {
+        "label": "高齢者の年間支出",
+        "description": "日本の高齢者は大きな購買力を持っています",
+        "source": "経済産業省"
+      },
+      "faxUsage": {
+        "label": "企業がFAXを使用",
+        "description": "FAXは日本で信頼されるコミュニケーションチャネルです",
+        "source": "日本事務機械・情報システム産業協会"
+      },
+      "noDigitalFootprint": {
+        "label": "デジタル足跡のない高齢者",
+        "description": "オンライン存在や購入履歴がゼロの未開拓市場",
+        "source": "総務省インターネット利用調査より推定"
+      },
+      "agingPopulation": {
+        "label": "人口が65歳以上",
+        "description": "日本は世界で最も高齢化が進んだ国の一つです",
+        "source": "総務省統計局"
+      }
+    },
+    "revenueOpportunities": {
+      "title": "収益機会",
+      "directRevenue": {
+        "title": "直接収益",
+        "description": "高齢ユーザーからの取引手数料、サブスクリプション収益、サービス料金"
+      },
+      "dataMonetization": {
+        "title": "データ収益化",
+        "description": "市場調査のための匿名化されたインサイトと集約データ製品"
+      },
+      "marketExpansion": {
+        "title": "市場拡大",
+        "description": "これまでリーチできなかった顧客セグメントへのアクセスにより、総アドレス可能市場が増加"
+      }
+    },
+    "partnerTestimonialsTitle": "パートナーの声",
+    "testimonials": {
+      "healthcare": {
+        "quote": "Faxiは高齢患者へのサービス提供を変革しました。技術スキルに関係なく、すべての人が予約できるようになりました。",
+        "author": "山本医師",
+        "role": "クリニック院長、東京メディカルセンター"
+      },
+      "ecommerce": {
+        "quote": "Faxiとの提携以来、高齢顧客からの注文が30%増加しました。まったく新しい市場セグメントが開かれました。",
+        "author": "田中健二",
+        "role": "Eコマース部長、オンライン小売株式会社"
+      }
+    },
+    "contactForm": {
+      "title": "お問い合わせ",
+      "subtitle": "Faxiとの提携にご興味がありますか？以下のフォームにご記入ください。24時間以内にご連絡いたします。",
+      "fields": {
+        "partnerType": {
+          "label": "パートナータイプ",
+          "placeholder": "組織タイプを選択してください",
+          "options": {
+            "healthcare": "医療機関",
+            "ecommerce": "Eコマースプラットフォーム",
+            "government": "行政サービス",
+            "advertiser": "広告主・マーケター",
+            "dataBuyer": "データ・インサイト購入者",
+            "other": "その他"
+          }
+        },
+        "companyName": {
+          "label": "会社名",
+          "placeholder": "御社名"
+        },
+        "contactName": {
+          "label": "担当者名",
+          "placeholder": "お名前"
+        },
+        "email": {
+          "label": "メールアドレス",
+          "placeholder": "your.email@company.com"
+        },
+        "phone": {
+          "label": "電話番号",
+          "placeholder": "03-1234-5678"
+        },
+        "message": {
+          "label": "メッセージ",
+          "placeholder": "御社とFaxiとの提携についてお聞かせください..."
+        }
+      },
+      "submit": "提携のお問い合わせを送信",
+      "submitting": "送信中...",
+      "successMessage": "お問い合わせありがとうございます！24時間以内にご連絡いたします。",
+      "errorMessage": "フォームの送信中にエラーが発生しました。もう一度お試しいただくか、直接お問い合わせください。",
+      "errors": {
+        "partnerTypeRequired": "パートナータイプを選択してください",
+        "companyNameRequired": "会社名は必須です",
+        "contactNameRequired": "担当者名は必須です",
+        "emailRequired": "メールアドレスは必須です",
+        "emailInvalid": "有効なメールアドレスを入力してください",
+        "phoneRequired": "電話番号は必須です",
+        "messageRequired": "メッセージは必須です",
+        "messageTooShort": "メッセージは10文字以上で入力してください"
+      }
+    }
+  }
+}

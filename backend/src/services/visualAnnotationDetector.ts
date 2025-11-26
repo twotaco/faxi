@@ -93,11 +93,15 @@ export class VisualAnnotationDetector {
       rawAnnotation.confidence || 0.5
     );
 
+    // Assign color code for visualization
+    const color = this.getAnnotationColor(type);
+
     return {
       type: type as any,
       boundingBox,
       associatedText,
-      confidence
+      confidence,
+      color
     };
   }
 
@@ -420,6 +424,20 @@ export class VisualAnnotationDetector {
     }
 
     return associations;
+  }
+
+  /**
+   * Get color code for annotation type
+   */
+  private getAnnotationColor(type: string): string {
+    const colorMap: Record<string, string> = {
+      circle: '#EF4444', // Red
+      checkmark: '#10B981', // Green
+      underline: '#F59E0B', // Amber
+      arrow: '#8B5CF6', // Purple
+      checkbox: '#06B6D4' // Cyan
+    };
+    return colorMap[type] || '#6B7280'; // Gray default
   }
 }
 

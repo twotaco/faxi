@@ -4,10 +4,11 @@ A modern fax-to-internet bridge service powered by AI, enabling offline users to
 
 ## 🏗️ Monorepo Structure
 
-This repository uses npm workspaces to manage two applications:
+This repository uses npm workspaces to manage three applications:
 
 - **backend/** - Express.js API server (port 4000)
 - **admin-dashboard/** - Next.js admin interface (port 4001)
+- **marketing-website/** - Next.js marketing website (port 4002)
 
 See [MONOREPO.md](./MONOREPO.md) for detailed information about the monorepo structure.
 
@@ -57,11 +58,17 @@ cd backend && npm run dev
 cd admin-dashboard && npm run dev
 ```
 
+**Step 6: Start the marketing website (in another terminal)**
+```bash
+cd marketing-website && npm run dev
+```
+
 ### Service URLs
 
 Once running, you can access:
 - **Backend API**: http://localhost:4000
 - **Admin Dashboard**: http://localhost:4001
+- **Marketing Website**: http://localhost:4002
 - **MinIO Console**: http://localhost:9001 (minioadmin/minioadmin)
 - **Postgres**: localhost:5432
 - **Redis**: localhost:6379
@@ -191,6 +198,29 @@ Build:
 ```bash
 npm run build
 ```
+
+## Marketing Website
+
+The marketing website showcases Faxi's capabilities with:
+- Interactive demo with real fax processing
+- AI accuracy metrics dashboard
+- Bilingual support (Japanese/English)
+- Use case demonstrations
+- Technical architecture details
+
+See [marketing-website/README.md](./marketing-website/README.md) for detailed documentation.
+
+### Deployment
+
+The marketing website is deployed to Vercel. See [marketing-website/DEPLOYMENT.md](./marketing-website/DEPLOYMENT.md) for deployment instructions.
+
+## Documentation
+
+- [Monorepo Structure](./MONOREPO.md)
+- [Marketing Website](./marketing-website/README.md)
+- [Marketing Website Deployment](./marketing-website/DEPLOYMENT.md)
+- [Backend CORS Configuration](./backend/CORS_CONFIGURATION.md)
+- [E2E Testing Checklist](./marketing-website/E2E_TESTING_CHECKLIST.md)
 
 ## License
 

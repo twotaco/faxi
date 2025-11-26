@@ -26,6 +26,8 @@ export class AIVisionInterpreter {
    * Main interpretation method that processes fax images
    */
   async interpretFax(request: InterpretationRequest): Promise<InterpretationResult> {
+    const startTime = Date.now();
+    
     try {
       // Log the interpretation request
       await auditLogService.logOperation({
@@ -143,6 +145,14 @@ export class AIVisionInterpreter {
         }
       }
 
+      // Calculate processing time
+      const processingTime = Date.now() - startTime;
+      interpretation.processingTime = processingTime;
+
+      // Generate visualization data
+      interpretation.visualizationData = this.generateVisualizationData(interpretation);
+      interpretation.textRegions = this.extractTextRegions(interpretation);
+
       // Log the interpretation result
       await auditLogService.logOperation({
         entityType: 'fax_interpretation',
@@ -152,7 +162,8 @@ export class AIVisionInterpreter {
           intent: interpretation.intent,
           confidence: interpretation.confidence,
           requiresClarification: interpretation.requiresClarification,
-          hasReferenceId: !!interpretation.referenceId
+          hasReferenceId: !!interpretation.referenceId,
+          processingTime
         }
       });
 
@@ -559,6 +570,114 @@ Analyze the image now:`;
     if (hasRelevantText) quality += 0.2;
 
     return Math.min(quality, 1.0);
+  }
+
+  /**
+   * Generate visualization data from interpretation result
+   */
+  private generateVisualizationData(interpretation: InterpretationResult): any {
+    const regions: any[] = [];
+
+    // Add text regions
+    if (interpretation.extractedText) {
+      const textLines = interpretation.extractedText.split('\n').filter(line => line.trim());
+      textLines.forEach((line, index) => {
+        regions.push({
+          type: 'text',
+          boundingBox: {
+            x: 50,
+            y: 50 + (index * 30),
+            width: 500,
+            height: 25
+          },
+          label: line.substring(0, 50) + (line.length > 50 ? '...' : ''),
+          confidence: 0.85,
+          color: '#3B82F6' // Blue for text
+        });
+      });
+    }
+
+    // Add annotation regions
+    if (interpretation.visualAnnotations) {
+      interpretation.visualAnnotations.forEach(ann => {
+        regions.push({
+          type: 'annotation',
+          boundingBox: ann.boundingBox,
+          label: `${ann.type}${ann.associatedText ? ': ' + ann.associatedText : ''}`,
+          confidence: ann.confidence,
+          color: this.getAnnotationColor(ann.type)
+        });
+      });
+    }
+
+    // Add form field regions based on parameters
+    if (interpretation.parameters) {
+      let yOffset = 200;
+      Object.entries(interpretation.parameters).forEach(([key, value]) => {
+        if (value && typeof value === 'string') {
+          regions.push({
+            type: 'form-field',
+            boundingBox: {
+              x: 100,
+              y: yOffset,
+              width: 400,
+              height: 30
+            },
+            label: `${key}: ${value}`,
+            confidence: 0.9,
+            color: '#10B981' // Green for form fields
+          });
+          yOffset += 40;
+        }
+      });
+    }
+
+    return {
+      regions
+    };
+  }
+
+  /**
+   * Extract text regions from interpretation
+   */
+  private extractTextRegions(interpretation: InterpretationResult): any[] {
+    if (!interpretation.extractedText) return [];
+
+    const textRegions: any[] = [];
+    const lines = interpretation.extractedText.split('\n').filter(line => line.trim());
+
+    lines.forEach((line, index) => {
+      // Detect if line is likely handwritten (heuristic: shorter, more informal)
+      const isHandwritten = line.length < 30 && !/^[A-Z][a-z]+:/.test(line);
+
+      textRegions.push({
+        text: line,
+        boundingBox: {
+          x: 50,
+          y: 50 + (index * 30),
+          width: Math.min(line.length * 10, 600),
+          height: 25
+        },
+        confidence: isHandwritten ? 0.75 : 0.9,
+        type: isHandwritten ? 'handwritten' : 'printed'
+      });
+    });
+
+    return textRegions;
+  }
+
+  /**
+   * Get color code for annotation type
+   */
+  private getAnnotationColor(type: string): string {
+    const colorMap: Record<string, string> = {
+      circle: '#EF4444', // Red
+      checkmark: '#10B981', // Green
+      underline: '#F59E0B', // Amber
+      arrow: '#8B5CF6', // Purple
+      checkbox: '#06B6D4' // Cyan
+    };
+    return colorMap[type] || '#6B7280'; // Gray default
   }
 }
 

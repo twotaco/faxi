@@ -582,9 +582,12 @@ CRITICAL FORMATTING REQUIREMENTS:
 - Use short paragraphs (2-3 sentences max)
 - Use bullet points for lists
 - Avoid complex formatting or special characters
+- No overly long explanations
 - Limit total response to fit on 1-2 fax pages (approximately 500-800 words)
 - Use simple, respectful language appropriate for all ages
 - Break up long text with line breaks for readability
+- Reply in the user's language
+- No hedging or verbosity
 
 RESPONSE STYLE:
 - Be helpful and informative

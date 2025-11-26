@@ -19,11 +19,38 @@ import { mockFaxSender } from './services/mockFaxSender';
 
 const app = express();
 
-// CORS configuration for admin dashboard
+// CORS configuration for admin dashboard and marketing website
+const allowedOrigins = config.app.env === 'production' 
+  ? [
+      'https://admin.faxi.jp',
+      'https://app.faxi.jp',
+      'https://faxi.jp',
+      'https://www.faxi.jp',
+      // Add Vercel deployment URLs
+      process.env.MARKETING_SITE_URL || 'https://faxi-marketing.vercel.app',
+      // Allow preview deployments
+      ...(process.env.VERCEL_URL ? [`https://${process.env.VERCEL_URL}`] : [])
+    ].filter(Boolean)
+  : ['http://localhost:4001', 'http://localhost:4002'];
+
 app.use(cors({
-  origin: config.app.env === 'production' 
-    ? ['https://admin.faxi.jp', 'https://app.faxi.jp']
-    : ['http://localhost:4001'],
+  origin: (origin, callback) => {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    // Check if origin is allowed
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else if (config.app.env !== 'production' && origin.includes('localhost')) {
+      // Allow all localhost origins in development
+      callback(null, true);
+    } else if (config.app.env === 'production' && origin.includes('.vercel.app')) {
+      // Allow Vercel preview deployments in production
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'Cookie'],
@@ -1317,6 +1344,13 @@ app.get('/', (req: Request, res: Response) => {
     status: 'running',
   });
 });
+
+// Demo and Metrics API endpoints (for marketing website)
+import { demoController } from './webhooks/demoController';
+import { metricsController } from './webhooks/metricsController';
+
+app.use('/api/demo', demoController);
+app.use('/api/metrics', metricsController);
 
 // Webhook endpoints
 app.post('/webhooks/telnyx/fax/received', (req: Request, res: Response) => {
