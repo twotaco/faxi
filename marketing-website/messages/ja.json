@@ -48,8 +48,8 @@
     "description": "AIを活用したFAX技術でデジタルデバイドを解消",
     "hero": {
       "families": {
-        "headline": "お年寄りのFAXを、インターネットに繋ぐ",
-        "subheadline": "高齢のご両親がコンピューターを学ばずにオンラインサービスにアクセスできるようサポート。予約、オンラインショッピング、請求書の支払い—すべて使い慣れたFAXで。",
+        "headline": "自立を保つ。つながりを保つ。",
+        "subheadline": "オンラインショッピング。予約。質問への回答。すべてFAXで。",
         "ctaPrimary": "ベータ版に登録",
         "ctaSecondary": "使い方を見る"
       },
@@ -67,50 +67,46 @@
       }
     },
     "problem": {
-      "title": "日本のデジタルデバイド",
-      "description": "社会がオンライン化する中、何百万人もの日本の高齢者が取り残されています。彼らはFAXを持っていますが、インターネットアクセスがなく、必須サービスから切り離されています。",
-      "stats": {
-        "faxUsers": {
-          "value": "1000万台以上",
-          "label": "日本で稼働中のFAX",
-          "source": "総務省"
+      "title": "テクノロジーに取り残されていませんか？",
+      "description": "多くのサービスがオンライン化する中、パソコンやスマートフォンなしで日常的なことをするのが難しくなっています。でも、病院の予約や買い物をするために新しい技術を学ぶ必要はありません。",
+      "painPoints": {
+        "complexity": {
+          "title": "テクノロジーは複雑すぎる",
+          "description": "パソコン、スマホ、アプリ—圧倒的で混乱します"
         },
-        "offlineSeniors": {
-          "value": "25%",
-          "label": "高齢者がインターネットを使用していない",
-          "source": "総務省"
+        "isolation": {
+          "title": "サービスがオンライン化",
+          "description": "銀行、店舗、クリニックがインターネット利用を期待"
         },
-        "elderlyPopulation": {
-          "value": "29%",
-          "label": "日本の人口が65歳以上",
-          "source": "統計局"
+        "independence": {
+          "title": "家族に負担をかけたくない",
+          "description": "助けを求めずに自分のことを処理したい"
         },
-        "noDigitalFootprint": {
-          "value": "900万人",
-          "label": "デジタル足跡のない高齢者",
-          "source": "総務省インターネット利用調査より推定"
+        "trust": {
+          "title": "FAXは確実に動く",
+          "description": "長年使ってきた—信頼できて使い慣れている"
         }
       }
     },
     "solution": {
-      "title": "AIを活用したFAXブリッジ",
-      "description": "Faxiは高度なAIを使用して手書きのFAXを解釈し、現代のインターネットサービスに接続します。コンピュータースキルは不要—いつものようにFAXを送るだけ。",
+      "title": "FAXですべてができる",
+      "description": "FaxiはあなたのFAXを現代のサービスに接続します。必要なことを書いてFAXを送るだけ—あとは私たちにお任せください。パソコンもスマホも学習も不要です。",
       "features": {
-        "aiVision": {
-          "title": "高度なAIビジョン",
-          "description": "手書き認識と意図検出で90%以上の精度"
+        "noLearning": {
+          "title": "新しいスキル不要",
+          "description": "いつも通りFAXを使うだけ—書いて送るだけ"
         },
-        "instantProcessing": {
-          "title": "即座の処理",
-          "description": "5秒以内にFAXを処理し、リアルタイムで応答"
+        "instantResponse": {
+          "title": "すぐに返事が来る",
+          "description": "数日ではなく数分でFAXで返事を受け取れます"
         },
         "multiService": {
-          "title": "複数のサービス",
-          "description": "医療、ショッピング、支払い、行政サービスなど"
+          "title": "あらゆるサービスにアクセス",
+          "description": "予約、オンラインショッピング、支払い、情報取得—すべてFAXで"
         },
-        "alwaysAvailable": {
-          "title": "24時間365日利用可能",
-          "description": "人の介入なしで自動処理"
+        "alwaysWorking": {
+          "title": "いつでも利用可能",
+          "description": "昼夜問わずいつでもFAXを送信—いつでもお手伝いします"
         }
       }
     },
@@ -614,6 +610,77 @@
         "messageRequired": "メッセージは必須です",
         "messageTooShort": "メッセージは10文字以上で入力してください"
       }
+    }
+  },
+  "about": {
+    "hero": {
+      "title": "AIでFAX技術を復活させる",
+      "subtitle": "日本で最後の未開拓消費者市場"
+    },
+    "vision": {
+      "title": "私たちのビジョン",
+      "description": "テクノロジーは、複雑なデジタルインターフェースを操作できる人だけでなく、すべての人に役立つべきだと私たちは信じています。Faxiは、信頼され使い慣れたツールであるFAX技術を復活させ、最新のAIと橋渡しすることで、何百万人もの日本の高齢者にデジタルインクルージョンを実現します。これは単にFAXの話ではありません。尊厳、自立、そしてデジタル時代に誰も取り残されないようにすることです。"
+    },
+    "market": {
+      "title": "市場機会",
+      "stats": {
+        "faxMachines": {
+          "value": "1000万台以上",
+          "label": "日本で稼働中のFAX",
+          "source": "総務省"
+        },
+        "offlineSeniors": {
+          "value": "25%",
+          "label": "インターネットを使わない高齢者",
+          "source": "総務省"
+        },
+        "elderlyPopulation": {
+          "value": "3600万人",
+          "label": "高齢者人口（65歳以上）",
+          "source": "総務省統計局"
+        },
+        "noDigitalFootprint": {
+          "value": "900万人",
+          "label": "デジタル足跡のない高齢者",
+          "source": "総務省調査より推定"
+        }
+      }
+    },
+    "technology": {
+      "title": "技術",
+      "ai": {
+        "title": "90%以上のAI精度",
+        "description": "最先端のビジョンモデルによる高度な手書き認識と意図検出"
+      },
+      "processing": {
+        "title": "5秒以内の処理",
+        "description": "リアルタイムFAX処理で即座にユーザーに返信"
+      },
+      "integration": {
+        "title": "拡張可能なプラットフォーム",
+        "description": "MCPベースのアーキテクチャにより、あらゆるサービスと簡単に統合"
+      }
+    },
+    "business": {
+      "title": "ビジネスモデル",
+      "b2c": {
+        "title": "B2C：サブスクリプションサービス",
+        "description": "高齢者ユーザーがFAXで無制限にサービスにアクセスできる月額サブスクリプション"
+      },
+      "b2b": {
+        "title": "B2B：パートナー統合",
+        "description": "医療提供者、eコマース、行政サービスが高齢者顧客にリーチするために支払い"
+      },
+      "data": {
+        "title": "データインサイト",
+        "description": "広告主や研究者向けの匿名化された行動データと市場インサイト"
+      }
+    },
+    "cta": {
+      "title": "詳細をお知りになりたいですか？",
+      "description": "私たちのビジョンを共有するパートナー、投資家、協力者を探しています",
+      "button": "お問い合わせ",
+      "email": "hello@faxi.jp"
     }
   }
 }

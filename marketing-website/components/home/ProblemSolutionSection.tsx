@@ -114,27 +114,27 @@ export function ProblemSolutionSection() {
             {t('problem.description')}
           </p>
 
-          {/* Statistics Grid */}
+          {/* Pain Points Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
-            <StatCard
-              value={t('problem.stats.faxUsers.value')}
-              label={t('problem.stats.faxUsers.label')}
-              source={t('problem.stats.faxUsers.source')}
+            <FeatureCard
+              icon="😰"
+              title={t('problem.painPoints.complexity.title')}
+              description={t('problem.painPoints.complexity.description')}
             />
-            <StatCard
-              value={t('problem.stats.offlineSeniors.value')}
-              label={t('problem.stats.offlineSeniors.label')}
-              source={t('problem.stats.offlineSeniors.source')}
+            <FeatureCard
+              icon="🌐"
+              title={t('problem.painPoints.isolation.title')}
+              description={t('problem.painPoints.isolation.description')}
             />
-            <StatCard
-              value={t('problem.stats.elderlyPopulation.value')}
-              label={t('problem.stats.elderlyPopulation.label')}
-              source={t('problem.stats.elderlyPopulation.source')}
+            <FeatureCard
+              icon="💪"
+              title={t('problem.painPoints.independence.title')}
+              description={t('problem.painPoints.independence.description')}
             />
-            <StatCard
-              value={t('problem.stats.noDigitalFootprint.value')}
-              label={t('problem.stats.noDigitalFootprint.label')}
-              source={t('problem.stats.noDigitalFootprint.source')}
+            <FeatureCard
+              icon="📠"
+              title={t('problem.painPoints.trust.title')}
+              description={t('problem.painPoints.trust.description')}
             />
           </div>
         </div>
@@ -151,14 +151,14 @@ export function ProblemSolutionSection() {
           {/* Features Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
             <FeatureCard
-              icon="🤖"
-              title={t('solution.features.aiVision.title')}
-              description={t('solution.features.aiVision.description')}
+              icon="✅"
+              title={t('solution.features.noLearning.title')}
+              description={t('solution.features.noLearning.description')}
             />
             <FeatureCard
               icon="⚡"
-              title={t('solution.features.instantProcessing.title')}
-              description={t('solution.features.instantProcessing.description')}
+              title={t('solution.features.instantResponse.title')}
+              description={t('solution.features.instantResponse.description')}
             />
             <FeatureCard
               icon="🔗"
@@ -166,9 +166,9 @@ export function ProblemSolutionSection() {
               description={t('solution.features.multiService.description')}
             />
             <FeatureCard
-              icon="🌐"
-              title={t('solution.features.alwaysAvailable.title')}
-              description={t('solution.features.alwaysAvailable.description')}
+              icon="🕐"
+              title={t('solution.features.alwaysWorking.title')}
+              description={t('solution.features.alwaysWorking.description')}
             />
           </div>
         </div>

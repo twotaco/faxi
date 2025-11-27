@@ -1,0 +1,96 @@
+Revenue Model Analysis - Faxi
+
+B2C: Elder User Subscriptions,,,,,,
+Pricing Tier,Monthly Price (¥),Features,Target % of Users,,,
+Basic,980,"Unlimited fax processing, Email bridge, Basic shopping, AI chat (limited)",[%],,,
+Premium,1980,"All Basic + Priority processing, Advanced shopping, Unlimited AI chat, Premium support",[%],,,
+
+Assumptions,,,,,,
+Metric,Value,Notes,Data Source,,,
+Conversion Rate (Trial to Paid),[%],[Notes],[Source],,,
+Monthly Churn Rate,[%],[Notes],[Source],,,
+Average Revenue Per User (ARPU),¥[Amount],[Notes],[Calculation],,,
+Customer Lifetime (Months),[Number],[Notes],[Calculation],,,
+Customer Lifetime Value (LTV),¥[Amount],[Notes],[Calculation],,,
+Customer Acquisition Cost (CAC),¥[Amount],[Notes],[Estimate],,,
+LTV:CAC Ratio,[Ratio],[Notes],[Calculation],,,
+
+B2C Projections,,,,,,
+Year,Total Subscribers,Basic Subscribers,Premium Subscribers,Monthly Revenue (¥),Annual Revenue (¥),Growth Rate %
+1,[Number],[Number],[Number],[Amount],[Amount],-
+2,[Number],[Number],[Number],[Amount],[Amount],[%]
+3,[Number],[Number],[Number],[Amount],[Amount],[%]
+5,[Number],[Number],[Number],[Amount],[Amount],[%]
+
+B2B: Partner Integration Fees,,,,,,
+Partner Type,Monthly Platform Fee (¥),Transaction Fee,Expected Partners Y1,Expected Partners Y3,,
+Healthcare Providers,50000,¥500/appointment,[Number],[Number],,
+E-commerce Platforms,100000,3% of transaction,[Number],[Number],,
+Government Services,200000,¥300/transaction,[Number],[Number],,
+Advertisers,150000,¥50/fax delivered,[Number],[Number],,
+
+B2B Assumptions,,,,,,
+Metric,Value,Notes,Data Source,,,
+Partner Acquisition Rate (per Quarter),[Number],[Notes],[Estimate],,,
+Average Partner Revenue (Monthly),¥[Amount],[Notes],[Calculation],,,
+Partner Annual Churn Rate,[%],[Notes],[Estimate],,,
+Average Transactions per Partner,[Number],[Notes],[Estimate],,,
+
+B2B Projections,,,,,,
+Year,Total Partners,Healthcare,E-commerce,Government,Advertisers,Monthly Revenue (¥),Annual Revenue (¥)
+1,[Number],[Number],[Number],[Number],[Number],[Amount],[Amount]
+2,[Number],[Number],[Number],[Number],[Number],[Amount],[Amount]
+3,[Number],[Number],[Number],[Number],[Number],[Amount],[Amount]
+5,[Number],[Number],[Number],[Number],[Number],[Amount],[Amount]
+
+Data Monetization,,,,,,
+Product Type,Price (¥),Expected Sales Y1,Expected Sales Y3,,,
+Market Research Reports,500000,[Number],[Number],,,
+Custom Data Analysis,1000000,[Number],[Number],,,
+API Access (Monthly),300000,[Number subscribers],[Number subscribers],,,
+Trend Dashboards (Monthly),200000,[Number subscribers],[Number subscribers],,,
+
+Data Monetization Assumptions,,,,,,
+Metric,Value,Notes,Data Source,,,
+Data Buyers (Organizations),[Number],[Notes],[Estimate],,,
+Average Deal Size,¥[Amount],[Notes],[Calculation],,,
+Sales Cycle (Months),[Number],[Notes],[Estimate],,,
+
+Data Monetization Projections,,,,,,
+Year,Annual Revenue (¥),Notes,,,,
+1,[Amount],[Notes],,,,
+2,[Amount],[Notes],,,,
+3,[Amount],[Notes],,,,
+5,[Amount],[Notes],,,,
+
+Total Revenue Summary,,,,,,
+Year,B2C Revenue (¥),B2B Revenue (¥),Data Revenue (¥),Total Revenue (¥),YoY Growth %,Notes
+1,[Amount],[Amount],[Amount],[Amount],-,[Notes]
+2,[Amount],[Amount],[Amount],[Amount],[%],[Notes]
+3,[Amount],[Amount],[Amount],[Amount],[%],[Notes]
+5,[Amount],[Amount],[Amount],[Amount],[%],[Notes]
+
+Revenue Mix Analysis,,,,,,
+Year,B2C %,B2B %,Data %,Total,,
+1,[%],[%],[%],100%,,
+2,[%],[%],[%],100%,,
+3,[%],[%],[%],100%,,
+5,[%],[%],[%],100%,,
+
+Key Metrics Dashboard,,,,,,
+Metric,Year 1,Year 2,Year 3,Year 5,,
+Total Customers,[Number],[Number],[Number],[Number],,
+Total Partners,[Number],[Number],[Number],[Number],,
+Monthly Recurring Revenue (MRR),¥[Amount],¥[Amount],¥[Amount],¥[Amount],,
+Annual Recurring Revenue (ARR),¥[Amount],¥[Amount],¥[Amount],¥[Amount],,
+Average Revenue Per Account (ARPA),¥[Amount],¥[Amount],¥[Amount],¥[Amount],,
+Customer Churn Rate,[%],[%],[%],[%],,
+Revenue Churn Rate,[%],[%],[%],[%],,
+
+Assumptions Summary,,,,,,
+Category,Key Assumptions,,,,
+Market Adoption,[List key assumptions about market adoption rates],,,,
+Pricing,[List key assumptions about pricing and willingness to pay],,,,
+Competition,[List key assumptions about competitive dynamics],,,,
+Operations,[List key assumptions about operational capabilities],,,,
+Partnerships,[List key assumptions about partner acquisition and retention],,,,

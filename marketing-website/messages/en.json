@@ -48,8 +48,8 @@
     "description": "Bridging the digital divide with AI-powered fax technology",
     "hero": {
       "families": {
-        "headline": "Connect Your Parents' Fax Machine to the Internet",
-        "subheadline": "Help elderly parents access online services without learning computers. Book appointments, shop online, and pay bills—all through the fax machine they already know.",
+        "headline": "Stay Independent. Stay Connected.",
+        "subheadline": "Shop online. Book appointments. Get answers. All by fax.",
         "ctaPrimary": "Sign Up for Beta",
         "ctaSecondary": "See How It Works"
       },
@@ -67,50 +67,46 @@
       }
     },
     "problem": {
-      "title": "The Digital Divide in Japan",
-      "description": "Millions of elderly Japanese citizens are left behind as society moves online. They have fax machines but no internet access, cutting them off from essential services.",
-      "stats": {
-        "faxUsers": {
-          "value": "10M+",
-          "label": "Active fax machines in Japan",
-          "source": "Ministry of Internal Affairs"
+      "title": "Feeling Left Behind by Technology?",
+      "description": "As more services move online, it's getting harder to do everyday things without a computer or smartphone. But you shouldn't have to learn new technology just to book a doctor's appointment or order groceries.",
+      "painPoints": {
+        "complexity": {
+          "title": "Technology is Too Complicated",
+          "description": "Computers, smartphones, apps—it's overwhelming and confusing"
         },
-        "offlineSeniors": {
-          "value": "25%",
-          "label": "Seniors don't use internet",
-          "source": "Ministry of Internal Affairs"
+        "isolation": {
+          "title": "Services Are Moving Online",
+          "description": "Banks, shops, and clinics expect you to use the internet"
         },
-        "elderlyPopulation": {
-          "value": "29%",
-          "label": "Of Japan's population is 65+",
-          "source": "Statistics Bureau of Japan"
+        "independence": {
+          "title": "Don't Want to Burden Family",
+          "description": "You want to handle your own affairs without asking for help"
         },
-        "noDigitalFootprint": {
-          "value": "9M",
-          "label": "Seniors with no digital footprint",
-          "source": "Estimated from MIC Internet Usage Survey"
+        "trust": {
+          "title": "Fax Machines Just Work",
+          "description": "You've used fax for years—it's reliable and familiar"
         }
       }
     },
     "solution": {
-      "title": "AI-Powered Fax Bridge",
-      "description": "Faxi uses advanced AI to interpret handwritten faxes and connect them to modern internet services. No computer skills required—just send a fax like always.",
+      "title": "Use Your Fax Machine for Everything",
+      "description": "Faxi connects your fax machine to modern services. Just write what you need and send a fax—we handle the rest. No computer, no smartphone, no learning required.",
       "features": {
-        "aiVision": {
-          "title": "Advanced AI Vision",
-          "description": "90%+ accuracy in handwriting recognition and intent detection"
+        "noLearning": {
+          "title": "No New Skills Needed",
+          "description": "Use your fax machine exactly like you always have—just write and send"
         },
-        "instantProcessing": {
-          "title": "Instant Processing",
-          "description": "Process faxes in under 5 seconds with real-time responses"
+        "instantResponse": {
+          "title": "Get Answers Fast",
+          "description": "Receive responses back by fax within minutes, not days"
         },
         "multiService": {
-          "title": "Multiple Services",
-          "description": "Healthcare, shopping, payments, government services, and more"
+          "title": "Access Any Service",
+          "description": "Book appointments, shop online, pay bills, get information—all by fax"
         },
-        "alwaysAvailable": {
-          "title": "24/7 Availability",
-          "description": "Automated processing with no human intervention needed"
+        "alwaysWorking": {
+          "title": "Always Available",
+          "description": "Send faxes anytime, day or night—we're always ready to help"
         }
       }
     },
@@ -614,6 +610,77 @@
         "messageRequired": "Message is required",
         "messageTooShort": "Message must be at least 10 characters"
       }
+    }
+  },
+  "about": {
+    "hero": {
+      "title": "Resurrecting Fax Technology with AI",
+      "subtitle": "The last untapped consumer market in Japan"
+    },
+    "vision": {
+      "title": "Our Vision",
+      "description": "We believe technology should serve everyone, not just those who can navigate complex digital interfaces. Faxi resurrects fax technology—a trusted, familiar tool—and bridges it with modern AI to create digital inclusion for millions of elderly Japanese citizens. This isn't just about fax machines; it's about dignity, independence, and ensuring no one is left behind in the digital age."
+    },
+    "market": {
+      "title": "Market Opportunity",
+      "stats": {
+        "faxMachines": {
+          "value": "10M+",
+          "label": "Active fax machines in Japan",
+          "source": "Ministry of Internal Affairs"
+        },
+        "offlineSeniors": {
+          "value": "25%",
+          "label": "Seniors don't use internet",
+          "source": "Ministry of Internal Affairs"
+        },
+        "elderlyPopulation": {
+          "value": "36M",
+          "label": "Elderly population (65+)",
+          "source": "Statistics Bureau of Japan"
+        },
+        "noDigitalFootprint": {
+          "value": "9M",
+          "label": "Seniors with no digital footprint",
+          "source": "Estimated from MIC Survey"
+        }
+      }
+    },
+    "technology": {
+      "title": "Technology",
+      "ai": {
+        "title": "90%+ AI Accuracy",
+        "description": "Advanced handwriting recognition and intent detection powered by state-of-the-art vision models"
+      },
+      "processing": {
+        "title": "<5s Processing",
+        "description": "Real-time fax processing with instant responses back to users"
+      },
+      "integration": {
+        "title": "Extensible Platform",
+        "description": "MCP-based architecture allows easy integration with any service"
+      }
+    },
+    "business": {
+      "title": "Business Model",
+      "b2c": {
+        "title": "B2C: Subscription Service",
+        "description": "Monthly subscription for elderly users to access unlimited services via fax"
+      },
+      "b2b": {
+        "title": "B2B: Partner Integration",
+        "description": "Healthcare providers, e-commerce, and government services pay to reach elderly customers"
+      },
+      "data": {
+        "title": "Data Insights",
+        "description": "Anonymized behavioral data and market insights for advertisers and researchers"
+      }
+    },
+    "cta": {
+      "title": "Interested in Learning More?",
+      "description": "We're looking for partners, investors, and collaborators who share our vision",
+      "button": "Get in Touch",
+      "email": "hello@faxi.jp"
     }
   }
 }

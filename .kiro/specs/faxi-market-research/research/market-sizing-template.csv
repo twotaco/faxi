@@ -1,0 +1,50 @@
+Market Sizing Analysis - Faxi
+
+TAM (Total Addressable Market),,,,
+Population Base,[Number],,[Data Source],[Citation URL]
+Criteria,[Description of who qualifies],,,
+TAM Size (Customers),[Number],,,
+TAM Value (Annual Revenue),[¥ Amount],,,
+Assumptions,,,
+,1,[Assumption 1],,
+,2,[Assumption 2],,
+,3,[Assumption 3],,
+
+SAM (Serviceable Addressable Market),,,,
+Geographic Constraints,[Description],,,
+Demographic Filters,[Description],,,
+Behavioral Requirements,[Description],,,
+Technical Capabilities,[Description],,,
+SAM Size (Customers),[Number],,,
+SAM Value (Annual Revenue),[¥ Amount],,,
+% of TAM,[Percentage],,,
+
+SOM (Serviceable Obtainable Market),,,,
+Competition Factor,[Description],,,
+Resource Constraints,[Description],,,
+Go-to-Market Strategy,[Description],,,
+Expected Adoption Rate,[Percentage],,,
+
+Year,SOM Size (Customers),SOM Value (¥),Market Penetration %,Notes
+1,[Number],[Amount],[%],[Notes]
+2,[Number],[Amount],[%],[Notes]
+3,[Number],[Amount],[%],[Notes]
+5,[Number],[Amount],[%],[Notes]
+
+Assumptions,,,
+,1,[Assumption 1],,
+,2,[Assumption 2],,
+,3,[Assumption 3],,
+
+Sensitivity Analysis,,,,
+Variable,Base Case,Optimistic,Pessimistic,Impact on SOM
+[Variable 1],[Value],[Value],[Value],[Description]
+[Variable 2],[Value],[Value],[Value],[Description]
+[Variable 3],[Value],[Value],[Value],[Description]
+
+Data Quality Checks,,,,
+Check,Status,Notes,,
+TAM >= SAM,[Pass/Fail],[Notes],,
+SAM >= SOM,[Pass/Fail],[Notes],,
+All sources cited,[Pass/Fail],[Notes],,
+Data within 3 years,[Pass/Fail],[Notes],,

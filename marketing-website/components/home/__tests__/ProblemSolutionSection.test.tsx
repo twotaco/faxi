@@ -10,20 +10,20 @@ describe('ProblemSolutionSection', () => {
     expect(screen.getByText('problem.description')).toBeInTheDocument();
   });
 
-  it('renders all four statistics cards', () => {
+  it('renders all four pain point cards', () => {
     render(<ProblemSolutionSection />);
     
-    expect(screen.getByText('problem.stats.faxUsers.label')).toBeInTheDocument();
-    expect(screen.getByText('problem.stats.offlineSeniors.label')).toBeInTheDocument();
-    expect(screen.getByText('problem.stats.elderlyPopulation.label')).toBeInTheDocument();
-    expect(screen.getByText('problem.stats.noDigitalFootprint.label')).toBeInTheDocument();
+    expect(screen.getByText('problem.painPoints.complexity.title')).toBeInTheDocument();
+    expect(screen.getByText('problem.painPoints.isolation.title')).toBeInTheDocument();
+    expect(screen.getByText('problem.painPoints.independence.title')).toBeInTheDocument();
+    expect(screen.getByText('problem.painPoints.trust.title')).toBeInTheDocument();
   });
 
-  it('renders statistics with sources', () => {
+  it('renders pain point descriptions', () => {
     render(<ProblemSolutionSection />);
     
-    expect(screen.getByText('problem.stats.faxUsers.source')).toBeInTheDocument();
-    expect(screen.getByText('problem.stats.offlineSeniors.source')).toBeInTheDocument();
+    expect(screen.getByText('problem.painPoints.complexity.description')).toBeInTheDocument();
+    expect(screen.getByText('problem.painPoints.isolation.description')).toBeInTheDocument();
   });
 
   it('renders solution section with title and description', () => {
@@ -36,16 +36,16 @@ describe('ProblemSolutionSection', () => {
   it('renders all four feature cards', () => {
     render(<ProblemSolutionSection />);
     
-    expect(screen.getByText('solution.features.aiVision.title')).toBeInTheDocument();
-    expect(screen.getByText('solution.features.instantProcessing.title')).toBeInTheDocument();
+    expect(screen.getByText('solution.features.noLearning.title')).toBeInTheDocument();
+    expect(screen.getByText('solution.features.instantResponse.title')).toBeInTheDocument();
     expect(screen.getByText('solution.features.multiService.title')).toBeInTheDocument();
-    expect(screen.getByText('solution.features.alwaysAvailable.title')).toBeInTheDocument();
+    expect(screen.getByText('solution.features.alwaysWorking.title')).toBeInTheDocument();
   });
 
   it('renders feature descriptions', () => {
     render(<ProblemSolutionSection />);
     
-    expect(screen.getByText('solution.features.aiVision.description')).toBeInTheDocument();
-    expect(screen.getByText('solution.features.instantProcessing.description')).toBeInTheDocument();
+    expect(screen.getByText('solution.features.noLearning.description')).toBeInTheDocument();
+    expect(screen.getByText('solution.features.instantResponse.description')).toBeInTheDocument();
   });
 });
