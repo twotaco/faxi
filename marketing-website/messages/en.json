@@ -35,6 +35,7 @@
   },
   "navigation": {
     "home": "Home",
+    "families": "For Families",
     "service": "Service",
     "partnering": "Partnering",
     "demo": "Demo",
@@ -67,6 +68,7 @@
       }
     },
     "problem": {
+      "badge": "The Challenge",
       "title": "Feeling Left Behind by Technology?",
       "description": "As more services move online, it's getting harder to do everyday things without a computer or smartphone. But you shouldn't have to learn new technology just to book a doctor's appointment or order groceries.",
       "painPoints": {
@@ -89,6 +91,7 @@
       }
     },
     "solution": {
+      "badge": "The Solution",
       "title": "Use Your Fax Machine for Everything",
       "description": "Faxi connects your fax machine to modern services. Just write what you need and send a fax—we handle the rest. No computer, no smartphone, no learning required.",
       "features": {
@@ -140,6 +143,7 @@
       "viewDetails": "View Details"
     },
     "testimonials": {
+      "badge": "Testimonials",
       "title": "Stories from Our Users",
       "subtitle": "Real experiences from people using Faxi",
       "items": {
@@ -681,6 +685,208 @@
       "description": "We're looking for partners, investors, and collaborators who share our vision",
       "button": "Get in Touch",
       "email": "hello@faxi.jp"
+    }
+  },
+  "families": {
+    "hero": {
+      "headline": "Give Your Parents Independence. Get Your Time Back.",
+      "subheadline": "No more \"how do I do this?\" calls. Your parents can shop, book appointments, and access services on their own—using their fax machine.",
+      "ctaPrimary": "Sign Up Your Parent",
+      "ctaSecondary": "See How It Works",
+      "value1": "Independence",
+      "value2": "Confidence",
+      "value3": "Connection",
+      "value4": "Peace of Mind"
+    },
+    "problem": {
+      "title": "Tired of Being Tech Support for Your Parents?",
+      "description": "You love your parents, but the constant calls for help with technology are exhausting. You want them to be independent, but teaching them smartphones or computers just doesn't work.",
+      "painPoints": {
+        "techSupport": {
+          "title": "Endless Tech Support Calls",
+          "description": "\"How do I order groceries?\" \"The website isn't working.\" Every week, the same questions."
+        },
+        "distance": {
+          "title": "Too Far to Help in Person",
+          "description": "You can't just pop over to help. They're 30 minutes—or 3 hours—away."
+        },
+        "teaching": {
+          "title": "Teaching Doesn't Stick",
+          "description": "You've explained it five times. They forget. You both get frustrated."
+        },
+        "worry": {
+          "title": "Constant Worry",
+          "description": "Are they managing okay? Can they access the services they need?"
+        }
+      }
+    },
+    "solution": {
+      "title": "Let Faxi Handle It",
+      "description": "Your parents use their fax machine—something they already know. Faxi connects it to modern services. No teaching required. No tech support calls. Just independence.",
+      "benefits": {
+        "fewerCalls": {
+          "title": "Fewer \"How Do I?\" Calls",
+          "description": "Tech support calls drop from 5x/week to maybe once a month"
+        },
+        "peaceOfMind": {
+          "title": "Peace of Mind",
+          "description": "Know your parents can access essential services even when you're not available"
+        },
+        "anyDistance": {
+          "title": "Works From Any Distance",
+          "description": "Whether you're 15 minutes or 3 hours away, your parents stay independent"
+        },
+        "timeBack": {
+          "title": "Get Your Time Back",
+          "description": "Spend quality time with parents, not troubleshooting their technology"
+        }
+      }
+    },
+    "timeSavings": {
+      "title": "Calculate Your Time Savings",
+      "subtitle": "How much time do you spend helping your parents with technology and errands?",
+      "sliderLabel": "Hours per week on parent tech support & errands:",
+      "hoursUnit": "hours",
+      "yearlyHours": "Hours saved per year",
+      "yearlyValue": "Value of your time",
+      "netSavings": "Net savings (minus Faxi cost)",
+      "calculation": "Based on ¥3,000/hour average value and ¥980/month Faxi subscription"
+    },
+    "useCases": {
+      "title": "Real Stories from Families Like Yours",
+      "subtitle": "See how Faxi has changed the relationship between adult children and their parents",
+      "shopping": {
+        "before": "Every weekend, 2-hour drive to help mom with groceries",
+        "after": "Mom orders her own groceries by fax. Weekends are for family time.",
+        "saved": "2 hours/week saved"
+      },
+      "techCalls": {
+        "before": "5 calls a week: \"How do I book an appointment?\"",
+        "after": "Mom books her own appointments. Calls are now just to chat.",
+        "saved": "5 calls → 1 call/month"
+      },
+      "distance": {
+        "before": "Monthly trips from Tokyo to Osaka to help dad with errands",
+        "after": "Dad handles his own affairs. Visits are now for quality time.",
+        "saved": "¥30,000/month in travel"
+      },
+      "work": {
+        "before": "Interrupted at work by parent's urgent \"help me\" calls",
+        "after": "Parents are self-sufficient. Work without interruption.",
+        "saved": "Focus restored"
+      }
+    },
+    "challenge": {
+      "title": "Tired of Being Tech Support for Your Parents?",
+      "description": "You love your parents, but the constant calls for help with technology are exhausting. You want them to be independent, but teaching them smartphones or computers just doesn't work.",
+      "challenges": {
+        "digitalBarrier": {
+          "title": "Digital Barrier",
+          "description": "Smartphones, tablets, and computers are overwhelming for many elderly parents."
+        },
+        "isolation": {
+          "title": "Growing Isolation",
+          "description": "As services move online, those without digital skills get left behind."
+        },
+        "dependence": {
+          "title": "Forced Dependence",
+          "description": "Having to ask children for help with basic tasks affects dignity and self-esteem."
+        }
+      }
+    },
+    "empowerment": {
+      "title": "Faxi Empowers Independence",
+      "description": "Your parents already know how to use a fax machine. Faxi connects that familiar technology to modern services, giving them back their independence.",
+      "benefits": {
+        "independence": {
+          "title": "True Independence",
+          "description": "Shop, book appointments, and access services without asking for help."
+        },
+        "confidence": {
+          "title": "Renewed Confidence",
+          "description": "Using familiar technology builds confidence, not frustration."
+        },
+        "inclusion": {
+          "title": "Digital Inclusion",
+          "description": "Access the same services as everyone else, via fax."
+        },
+        "connection": {
+          "title": "Stay Connected",
+          "description": "Reach family, services, and the world on their own terms."
+        }
+      },
+      "familyBenefits": {
+        "title": "Benefits for the Whole Family",
+        "peace": {
+          "title": "Peace of Mind",
+          "description": "Know your parents can handle daily tasks independently, even when you're not available."
+        },
+        "bridge": {
+          "title": "Bridge Generations",
+          "description": "Less tech support means more quality time together as a family."
+        }
+      }
+    },
+    "stories": {
+      "title": "Real Stories of Independence",
+      "subtitle": "See how Faxi has transformed the lives of elderly users and their families",
+      "shopping": {
+        "title": "Shopping Freedom",
+        "story": "Tanaka-san, 78, used to wait for her daughter's weekend visits to order groceries. Now she browses catalogs and orders by fax whenever she needs something.",
+        "impact": "Weekly grocery orders without any help from family"
+      },
+      "healthcare": {
+        "title": "Healthcare Access",
+        "story": "Yamamoto-san, 82, missed appointments because he couldn't navigate the clinic's online booking system. With Faxi, he books appointments with a simple fax.",
+        "impact": "Zero missed appointments in 6 months"
+      },
+      "hobbies": {
+        "title": "Pursuing Hobbies",
+        "story": "Suzuki-san, 75, loves gardening but couldn't order specialty seeds online. Now she browses catalogs and orders rare plants via fax.",
+        "impact": "Rediscovered joy in her favorite hobby"
+      }
+    },
+    "testimonials": {
+      "title": "From Adult Children Like You",
+      "subtitle": "Real experiences from families using Faxi",
+      "parent": {
+        "quote": "I can finally do things on my own again. I don't have to wait for my son to visit to order my medicine or book my doctor's appointment.",
+        "name": "Tanaka Michiko",
+        "details": "Age 78, Tokyo"
+      },
+      "family": {
+        "quote": "My mother's confidence has soared since using Faxi. She's proud that she can handle her own affairs. And our phone calls are now about her life, not tech problems.",
+        "name": "Sato Kenji",
+        "details": "Son of Faxi user"
+      },
+      "stats": {
+        "independence": "92%",
+        "independenceLabel": "of users feel more independent",
+        "satisfaction": "4.8/5",
+        "satisfactionLabel": "family satisfaction rating",
+        "connection": "85%",
+        "connectionLabel": "reduction in tech support calls"
+      },
+      "items": {
+        "kenji": {
+          "quote": "My mother used to call me 5 times a week asking how to do things online. Since Faxi, she handles everything herself. Our calls are now about life, not tech support.",
+          "author": "Kenji M.",
+          "relationship": "Son of 78-year-old Faxi user",
+          "location": "Lives in Tokyo, mother in Osaka"
+        },
+        "yuki": {
+          "quote": "I felt so guilty that I couldn't help my father more. He lives alone in the countryside. Now he orders his own groceries, books his own appointments. He's proud of himself, and I have peace of mind.",
+          "author": "Yuki T.",
+          "relationship": "Daughter of 82-year-old Faxi user",
+          "location": "Lives in Yokohama, father in Niigata"
+        },
+        "hiroshi": {
+          "quote": "Teaching my parents technology was destroying our relationship. Every visit turned into a frustrating tech support session. Faxi gave us our relationship back.",
+          "author": "Hiroshi S.",
+          "relationship": "Son of 75-year-old Faxi users",
+          "location": "Lives in Nagoya, parents in Kyoto"
+        }
+      }
     }
   }
 }

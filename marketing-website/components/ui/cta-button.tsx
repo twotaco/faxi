@@ -2,40 +2,58 @@ import * as React from 'react';
 import Link from 'next/link';
 import { Button, ButtonProps } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { ArrowRight } from 'lucide-react';
 
 export interface CTAButtonProps extends Omit<ButtonProps, 'asChild'> {
   href?: string;
   audience?: 'families' | 'partners' | 'investors';
   priority?: 'primary' | 'secondary';
   external?: boolean;
+  showArrow?: boolean;
 }
 
 const CTAButton = React.forwardRef<HTMLButtonElement, CTAButtonProps>(
-  ({ 
-    className, 
-    href, 
+  ({
+    className,
+    href,
     audience = 'families',
     priority = 'primary',
     external = false,
+    showArrow = false,
     children,
     variant,
     size = 'lg',
-    ...props 
+    ...props
   }, ref) => {
     // Determine variant based on priority if not explicitly set
     const buttonVariant = variant || (priority === 'primary' ? 'default' : 'outline');
-    
-    // Add audience-specific styling
+
+    // Modern audience-specific styling with Faxi brand colors
     const audienceClasses = {
-      families: priority === 'primary' ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'border-blue-600 text-blue-600 hover:bg-blue-50',
-      partners: priority === 'primary' ? 'bg-green-600 hover:bg-green-700 text-white' : 'border-green-600 text-green-600 hover:bg-green-50',
-      investors: priority === 'primary' ? 'bg-purple-600 hover:bg-purple-700 text-white' : 'border-purple-600 text-purple-600 hover:bg-purple-50',
+      families: priority === 'primary'
+        ? 'bg-faxi-brown hover:bg-faxi-brown-dark text-white shadow-lg hover:shadow-xl'
+        : 'border-2 border-faxi-brown text-faxi-brown hover:bg-faxi-brown hover:text-white',
+      partners: priority === 'primary'
+        ? 'bg-faxi-accent hover:bg-faxi-accent/90 text-white shadow-lg hover:shadow-xl'
+        : 'border-2 border-faxi-accent text-faxi-accent hover:bg-faxi-accent hover:text-white',
+      investors: priority === 'primary'
+        ? 'bg-faxi-brown-light hover:bg-faxi-brown text-white shadow-lg hover:shadow-xl'
+        : 'border-2 border-faxi-brown-light text-faxi-brown-light hover:bg-faxi-brown-light hover:text-white',
     };
 
     const buttonClasses = cn(
-      'font-semibold transition-all duration-200',
+      'font-semibold transition-all duration-300 rounded-full px-8 group',
       audienceClasses[audience],
       className
+    );
+
+    const content = (
+      <>
+        {children}
+        {showArrow && (
+          <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
+        )}
+      </>
     );
 
     if (href) {
@@ -49,12 +67,12 @@ const CTAButton = React.forwardRef<HTMLButtonElement, CTAButtonProps>(
             {...props}
           >
             <a href={href} target="_blank" rel="noopener noreferrer">
-              {children}
+              {content}
             </a>
           </Button>
         );
       }
-      
+
       return (
         <Button
           variant={buttonVariant}
@@ -64,7 +82,7 @@ const CTAButton = React.forwardRef<HTMLButtonElement, CTAButtonProps>(
           {...props}
         >
           <Link href={href}>
-            {children}
+            {content}
           </Link>
         </Button>
       );
@@ -78,7 +96,7 @@ const CTAButton = React.forwardRef<HTMLButtonElement, CTAButtonProps>(
         className={buttonClasses}
         {...props}
       >
-        {children}
+        {content}
       </Button>
     );
   }

@@ -85,12 +85,12 @@ export default function PartnerBenefits() {
             {dataInsights.map((insight, index) => (
               <div
                 key={index}
-                className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg p-6 hover:shadow-lg transition-shadow"
+                className="bg-gradient-to-br from-amber-50 to-stone-50 rounded-lg p-6 hover:shadow-lg transition-shadow"
               >
                 <div className="text-4xl mb-3">{insight.icon}</div>
                 <h3 className="text-xl font-bold mb-2">{insight.category}</h3>
                 <p className="text-sm text-gray-600 mb-3">{insight.description}</p>
-                <p className="text-sm font-semibold text-blue-600">{insight.value}</p>
+                <p className="text-sm font-semibold text-faxi-brown">{insight.value}</p>
               </div>
             ))}
           </div>
@@ -106,7 +106,7 @@ export default function PartnerBenefits() {
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
             {marketStats.map((stat, index) => (
               <div key={index} className="text-center">
-                <div className="text-5xl font-bold text-blue-600 mb-2">{stat.value}</div>
+                <div className="text-5xl font-bold text-faxi-brown mb-2">{stat.value}</div>
                 <div className="text-lg font-semibold mb-2">{stat.label}</div>
                 <p className="text-sm text-gray-600 mb-2">{stat.description}</p>
                 <p className="text-xs text-gray-400 italic">{stat.source}</p>
@@ -116,26 +116,26 @@ export default function PartnerBenefits() {
         </div>
 
         {/* Revenue Opportunities Section */}
-        <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl p-12 text-white">
+        <div className="bg-gradient-to-r from-faxi-brown to-faxi-brown-dark rounded-2xl p-12 text-white">
           <h2 className="text-3xl font-bold text-center mb-8">{t('revenueOpportunities.title')}</h2>
-          
+
           <div className="grid md:grid-cols-3 gap-8">
             <div className="text-center">
               <div className="text-4xl mb-4">💰</div>
               <h3 className="text-xl font-bold mb-2">{t('revenueOpportunities.directRevenue.title')}</h3>
-              <p className="text-blue-100">{t('revenueOpportunities.directRevenue.description')}</p>
+              <p className="text-amber-100">{t('revenueOpportunities.directRevenue.description')}</p>
             </div>
-            
+
             <div className="text-center">
               <div className="text-4xl mb-4">📈</div>
               <h3 className="text-xl font-bold mb-2">{t('revenueOpportunities.dataMonetization.title')}</h3>
-              <p className="text-blue-100">{t('revenueOpportunities.dataMonetization.description')}</p>
+              <p className="text-amber-100">{t('revenueOpportunities.dataMonetization.description')}</p>
             </div>
-            
+
             <div className="text-center">
               <div className="text-4xl mb-4">🎯</div>
               <h3 className="text-xl font-bold mb-2">{t('revenueOpportunities.marketExpansion.title')}</h3>
-              <p className="text-blue-100">{t('revenueOpportunities.marketExpansion.description')}</p>
+              <p className="text-amber-100">{t('revenueOpportunities.marketExpansion.description')}</p>
             </div>
           </div>
         </div>

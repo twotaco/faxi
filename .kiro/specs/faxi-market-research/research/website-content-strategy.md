@@ -28,6 +28,23 @@ The strategy includes:
 
 ## Executive Summary
 
+### Core Messaging Philosophy
+
+**SOLUTION SELLING, NOT FEATURE SELLING**
+
+The elderly don't want to "use the internet" or "access online services." They want to:
+- **Stay independent** - handle their own affairs without burdening family
+- **Participate in modern life** - not be left behind as services go digital
+- **Maintain dignity** - feel capable and self-sufficient
+- **Access services that are increasingly online-only** - out of necessity, not desire
+
+**Wrong approach**: "Access the internet through your fax machine"
+**Right approach**: "Stay Independent. Stay Connected. Shop online. Book appointments. Get answers. All by fax."
+
+The fax machine is the HOW, not the WHAT. The WHAT is independence, dignity, and participation.
+
+---
+
 ### Strategic Approach
 
 Faxi's website must serve three distinct audiences with different needs, decision-making processes, and communication preferences. The strategy employs:
@@ -308,62 +325,62 @@ Faxi connects your fax machine to modern services. Just write what you need and 
 
 ---
 
-#### Section 3: Key Benefits (Audience-Adaptive)
+#### Section 5: Key Benefits (Audience-Adaptive)
 
-**Purpose**: Communicate primary value propositions relevant to each audience
+**Purpose**: Communicate VALUE and OUTCOMES, not features. Focus on what they GET, not what the product DOES.
 
 **Default/Mixed Audience Benefits**:
 
-**Benefit 1: 学習不要** (No Learning Required)
-- Icon: Fax machine with checkmark
-- Headline: "今お持ちのファックスを使用"
-- Text: "新しい技術を学ぶ必要はありません。今使っているファックスで、すぐに始められます。"
-- Translation: "Use your existing fax machine. No new technology to learn. Start immediately with what you already know."
-
-**Benefit 2: 自立を維持** (Maintain Independence)
+**Benefit 1: 自分のことは自分で** (Handle Your Own Affairs)
 - Icon: Person standing confidently
-- Headline: "自分でできる"
-- Text: "家族に頼らず、自分でオンラインショッピングや予約ができます。"
-- Translation: "Do it yourself. Shop online and book appointments without relying on family."
+- Headline: "家族に頼らなくていい"
+- Text: "買い物も予約も、自分でできます。「ちょっと手伝って」と言わなくて済みます。"
+- Translation: "Shop and book appointments yourself. No more asking family for help."
 
-**Benefit 3: 安全・安心** (Safe and Secure)
-- Icon: Shield with checkmark
-- Headline: "詐欺から保護"
-- Text: "オンライン詐欺やフィッシングから守ります。日本語サポートも利用可能。"
-- Translation: "Protected from online scams and phishing. Japanese language support available."
+**Benefit 2: 置いていかれない** (Don't Get Left Behind)
+- Icon: Connected circles
+- Headline: "現代のサービスにアクセス"
+- Text: "オンライン化が進む世界でも、取り残されません。"
+- Translation: "Stay connected to services in an increasingly digital world."
 
-**Benefit 4: 手頃な価格** (Affordable)
-- Icon: Yen symbol
-- Headline: "月額980円から"
-- Text: "年金生活でも安心の価格。いつでもキャンセル可能。"
-- Translation: "From ¥980/month. Affordable on pension income. Cancel anytime."
+**Benefit 3: 安心して使える** (Use with Confidence)
+- Icon: Shield with heart
+- Headline: "詐欺の心配なし"
+- Text: "オンライン詐欺から守られます。困ったときは日本語でサポート。"
+- Translation: "Protected from online scams. Japanese support when you need it."
 
----
-
-**Elder-Focused Benefits** (emphasize independence and simplicity):
-
-**Benefit 1**: "新しい機器は不要" (No New Devices)
-**Benefit 2**: "家族の負担を軽減" (Reduce Family Burden)
-**Benefit 3**: "尊厳を保つ" (Preserve Dignity)
-**Benefit 4**: "日本語サポート" (Japanese Support)
+**Benefit 4: 年金でも安心** (Affordable on Pension)
+- Icon: Coin with checkmark
+- Headline: "1日66円から"
+- Text: "コーヒー1杯より安い。いつでもやめられます。"
+- Translation: "Less than a cup of coffee per day. Cancel anytime."
 
 ---
 
-**Family-Focused Benefits** (emphasize time savings and peace of mind):
+**Elder-Focused Benefits** (emphasize dignity and autonomy):
 
-**Benefit 1**: "週5〜10時間の節約" (Save 5-10 Hours Per Week)
-**Benefit 2**: "テクサポート不要" (No Tech Support Needed)
-**Benefit 3**: "距離を超えたサポート" (Support Across Distance)
-**Benefit 4**: "安心感" (Peace of Mind)
+**Benefit 1**: "自分でできる喜び" (The Joy of Doing It Yourself)
+**Benefit 2**: "家族に迷惑をかけない" (Don't Burden Your Family)
+**Benefit 3**: "尊厳を守る" (Preserve Your Dignity)
+**Benefit 4**: "いつでも相談できる" (Help When You Need It)
 
 ---
 
-**Business-Focused Benefits** (emphasize ROI and market access):
+**Family-Focused Benefits** (emphasize relief and peace of mind):
 
-**Benefit 1**: "620万人の市場にアクセス" (Access 6.2M Market)
-**Benefit 2**: "CAC 30-50%削減" (Reduce CAC 30-50%)
-**Benefit 3**: "収益15-25%増加" (Increase Revenue 15-25%)
-**Benefit 4**: "6-18ヶ月でROI" (ROI in 6-18 Months)
+**Benefit 1**: "「どうやるの？」電話が激減" (Fewer "How Do I?" Calls)
+**Benefit 2**: "親が自分でできる安心" (Peace of Mind That Parents Can Manage)
+**Benefit 3**: "遠くても支えられる" (Support From Any Distance)
+**Benefit 4**: "あなたの時間を取り戻す" (Get Your Time Back)
+
+---
+
+**Business-Focused Benefits** (emphasize opportunity and results):
+
+**Benefit 1**: "取り残された620万人にリーチ" (Reach 6.2M Left Behind)
+**Benefit 2**: "顧客獲得コスト半減" (Cut Acquisition Costs in Half)
+**Benefit 3**: "高齢者売上15-25%増" (Grow Elderly Revenue 15-25%)
+**Benefit 4**: "1年以内に投資回収" (ROI Within 1 Year)
 
 ---
 
@@ -411,33 +428,63 @@ Faxi connects your fax machine to modern services. Just write what you need and 
 
 ---
 
-#### Section 5: Use Cases (Scenario-Based)
+#### Section 6: Real-World Use Cases (Scenario-Based)
 
-**Purpose**: Help visitors visualize how Faxi solves their specific problems
+**Purpose**: Help visitors visualize how Faxi solves their specific problems with concrete, relatable scenarios
 
-**Use Case 1: オンラインショッピング** (Online Shopping)
-- Icon: Shopping cart
-- Scenario: "食料品や日用品を自宅から注文"
-- Translation: "Order groceries and household items from home"
-- Benefit: "重い荷物を運ぶ必要なし" (No need to carry heavy bags)
+**Section Headline**:
+```
+実際の使い方
+Real-World Use Cases
+```
 
-**Use Case 2: 医療予約** (Medical Appointments)
-- Icon: Calendar with medical cross
-- Scenario: "病院の予約を簡単に"
-- Translation: "Book hospital appointments easily"
-- Benefit: "電話の待ち時間なし" (No phone wait times)
+**Section Subheadline**:
+```
+Faxiがどのように高齢者の生活を支えているかをご覧ください
+See how Faxi helps elderly users access essential services
+```
 
-**Use Case 3: 政府サービス** (Government Services)
-- Icon: Government building
-- Scenario: "行政サービスにアクセス"
-- Translation: "Access government services"
-- Benefit: "役所に行く必要なし" (No need to visit office)
+---
 
-**Use Case 4: AIチャット** (AI Chat)
-- Icon: Chat bubble with AI
-- Scenario: "質問や情報検索"
-- Translation: "Ask questions and search for information"
-- Benefit: "24時間利用可能" (Available 24/7)
+**Use Case 1: 🏥 医療アクセス** (Healthcare Access)
+- **Who**: 高齢患者 (Elderly patients)
+- **Problem**: "オンラインで病院の予約ができない"
+  - "Difficulty booking doctor appointments online"
+- **Solution**: "ファックスで予約、変更、キャンセルができます"
+  - "Send a fax to book, reschedule, or cancel appointments"
+- **CTA**: "詳しく見る →" (View Details →)
+
+**Use Case 2: 🛒 オンラインショッピング** (Online Shopping)
+- **Who**: インターネットを使わない高齢者 (Seniors without internet)
+- **Problem**: "ECサイトにアクセスできない"
+  - "Cannot access e-commerce platforms"
+- **Solution**: "ファックスで商品を探して注文できます"
+  - "Browse products and place orders via fax"
+- **CTA**: "詳しく見る →" (View Details →)
+
+**Use Case 3: 🏛️ 行政サービス** (Government Services)
+- **Who**: 地方在住者 (Rural residents)
+- **Problem**: "公共サービスへのアクセスが限られている"
+  - "Limited access to public services"
+- **Solution**: "ファックスで申請書や届出を提出できます"
+  - "Submit forms and requests through fax"
+- **CTA**: "詳しく見る →" (View Details →)
+
+**Use Case 4: 💬 AIアシスタント** (AI Assistant)
+- **Who**: 一人暮らしの高齢者 (Isolated seniors)
+- **Problem**: "情報が欲しい、話し相手が欲しい"
+  - "Need information and companionship"
+- **Solution**: "ファックスでAIアシスタントに質問できます"
+  - "Chat with AI assistant via fax for answers and support"
+- **CTA**: "詳しく見る →" (View Details →)
+
+---
+
+**Visual Design**:
+- Card-based layout with icons
+- Each card shows: Icon, Who, Problem, Solution, CTA
+- Hover effect reveals more details
+- Mobile: Swipeable carousel
 
 **CTA**: "すべてのサービスを見る" (See All Services) → Links to services page
 

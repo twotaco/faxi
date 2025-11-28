@@ -82,15 +82,15 @@ export default function PartnerValueProposition() {
           <p className="text-xl text-gray-600 mb-8">{t('marketOpportunity.subtitle')}</p>
           <div className="flex flex-wrap justify-center gap-8 mb-8">
             <div className="text-center">
-              <div className="text-5xl font-bold text-blue-600 mb-2">10M+</div>
+              <div className="text-5xl font-bold text-faxi-brown mb-2">10M+</div>
               <div className="text-gray-600">{t('marketOpportunity.stats.faxUsers')}</div>
             </div>
             <div className="text-center">
-              <div className="text-5xl font-bold text-blue-600 mb-2">36M</div>
+              <div className="text-5xl font-bold text-faxi-brown mb-2">36M</div>
               <div className="text-gray-600">{t('marketOpportunity.stats.elderlyPopulation')}</div>
             </div>
             <div className="text-center">
-              <div className="text-5xl font-bold text-blue-600 mb-2">25%</div>
+              <div className="text-5xl font-bold text-faxi-brown mb-2">25%</div>
               <div className="text-gray-600">{t('marketOpportunity.stats.offlineSeniors')}</div>
             </div>
           </div>
@@ -105,7 +105,7 @@ export default function PartnerValueProposition() {
                 key={partner.type}
                 className="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow"
               >
-                <h4 className="text-2xl font-bold mb-3 text-blue-600">{partner.title}</h4>
+                <h4 className="text-2xl font-bold mb-3 text-faxi-brown">{partner.title}</h4>
                 <p className="text-gray-600 mb-4">{partner.description}</p>
                 
                 <div className="mb-4">
@@ -113,7 +113,7 @@ export default function PartnerValueProposition() {
                   <ul className="space-y-2">
                     {partner.benefits.map((benefit, index) => (
                       <li key={index} className="flex items-start">
-                        <span className="text-green-500 mr-2">✓</span>
+                        <span className="text-amber-700 mr-2">✓</span>
                         <span className="text-sm text-gray-700">{benefit}</span>
                       </li>
                     ))}
@@ -127,7 +127,7 @@ export default function PartnerValueProposition() {
                     </h5>
                     <p className="text-sm font-medium mb-1">{partner.caseStudy.title}</p>
                     <p className="text-sm text-gray-600 mb-2">{partner.caseStudy.result}</p>
-                    <p className="text-lg font-bold text-blue-600">{partner.caseStudy.metric}</p>
+                    <p className="text-lg font-bold text-faxi-brown">{partner.caseStudy.metric}</p>
                   </div>
                 )}
               </div>

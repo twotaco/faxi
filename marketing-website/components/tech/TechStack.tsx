@@ -122,10 +122,10 @@ const technologies: Technology[] = [
 ];
 
 const categoryColors = {
-  frontend: 'bg-blue-500/10 text-blue-700 border-blue-500/20',
-  backend: 'bg-purple-500/10 text-purple-700 border-purple-500/20',
-  ai: 'bg-green-500/10 text-green-700 border-green-500/20',
-  infrastructure: 'bg-orange-500/10 text-orange-700 border-orange-500/20'
+  frontend: 'bg-amber-500/10 text-amber-700 border-amber-500/20',
+  backend: 'bg-stone-500/10 text-stone-700 border-stone-500/20',
+  ai: 'bg-faxi-brown/10 text-faxi-brown border-faxi-brown/20',
+  infrastructure: 'bg-amber-600/10 text-amber-800 border-amber-600/20'
 };
 
 const categoryLabels = {
@@ -186,23 +186,23 @@ export function TechStack() {
           <h3 className="font-semibold mb-3">Why This Stack?</h3>
           <ul className="space-y-2 text-sm text-muted-foreground">
             <li className="flex gap-2">
-              <span className="text-green-600">✓</span>
+              <span className="text-amber-700">✓</span>
               <span><strong>Performance:</strong> Server-side rendering and edge deployment for fast load times</span>
             </li>
             <li className="flex gap-2">
-              <span className="text-green-600">✓</span>
+              <span className="text-amber-700">✓</span>
               <span><strong>Scalability:</strong> Horizontal scaling with containerization and cloud infrastructure</span>
             </li>
             <li className="flex gap-2">
-              <span className="text-green-600">✓</span>
+              <span className="text-amber-700">✓</span>
               <span><strong>Reliability:</strong> Type safety, robust error handling, and comprehensive testing</span>
             </li>
             <li className="flex gap-2">
-              <span className="text-green-600">✓</span>
+              <span className="text-amber-700">✓</span>
               <span><strong>Developer Experience:</strong> Modern tooling with hot reload and TypeScript support</span>
             </li>
             <li className="flex gap-2">
-              <span className="text-green-600">✓</span>
+              <span className="text-amber-700">✓</span>
               <span><strong>AI-First:</strong> Integration with leading AI models for state-of-the-art accuracy</span>
             </li>
           </ul>

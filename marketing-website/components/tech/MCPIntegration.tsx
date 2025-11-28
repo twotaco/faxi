@@ -158,15 +158,15 @@ faxiSystem.registerMCP('weather', new WeatherMCPServer());
                     <ul className="space-y-1">
                       {server.capabilities.map((capability, idx) => (
                         <li key={idx} className="text-sm text-muted-foreground flex gap-2">
-                          <span className="text-green-600">✓</span>
+                          <span className="text-amber-700">✓</span>
                           <span>{capability}</span>
                         </li>
                       ))}
                     </ul>
                   </div>
-                  <div className="p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
-                    <h5 className="text-sm font-semibold mb-1 text-blue-700">Example Use Case:</h5>
-                    <p className="text-sm text-blue-900/80">{server.exampleUseCase}</p>
+                  <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg">
+                    <h5 className="text-sm font-semibold mb-1 text-amber-700">Example Use Case:</h5>
+                    <p className="text-sm text-stone-700">{server.exampleUseCase}</p>
                   </div>
                 </div>
               )}
@@ -212,7 +212,7 @@ faxiSystem.registerMCP('weather', new WeatherMCPServer());
         <div>
           <button
             onClick={() => setShowCode(!showCode)}
-            className="text-sm font-semibold text-blue-600 hover:text-blue-700 mb-3"
+            className="text-sm font-semibold text-faxi-brown hover:text-faxi-brown-dark mb-3"
             aria-expanded={showCode}
             aria-label={showCode ? 'Hide code example' : 'Show code example'}
           >
@@ -232,9 +232,9 @@ faxiSystem.registerMCP('weather', new WeatherMCPServer());
         </div>
 
         {/* Benefits */}
-        <div className="mt-6 p-4 bg-green-500/10 border border-green-500/20 rounded-lg">
-          <h3 className="font-semibold mb-2 text-green-700">Why MCP Matters</h3>
-          <ul className="space-y-1 text-sm text-green-900/80">
+        <div className="mt-6 p-4 bg-amber-500/10 border border-amber-500/20 rounded-lg">
+          <h3 className="font-semibold mb-2 text-amber-700">Why MCP Matters</h3>
+          <ul className="space-y-1 text-sm text-stone-700">
             <li className="flex gap-2">
               <span>•</span>
               <span><strong>Standardized:</strong> Open protocol ensures compatibility and interoperability</span>

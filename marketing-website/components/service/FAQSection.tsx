@@ -41,7 +41,7 @@ export default function FAQSection() {
                     {t(`items.${key}.question`)}
                   </span>
                   {openIndex === index ? (
-                    <ChevronUp size={24} className="text-blue-600 flex-shrink-0" />
+                    <ChevronUp size={24} className="text-faxi-brown flex-shrink-0" />
                   ) : (
                     <ChevronDown size={24} className="text-gray-400 flex-shrink-0" />
                   )}
@@ -57,13 +57,13 @@ export default function FAQSection() {
           </div>
 
           {/* Contact Information */}
-          <div className="bg-blue-50 border-2 border-blue-200 rounded-lg p-8 text-center">
+          <div className="bg-amber-50 border-2 border-amber-200 rounded-lg p-8 text-center">
             <h3 className="text-2xl font-bold mb-4">{t('contactTitle')}</h3>
             <p className="text-gray-700 mb-6">{t('contactDescription')}</p>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-2xl mx-auto">
               <div className="bg-white rounded-lg p-4 flex items-center gap-3">
-                <Phone size={24} className="text-blue-600 flex-shrink-0" />
+                <Phone size={24} className="text-faxi-brown flex-shrink-0" />
                 <div className="text-left">
                   <p className="text-sm text-gray-600">Phone Support</p>
                   <p className="font-semibold">{t('contactPhone')}</p>
@@ -71,7 +71,7 @@ export default function FAQSection() {
               </div>
               
               <div className="bg-white rounded-lg p-4 flex items-center gap-3">
-                <Printer size={24} className="text-green-600 flex-shrink-0" />
+                <Printer size={24} className="text-amber-700 flex-shrink-0" />
                 <div className="text-left">
                   <p className="text-sm text-gray-600">Fax Support</p>
                   <p className="font-semibold">{t('contactFax')}</p>

@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { ChevronDown, ChevronUp, Clock, Target, Users } from 'lucide-react';
-import Image from 'next/image';
 
 interface UseCaseDetailCardProps {
   useCaseKey: string;
@@ -31,38 +30,26 @@ export default function UseCaseDetailCard({ useCaseKey, icon }: UseCaseDetailCar
 
         {/* Problem */}
         <div className="mb-4">
-          <h4 className="font-semibold text-red-600 mb-2">Problem:</h4>
+          <h4 className="font-semibold text-stone-600 mb-2">Problem:</h4>
           <p className="text-gray-700">{t('problem')}</p>
         </div>
 
         {/* Solution */}
         <div className="mb-4">
-          <h4 className="font-semibold text-green-600 mb-2">Solution:</h4>
+          <h4 className="font-semibold text-amber-700 mb-2">Solution:</h4>
           <p className="text-gray-700">{t('solution')}</p>
         </div>
 
-        {/* Before/After Images */}
+        {/* Before/After Visual Comparison */}
         <div className="grid grid-cols-2 gap-4 mb-4">
           <div>
             <p className="text-sm font-semibold text-gray-600 mb-2">
               {t('beforeLabel')}
             </p>
-            <div className="relative aspect-[4/3] bg-gray-100 rounded border-2 border-gray-300">
-              {/* Placeholder for before image */}
-              <div className="absolute inset-0 flex items-center justify-center text-gray-400">
-                <Image
-                  src={`/images/use-cases/${useCaseKey}-before.png`}
-                  alt={t('beforeLabel')}
-                  fill
-                  className="object-cover rounded"
-                  loading="lazy"
-                  onError={(e) => {
-                    // Fallback to placeholder if image doesn't exist
-                    const target = e.target as HTMLImageElement;
-                    target.style.display = 'none';
-                  }}
-                />
-                <span className="text-sm">Before</span>
+            <div className="relative aspect-[4/3] bg-gray-100 rounded border-2 border-gray-300 flex items-center justify-center">
+              <div className="text-center p-4">
+                <div className="text-4xl mb-2">😰</div>
+                <span className="text-sm text-gray-500">Complex Digital Interface</span>
               </div>
             </div>
           </div>
@@ -70,22 +57,10 @@ export default function UseCaseDetailCard({ useCaseKey, icon }: UseCaseDetailCar
             <p className="text-sm font-semibold text-gray-600 mb-2">
               {t('afterLabel')}
             </p>
-            <div className="relative aspect-[4/3] bg-green-50 rounded border-2 border-green-300">
-              {/* Placeholder for after image */}
-              <div className="absolute inset-0 flex items-center justify-center text-green-400">
-                <Image
-                  src={`/images/use-cases/${useCaseKey}-after.png`}
-                  alt={t('afterLabel')}
-                  fill
-                  className="object-cover rounded"
-                  loading="lazy"
-                  onError={(e) => {
-                    // Fallback to placeholder if image doesn't exist
-                    const target = e.target as HTMLImageElement;
-                    target.style.display = 'none';
-                  }}
-                />
-                <span className="text-sm">After</span>
+            <div className="relative aspect-[4/3] bg-amber-50 rounded border-2 border-amber-300 flex items-center justify-center">
+              <div className="text-center p-4">
+                <div className="text-4xl mb-2">📠</div>
+                <span className="text-sm text-amber-700">Simple Fax Form</span>
               </div>
             </div>
           </div>
@@ -94,7 +69,7 @@ export default function UseCaseDetailCard({ useCaseKey, icon }: UseCaseDetailCar
         {/* Expand/Collapse Button */}
         <button
           onClick={() => setExpanded(!expanded)}
-          className="w-full flex items-center justify-center gap-2 py-2 text-blue-600 hover:text-blue-700 font-semibold transition-colors"
+          className="w-full flex items-center justify-center gap-2 py-2 text-faxi-brown hover:text-faxi-brown-dark font-semibold transition-colors"
           aria-expanded={expanded}
           aria-label={expanded ? 'Hide technical details' : 'Show technical details'}
         >
@@ -120,20 +95,20 @@ export default function UseCaseDetailCard({ useCaseKey, icon }: UseCaseDetailCar
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
             <div className="bg-white p-4 rounded-lg">
               <div className="flex items-center gap-2 mb-2">
-                <Target size={20} className="text-blue-600" />
+                <Target size={20} className="text-faxi-brown" />
                 <span className="font-semibold">Accuracy</span>
               </div>
-              <p className="text-2xl font-bold text-blue-600">
+              <p className="text-2xl font-bold text-faxi-brown">
                 {t('technicalDetails.accuracy')}
               </p>
             </div>
             
             <div className="bg-white p-4 rounded-lg">
               <div className="flex items-center gap-2 mb-2">
-                <Clock size={20} className="text-green-600" />
+                <Clock size={20} className="text-amber-700" />
                 <span className="font-semibold">Processing Time</span>
               </div>
-              <p className="text-2xl font-bold text-green-600">
+              <p className="text-2xl font-bold text-amber-700">
                 {t('technicalDetails.processingTime')}
               </p>
             </div>

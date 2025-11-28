@@ -54,6 +54,21 @@ const config: Config = {
   				'3': 'hsl(var(--chart-3))',
   				'4': 'hsl(var(--chart-4))',
   				'5': 'hsl(var(--chart-5))'
+  			},
+  			// Faxi Brand Colors
+  			faxi: {
+  				brown: {
+  					DEFAULT: '#4f3a21',
+  					dark: '#4f2b00',
+  					light: '#66551e',
+  				},
+  				footer: '#3e270e',
+  				accent: '#8b7355',
+  				grey: {
+  					DEFAULT: '#5a5a5a',
+  					light: '#7a7a7a',
+  					dark: '#3a3a3a',
+  				},
   			}
   		},
   		borderRadius: {

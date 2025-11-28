@@ -2,23 +2,25 @@
 
 import { useTranslations } from 'next-intl';
 import { useEffect, useRef, useState } from 'react';
+import { AlertTriangle, Globe, Heart, Printer, CheckCircle, Zap, Link2, Clock } from 'lucide-react';
 
-interface StatCardProps {
-  value: string;
-  label: string;
-  source: string;
+interface FeatureCardProps {
+  icon: React.ReactNode;
+  title: string;
+  description: string;
+  variant: 'problem' | 'solution';
+  delay?: number;
 }
 
-function StatCard({ value, label, source }: StatCardProps) {
+function FeatureCard({ icon, title, description, variant, delay = 0 }: FeatureCardProps) {
   const [isVisible, setIsVisible] = useState(false);
-  const [displayValue, setDisplayValue] = useState('0');
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
-          setIsVisible(true);
+          setTimeout(() => setIsVisible(true), delay);
         }
       },
       { threshold: 0.1 }
@@ -34,67 +36,40 @@ function StatCard({ value, label, source }: StatCardProps) {
         observer.unobserve(currentRef);
       }
     };
-  }, []);
-
-  useEffect(() => {
-    if (isVisible) {
-      // Animate the number if it contains digits
-      const numMatch = value.match(/\d+/);
-      if (numMatch) {
-        const targetNum = parseInt(numMatch[0]);
-        const duration = 2000; // 2 seconds
-        const steps = 60;
-        const increment = targetNum / steps;
-        let current = 0;
-        
-        const timer = setInterval(() => {
-          current += increment;
-          if (current >= targetNum) {
-            setDisplayValue(value);
-            clearInterval(timer);
-          } else {
-            setDisplayValue(value.replace(/\d+/, Math.floor(current).toString()));
-          }
-        }, duration / steps);
-
-        return () => clearInterval(timer);
-      } else {
-        setDisplayValue(value);
-      }
-    }
-  }, [isVisible, value]);
+  }, [delay]);
 
   return (
-    <div ref={ref} className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-lg">
-      <div className="text-4xl font-bold text-blue-600 dark:text-blue-400 mb-2">
-        {displayValue}
+    <div
+      ref={ref}
+      className={`group relative bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-500 border border-gray-100 dark:border-gray-700 ${
+        isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+      }`}
+    >
+      {/* Icon */}
+      <div
+        className={`w-14 h-14 rounded-xl flex items-center justify-center mb-4 transition-transform group-hover:scale-110 ${
+          variant === 'problem'
+            ? 'bg-stone-100 dark:bg-stone-900/20 text-stone-600'
+            : 'bg-amber-50 dark:bg-amber-900/20 text-amber-700'
+        }`}
+      >
+        {icon}
       </div>
-      <div className="text-gray-700 dark:text-gray-300 font-medium mb-1">
-        {label}
-      </div>
-      <div className="text-sm text-gray-500 dark:text-gray-400">
-        {source}
-      </div>
-    </div>
-  );
-}
 
-interface FeatureCardProps {
-  icon: string;
-  title: string;
-  description: string;
-}
-
-function FeatureCard({ icon, title, description }: FeatureCardProps) {
-  return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-lg hover:shadow-xl transition-shadow">
-      <div className="text-4xl mb-4">{icon}</div>
-      <h3 className="text-xl font-semibold mb-2 text-gray-900 dark:text-white">
+      {/* Content */}
+      <h3 className="text-lg font-semibold mb-2 text-faxi-brown dark:text-white">
         {title}
       </h3>
-      <p className="text-gray-600 dark:text-gray-300">
+      <p className="text-gray-600 dark:text-gray-300 text-sm leading-relaxed">
         {description}
       </p>
+
+      {/* Decorative corner */}
+      <div
+        className={`absolute top-0 right-0 w-20 h-20 rounded-bl-[100px] transition-opacity opacity-0 group-hover:opacity-100 ${
+          variant === 'problem' ? 'bg-stone-50' : 'bg-amber-50'
+        }`}
+      />
     </div>
   );
 }
@@ -102,74 +77,93 @@ function FeatureCard({ icon, title, description }: FeatureCardProps) {
 export function ProblemSolutionSection() {
   const t = useTranslations('home');
 
-  return (
-    <section className="py-16 md:py-24 bg-gray-50 dark:bg-gray-900">
-      <div className="container mx-auto px-4">
-        {/* Problem Section */}
-        <div className="mb-16">
-          <h2 className="text-3xl md:text-4xl font-bold text-center mb-6 text-gray-900 dark:text-white">
-            {t('problem.title')}
-          </h2>
-          <p className="text-lg text-center text-gray-600 dark:text-gray-300 mb-12 max-w-3xl mx-auto">
-            {t('problem.description')}
-          </p>
+  const problemIcons = [
+    <AlertTriangle key="complexity" className="w-7 h-7" />,
+    <Globe key="isolation" className="w-7 h-7" />,
+    <Heart key="independence" className="w-7 h-7" />,
+    <Printer key="trust" className="w-7 h-7" />,
+  ];
 
-          {/* Pain Points Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
-            <FeatureCard
-              icon="😰"
-              title={t('problem.painPoints.complexity.title')}
-              description={t('problem.painPoints.complexity.description')}
-            />
-            <FeatureCard
-              icon="🌐"
-              title={t('problem.painPoints.isolation.title')}
-              description={t('problem.painPoints.isolation.description')}
-            />
-            <FeatureCard
-              icon="💪"
-              title={t('problem.painPoints.independence.title')}
-              description={t('problem.painPoints.independence.description')}
-            />
-            <FeatureCard
-              icon="📠"
-              title={t('problem.painPoints.trust.title')}
-              description={t('problem.painPoints.trust.description')}
-            />
+  const solutionIcons = [
+    <CheckCircle key="noLearning" className="w-7 h-7" />,
+    <Zap key="instantResponse" className="w-7 h-7" />,
+    <Link2 key="multiService" className="w-7 h-7" />,
+    <Clock key="alwaysWorking" className="w-7 h-7" />,
+  ];
+
+  return (
+    <section className="py-20 md:py-32 bg-gradient-to-b from-white to-gray-50 dark:from-gray-900 dark:to-gray-800 overflow-hidden">
+      <div className="container mx-auto px-4 lg:px-8">
+        {/* Problem Section */}
+        <div className="mb-24">
+          {/* Section Header */}
+          <div className="text-center mb-16">
+            <div className="inline-flex items-center gap-2 bg-stone-100 dark:bg-stone-900/20 text-stone-600 dark:text-stone-400 px-4 py-2 rounded-full text-sm font-medium mb-4">
+              <AlertTriangle className="w-4 h-4" />
+              {t('problem.badge') || 'The Challenge'}
+            </div>
+            <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-faxi-brown dark:text-white mb-6">
+              {t('problem.title')}
+            </h2>
+            <p className="text-lg text-gray-600 dark:text-gray-300 max-w-3xl mx-auto leading-relaxed">
+              {t('problem.description')}
+            </p>
           </div>
+
+          {/* Problem Cards Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
+            {['complexity', 'isolation', 'independence', 'trust'].map((key, index) => (
+              <FeatureCard
+                key={key}
+                icon={problemIcons[index]}
+                title={t(`problem.painPoints.${key}.title`)}
+                description={t(`problem.painPoints.${key}.description`)}
+                variant="problem"
+                delay={index * 100}
+              />
+            ))}
+          </div>
+        </div>
+
+        {/* Divider with Arrow */}
+        <div className="flex items-center justify-center mb-24">
+          <div className="flex-1 h-px bg-gradient-to-r from-transparent via-gray-300 to-transparent" />
+          <div className="mx-8 w-16 h-16 bg-faxi-brown rounded-full flex items-center justify-center shadow-lg">
+            <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+            </svg>
+          </div>
+          <div className="flex-1 h-px bg-gradient-to-r from-transparent via-gray-300 to-transparent" />
         </div>
 
         {/* Solution Section */}
         <div>
-          <h2 className="text-3xl md:text-4xl font-bold text-center mb-6 text-gray-900 dark:text-white">
-            {t('solution.title')}
-          </h2>
-          <p className="text-lg text-center text-gray-600 dark:text-gray-300 mb-12 max-w-3xl mx-auto">
-            {t('solution.description')}
-          </p>
+          {/* Section Header */}
+          <div className="text-center mb-16">
+            <div className="inline-flex items-center gap-2 bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 px-4 py-2 rounded-full text-sm font-medium mb-4">
+              <CheckCircle className="w-4 h-4" />
+              {t('solution.badge') || 'The Solution'}
+            </div>
+            <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-faxi-brown dark:text-white mb-6">
+              {t('solution.title')}
+            </h2>
+            <p className="text-lg text-gray-600 dark:text-gray-300 max-w-3xl mx-auto leading-relaxed">
+              {t('solution.description')}
+            </p>
+          </div>
 
-          {/* Features Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
-            <FeatureCard
-              icon="✅"
-              title={t('solution.features.noLearning.title')}
-              description={t('solution.features.noLearning.description')}
-            />
-            <FeatureCard
-              icon="⚡"
-              title={t('solution.features.instantResponse.title')}
-              description={t('solution.features.instantResponse.description')}
-            />
-            <FeatureCard
-              icon="🔗"
-              title={t('solution.features.multiService.title')}
-              description={t('solution.features.multiService.description')}
-            />
-            <FeatureCard
-              icon="🕐"
-              title={t('solution.features.alwaysWorking.title')}
-              description={t('solution.features.alwaysWorking.description')}
-            />
+          {/* Solution Cards Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
+            {['noLearning', 'instantResponse', 'multiService', 'alwaysWorking'].map((key, index) => (
+              <FeatureCard
+                key={key}
+                icon={solutionIcons[index]}
+                title={t(`solution.features.${key}.title`)}
+                description={t(`solution.features.${key}.description`)}
+                variant="solution"
+                delay={index * 100}
+              />
+            ))}
           </div>
         </div>
       </div>

@@ -10,26 +10,26 @@ export default function ServiceOverview() {
     {
       key: 'register',
       icon: FileText,
-      color: 'text-blue-600',
-      bgColor: 'bg-blue-100',
+      color: 'text-faxi-brown',
+      bgColor: 'bg-amber-100',
     },
     {
       key: 'send',
       icon: Send,
-      color: 'text-green-600',
-      bgColor: 'bg-green-100',
+      color: 'text-amber-700',
+      bgColor: 'bg-amber-50',
     },
     {
       key: 'process',
       icon: Cpu,
-      color: 'text-purple-600',
-      bgColor: 'bg-purple-100',
+      color: 'text-stone-600',
+      bgColor: 'bg-stone-100',
     },
     {
       key: 'receive',
       icon: CheckCircle,
-      color: 'text-orange-600',
-      bgColor: 'bg-orange-100',
+      color: 'text-faxi-brown-dark',
+      bgColor: 'bg-amber-100',
     },
   ];
 

@@ -3,7 +3,7 @@
 import { useTranslations } from 'next-intl';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 
-const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6'];
+const COLORS = ['#4f3a21', '#d97706', '#78716c', '#b45309', '#57534e'];
 
 export function DigitalDivideVisualization() {
   const t = useTranslations('home.dataVisualization');
@@ -118,7 +118,7 @@ export function DigitalDivideVisualization() {
                     color: '#F9FAFB'
                   }}
                 />
-                <Bar dataKey="percentage" fill="#3B82F6" name={t('internetUsage.barLabel')} />
+                <Bar dataKey="percentage" fill="#4f3a21" name={t('internetUsage.barLabel')} />
               </BarChart>
             </ResponsiveContainer>
             <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 italic">
@@ -194,14 +194,14 @@ export function DigitalDivideVisualization() {
                   }}
                 />
                 <Legend />
-                <Bar 
-                  dataKey="withInternet" 
-                  fill="#10B981" 
+                <Bar
+                  dataKey="withInternet"
+                  fill="#d97706"
                   name={t('accessibility.withInternetLabel')}
                 />
-                <Bar 
-                  dataKey="withoutInternet" 
-                  fill="#EF4444" 
+                <Bar
+                  dataKey="withoutInternet"
+                  fill="#78716c"
                   name={t('accessibility.withoutInternetLabel')}
                 />
               </BarChart>
@@ -214,25 +214,25 @@ export function DigitalDivideVisualization() {
 
         {/* Key Insights */}
         <div className="mt-12 max-w-4xl mx-auto">
-          <div className="bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-500 p-6 rounded-r-lg">
+          <div className="bg-amber-50 dark:bg-amber-900/20 border-l-4 border-amber-600 p-6 rounded-r-lg">
             <h4 className="text-lg font-semibold mb-3 text-gray-900 dark:text-white">
               {t('insights.title')}
             </h4>
             <ul className="space-y-2 text-gray-700 dark:text-gray-300">
               <li className="flex items-start">
-                <span className="text-blue-500 mr-2">•</span>
+                <span className="text-amber-700 mr-2">•</span>
                 <span>{t('insights.point1')}</span>
               </li>
               <li className="flex items-start">
-                <span className="text-blue-500 mr-2">•</span>
+                <span className="text-amber-700 mr-2">•</span>
                 <span>{t('insights.point2')}</span>
               </li>
               <li className="flex items-start">
-                <span className="text-blue-500 mr-2">•</span>
+                <span className="text-amber-700 mr-2">•</span>
                 <span>{t('insights.point3')}</span>
               </li>
               <li className="flex items-start">
-                <span className="text-blue-500 mr-2">•</span>
+                <span className="text-amber-700 mr-2">•</span>
                 <span>{t('insights.point4')}</span>
               </li>
             </ul>
