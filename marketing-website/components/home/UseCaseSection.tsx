@@ -3,7 +3,7 @@
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useState, useRef, useEffect } from 'react';
-import { ArrowRight, Stethoscope, ShoppingCart, Building2, MessageSquare } from 'lucide-react';
+import { ArrowRight, Stethoscope, ShoppingCart, Building2, Mail } from 'lucide-react';
 
 interface UseCaseCardProps {
   icon: React.ReactNode;
@@ -137,7 +137,7 @@ export function UseCaseSection({ locale }: UseCaseSectionProps) {
       color: 'bg-stone-500',
     },
     {
-      icon: <MessageSquare className="w-8 h-8" />,
+      icon: <Mail className="w-8 h-8" />,
       key: 'aiChat',
       color: 'bg-amber-700',
     },

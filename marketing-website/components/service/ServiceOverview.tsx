@@ -84,27 +84,34 @@ export default function ServiceOverview() {
             {t('exampleDescription')}
           </p>
 
-          {/* Example diagrams - placeholder for now */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-              <div className="text-4xl mb-2">📋</div>
-              <p className="font-semibold mb-2">Healthcare</p>
+          {/* Example format cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="bg-gradient-to-br from-amber-50 to-white rounded-lg p-6 text-center border border-amber-200">
+              <div className="text-4xl mb-3">📧</div>
+              <p className="font-semibold text-faxi-brown mb-2">Email Family</p>
               <p className="text-sm text-gray-600">
-                Appointment booking form
+                Write a message—we save your address book so you just write names
               </p>
             </div>
-            <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-              <div className="text-4xl mb-2">🛒</div>
-              <p className="font-semibold mb-2">Shopping</p>
+            <div className="bg-gradient-to-br from-amber-50 to-white rounded-lg p-6 text-center border border-amber-200">
+              <div className="text-4xl mb-3">🏥</div>
+              <p className="font-semibold text-faxi-brown mb-2">Healthcare</p>
               <p className="text-sm text-gray-600">
-                Product selection with checkmarks
+                Write date and time preference for appointments
               </p>
             </div>
-            <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-              <div className="text-4xl mb-2">💬</div>
-              <p className="font-semibold mb-2">AI Chat</p>
+            <div className="bg-gradient-to-br from-amber-50 to-white rounded-lg p-6 text-center border border-amber-200">
+              <div className="text-4xl mb-3">🛒</div>
+              <p className="font-semibold text-faxi-brown mb-2">Shopping</p>
               <p className="text-sm text-gray-600">
-                Question and answer format
+                Write what you need—we send options to choose from
+              </p>
+            </div>
+            <div className="bg-gradient-to-br from-amber-50 to-white rounded-lg p-6 text-center border border-amber-200">
+              <div className="text-4xl mb-3">❓</div>
+              <p className="font-semibold text-faxi-brown mb-2">Questions</p>
+              <p className="text-sm text-gray-600">
+                Write any question—get detailed answers by fax
               </p>
             </div>
           </div>

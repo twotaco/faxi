@@ -7,10 +7,10 @@ export default function UseCasesSection() {
   const t = useTranslations('service.useCases');
 
   const useCases = [
+    { key: 'email', icon: '📧' },
     { key: 'healthcare', icon: '🏥' },
     { key: 'shopping', icon: '🛒' },
-    { key: 'government', icon: '🏛️' },
-    { key: 'payment', icon: '💳' },
+    { key: 'government', icon: '📍' },
     { key: 'aiChat', icon: '💬' },
   ];
 

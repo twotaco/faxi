@@ -2,7 +2,6 @@
 
 import { DemoFixture } from '@/lib/api/types';
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import Image from 'next/image';
 
 interface FixtureSelectionProps {
   fixtures: DemoFixture[];
@@ -72,12 +71,11 @@ export function FixtureSelection({
               >
                 <CardHeader className="p-4">
                   <div className="relative w-full h-40 mb-2 bg-gray-100 rounded overflow-hidden">
-                    <Image
-                      src={fixture.thumbnailUrl}
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}${fixture.thumbnailUrl}`}
                       alt={`Sample fax demonstrating ${fixture.name}: ${fixture.description}`}
-                      fill
-                      className="object-cover"
-                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                      className="w-full h-full object-cover"
                       loading="lazy"
                     />
                   </div>

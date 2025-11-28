@@ -1515,40 +1515,42 @@ async function start() {
   }
 }
 
-// Graceful shutdown
-process.on('SIGTERM', async () => {
-  loggingService.info('SIGTERM received, shutting down gracefully...');
-  console.log('SIGTERM received, shutting down gracefully...');
-  
-  try {
-    await emailToFaxWorker.stop();
-    await faxProcessorWorker.shutdown();
-    await db.close();
-    await redis.close();
-    loggingService.info('Graceful shutdown completed');
-  } catch (error) {
-    loggingService.error('Error during graceful shutdown', error as Error);
-  }
-  
-  process.exit(0);
-});
+// Graceful shutdown with timeout
+const SHUTDOWN_TIMEOUT = 5000; // 5 seconds max
 
-process.on('SIGINT', async () => {
-  loggingService.info('SIGINT received, shutting down gracefully...');
-  console.log('SIGINT received, shutting down gracefully...');
-  
+async function gracefulShutdown(signal: string) {
+  loggingService.info(`${signal} received, shutting down gracefully...`);
+  console.log(`${signal} received, shutting down gracefully...`);
+
+  // Force exit after timeout
+  const forceExitTimeout = setTimeout(() => {
+    console.log('Shutdown timeout reached, forcing exit...');
+    process.exit(1);
+  }, SHUTDOWN_TIMEOUT);
+
   try {
-    await emailToFaxWorker.stop();
-    await faxProcessorWorker.shutdown();
-    await db.close();
-    await redis.close();
+    await Promise.race([
+      Promise.all([
+        emailToFaxWorker.stop(),
+        faxProcessorWorker.shutdown(),
+        db.close(),
+        redis.close(),
+      ]),
+      new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Shutdown timeout')), SHUTDOWN_TIMEOUT - 500)
+      )
+    ]);
     loggingService.info('Graceful shutdown completed');
   } catch (error) {
     loggingService.error('Error during graceful shutdown', error as Error);
   }
-  
+
+  clearTimeout(forceExitTimeout);
   process.exit(0);
-});
+}
+
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 
 // Handle uncaught exceptions
 process.on('uncaughtException', (error) => {

@@ -12,12 +12,12 @@ const router = Router();
 // Rate limiting map (simple in-memory implementation)
 const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
 
-// Rate limit middleware (10 requests per 15 minutes)
+// Rate limit middleware (100 requests per 15 minutes in dev, 10 in prod)
 function rateLimitMiddleware(req: Request, res: Response, next: Function) {
   const ip = req.ip || req.socket.remoteAddress || 'unknown';
   const now = Date.now();
   const windowMs = 15 * 60 * 1000; // 15 minutes
-  const maxRequests = 10;
+  const maxRequests = process.env.NODE_ENV === 'production' ? 10 : 100;
 
   const clientData = rateLimitMap.get(ip);
 

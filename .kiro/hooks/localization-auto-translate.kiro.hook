@@ -1,0 +1,24 @@
+{
+  "enabled": true,
+  "name": "Auto-translate Localization Files",
+  "description": "Monitors changes to user-facing text content in localization files (such as .json, .yaml files in messages/ or i18n/ directories). When changes are detected, automatically identifies new or modified text and generates translations for all configured target languages while maintaining proper context and locale-specific conventions.",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "**/messages/*.json",
+      "**/i18n/*.json",
+      "**/locales/*.json",
+      "**/translations/*.json",
+      "**/lang/*.json",
+      "**/*.i18n.json",
+      "**/messages/*.yaml",
+      "**/i18n/*.yaml",
+      "**/locales/*.yaml"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "A localization file has been modified. Please analyze the changes and:\n\n1. Identify the primary/source language of the modified file (e.g., en.json for English)\n2. Detect all new or modified text entries by comparing with the previous version\n3. Identify all other language files that need corresponding translations (e.g., if en.json changed, find ja.json, es.json, etc.)\n4. For each new or modified entry:\n   - Generate accurate translations for all target languages\n   - Maintain proper context and meaning from the source text\n   - Apply locale-specific conventions (date formats, currency, honorifics, etc.)\n   - Preserve any interpolation variables, placeholders, or formatting codes (e.g., {variable}, %s, {{key}})\n5. Update each target language file with the new translations\n6. Ensure JSON/YAML structure and formatting consistency across all files\n7. Add comments if cultural adaptation or context is important for translators to review\n\nPlease provide the translations and update the corresponding language files accordingly."
+  }
+}

@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
-import { Github, Menu, X } from 'lucide-react';
+import { Menu, X } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
 export function Header({ locale }: { locale: string }) {
@@ -35,7 +35,6 @@ export function Header({ locale }: { locale: string }) {
 
   const navItems = [
     { href: `/${locale}`, label: t('home') },
-    { href: `/${locale}/families`, label: t('families') },
     { href: `/${locale}/service`, label: t('service') },
     { href: `/${locale}/partnering`, label: t('partnering') },
     { href: `/${locale}/demo`, label: t('demo') },
@@ -105,26 +104,6 @@ export function Header({ locale }: { locale: string }) {
             {/* Actions */}
             <div className="flex items-center gap-3">
               <Button
-                variant="ghost"
-                size="sm"
-                asChild
-                className={`hidden sm:flex ${
-                  useLightText
-                    ? 'text-white hover:bg-white/10'
-                    : 'text-faxi-brown hover:bg-faxi-brown/10'
-                }`}
-              >
-                <a
-                  href="https://github.com/faxi-ai/faxi"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label="GitHub Repository"
-                >
-                  <Github className="h-5 w-5" />
-                </a>
-              </Button>
-
-              <Button
                 onClick={toggleLocale}
                 variant="outline"
                 size="sm"
@@ -176,15 +155,6 @@ export function Header({ locale }: { locale: string }) {
                 {item.label}
               </Link>
             ))}
-            <a
-              href="https://github.com/faxi-ai/faxi"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-2 px-4 py-3 rounded-lg text-base font-medium text-faxi-brown hover:bg-faxi-brown/10 transition-colors"
-            >
-              <Github className="h-5 w-5" />
-              GitHub
-            </a>
           </nav>
         </div>
       </header>

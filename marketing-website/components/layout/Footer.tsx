@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { useTranslations } from 'next-intl';
-import { Github, FileText, Book, Mail, MapPin, ArrowUpRight } from 'lucide-react';
+import { FileText, Book, Mail, MapPin, ArrowUpRight } from 'lucide-react';
 
 export function Footer({ locale }: { locale: string }) {
   const t = useTranslations('navigation');
@@ -44,15 +44,6 @@ export function Footer({ locale }: { locale: string }) {
             </p>
             <div className="flex gap-3">
               <a
-                href="https://github.com/faxi-ai/faxi"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-10 h-10 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center transition-colors"
-                aria-label="GitHub"
-              >
-                <Github className="h-5 w-5" />
-              </a>
-              <a
                 href="mailto:contact@faxi.jp"
                 className="w-10 h-10 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center transition-colors"
                 aria-label="Email"
@@ -75,15 +66,6 @@ export function Footer({ locale }: { locale: string }) {
                   className="group flex items-center gap-2 text-white/70 hover:text-white transition-colors"
                 >
                   <span>{t('service')}</span>
-                  <ArrowUpRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" />
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href={`/${locale}/families`}
-                  className="group flex items-center gap-2 text-white/70 hover:text-white transition-colors"
-                >
-                  <span>{t('families')}</span>
                   <ArrowUpRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" />
                 </Link>
               </li>
@@ -115,18 +97,6 @@ export function Footer({ locale }: { locale: string }) {
               {locale === 'ja' ? '開発者向け' : 'Developers'}
             </h4>
             <ul className="space-y-4">
-              <li>
-                <a
-                  href="https://github.com/faxi-ai/faxi"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="group flex items-center gap-2 text-white/70 hover:text-white transition-colors"
-                >
-                  <Github className="h-4 w-4" />
-                  <span>GitHub</span>
-                  <ArrowUpRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" />
-                </a>
-              </li>
               <li>
                 <a
                   href="https://docs.faxi.jp"

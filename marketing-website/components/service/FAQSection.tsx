@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { ChevronDown, ChevronUp, Phone, Printer } from 'lucide-react';
+import { ChevronDown, ChevronUp, Printer } from 'lucide-react';
 
 export default function FAQSection() {
   const t = useTranslations('service.faq');
@@ -60,21 +60,21 @@ export default function FAQSection() {
           <div className="bg-amber-50 border-2 border-amber-200 rounded-lg p-8 text-center">
             <h3 className="text-2xl font-bold mb-4">{t('contactTitle')}</h3>
             <p className="text-gray-700 mb-6">{t('contactDescription')}</p>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-2xl mx-auto">
               <div className="bg-white rounded-lg p-4 flex items-center gap-3">
-                <Phone size={24} className="text-faxi-brown flex-shrink-0" />
+                <Printer size={24} className="text-faxi-brown flex-shrink-0" />
                 <div className="text-left">
-                  <p className="text-sm text-gray-600">Phone Support</p>
-                  <p className="font-semibold">{t('contactPhone')}</p>
+                  <p className="text-sm text-gray-600">Fax (Japan)</p>
+                  <p className="font-semibold">{t('contactFax')}</p>
                 </div>
               </div>
-              
+
               <div className="bg-white rounded-lg p-4 flex items-center gap-3">
                 <Printer size={24} className="text-amber-700 flex-shrink-0" />
                 <div className="text-left">
-                  <p className="text-sm text-gray-600">Fax Support</p>
-                  <p className="font-semibold">{t('contactFax')}</p>
+                  <p className="text-sm text-gray-600">Fax (USA)</p>
+                  <p className="font-semibold">{t('contactFaxUS')}</p>
                 </div>
               </div>
             </div>

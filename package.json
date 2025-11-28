@@ -5,12 +5,14 @@
   "private": true,
   "workspaces": [
     "backend",
-    "admin-dashboard"
+    "admin-dashboard",
+    "marketing-website"
   ],
   "scripts": {
     "dev": "npm run dev --workspace=backend",
     "dev:admin": "npm run dev --workspace=admin-dashboard",
-    "dev:all": "concurrently \"npm run dev --workspace=backend\" \"npm run dev --workspace=admin-dashboard\"",
+    "dev:marketing": "npm run dev --workspace=marketing-website",
+    "dev:all": "concurrently \"npm run dev --workspace=backend\" \"npm run dev --workspace=admin-dashboard\" \"npm run dev --workspace=marketing-website\"",
     "build": "npm run build --workspaces",
     "build:backend": "npm run build --workspace=backend",
     "build:admin": "npm run build --workspace=admin-dashboard",

@@ -1,0 +1,25 @@
+{
+  "enabled": true,
+  "name": "Source Code Documentation Sync",
+  "description": "Monitors all TypeScript source files (*.ts, *.tsx), JavaScript files (*.js, *.jsx), configuration files (*.json, *.yaml, *.yml), and SQL files (*.sql) across the repository. When changes are detected, prompts the agent to update relevant documentation in the docs/ folder and specifications in the .kiro/specs/ folder to keep them synchronized with the codebase.",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "**/*.ts",
+      "**/*.tsx",
+      "**/*.js",
+      "**/*.jsx",
+      "**/*.json",
+      "**/*.yaml",
+      "**/*.yml",
+      "**/*.sql",
+      "**/package.json",
+      "**/tsconfig.json"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Source files have been modified. Please review the changes and:\n\n1. Check if there are related documentation files in the docs/ folder that need to be updated to reflect these changes\n2. Check if there are related specification files in the .kiro/specs/ folder that need to be updated\n3. Update any affected documentation to maintain consistency with the code changes\n4. Ensure technical accuracy and completeness of the documentation updates\n\nFocus on keeping documentation synchronized with implementation details, API changes, configuration updates, and architectural modifications."
+  }
+}

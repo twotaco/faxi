@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { apiClient } from '@/lib/api/client';
 import type { DemoFixture, ProcessResponse, ProcessingResult } from '@/lib/api/types';
 
@@ -13,7 +13,7 @@ export function useDemo() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [processingError, setProcessingError] = useState<string | null>(null);
 
-  const fetchFixtures = async () => {
+  const fetchFixtures = useCallback(async () => {
     setIsLoadingFixtures(true);
     setFixturesError(null);
     try {
@@ -24,7 +24,7 @@ export function useDemo() {
     } finally {
       setIsLoadingFixtures(false);
     }
-  };
+  }, []);
 
   const processFixture = async (fixtureId: string) => {
     setIsProcessing(true);

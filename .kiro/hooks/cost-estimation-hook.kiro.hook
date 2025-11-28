@@ -1,0 +1,18 @@
+{
+  "enabled": true,
+  "name": "Cost Estimation Hook",
+  "description": "Monitors changes to prompt templates and fax generation files to estimate LLM token usage costs and fax page length costs ($0.007 per page), alerting when costs increase significantly",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "backend/src/prompts/templates/*.ts",
+      "backend/src/services/*FaxGenerator.ts",
+      "backend/src/services/faxTemplateEngine.ts"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Analyze the changes to prompt templates or fax generation logic and provide a cost estimation report:\n\n1. **LLM Token Usage Analysis**:\n   - Estimate token count changes in prompt templates (input tokens)\n   - Estimate expected response length changes (output tokens)\n   - Calculate cost impact using typical LLM pricing (e.g., Gemini 2.0 Flash rates)\n   - Flag if token usage increases by >20%\n\n2. **Fax Page Length Analysis**:\n   - Estimate page count for generated faxes based on content length\n   - Calculate fax cost at $0.007 per page\n   - Compare with previous estimates if available\n   - Flag if page count increases significantly (>1 page increase)\n\n3. **Cost Alert Summary**:\n   - Total estimated cost per transaction (LLM + fax)\n   - Percentage increase/decrease from baseline\n   - Recommendations for optimization if costs increased\n   - Highlight any concerning patterns (e.g., verbose prompts, unnecessary content)\n\n4. **Specific Concerns**:\n   - Check for prompt bloat or redundant instructions\n   - Identify opportunities to reduce fax page length\n   - Suggest template optimizations\n\nProvide actionable insights and flag if immediate attention is needed due to significant cost increases."
+  }
+}

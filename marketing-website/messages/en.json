@@ -35,7 +35,6 @@
   },
   "navigation": {
     "home": "Home",
-    "families": "For Families",
     "service": "Service",
     "partnering": "Partnering",
     "demo": "Demo",
@@ -50,7 +49,7 @@
     "hero": {
       "families": {
         "headline": "Stay Independent. Stay Connected.",
-        "subheadline": "Shop online. Book appointments. Get answers. All by fax.",
+        "subheadline": "Email family. Shop online. Book appointments. All by fax.",
         "ctaPrimary": "Sign Up for Beta",
         "ctaSecondary": "See How It Works"
       },
@@ -69,8 +68,8 @@
     },
     "problem": {
       "badge": "The Challenge",
-      "title": "Feeling Left Behind by Technology?",
-      "description": "As more services move online, it's getting harder to do everyday things without a computer or smartphone. But you shouldn't have to learn new technology just to book a doctor's appointment or order groceries.",
+      "title": "When Technology Creates Distance",
+      "description": "As more communication and services move online, it's getting harder to do everyday things without a computer or smartphone. But you shouldn't have to learn new technology just to connect with your family, book a doctor's appointment or order groceries.",
       "painPoints": {
         "complexity": {
           "title": "Technology is Too Complicated",
@@ -135,10 +134,10 @@
         "solution": "Submit forms and requests through fax"
       },
       "aiChat": {
-        "title": "AI Assistant",
-        "demographic": "Isolated seniors",
-        "problem": "Need information and companionship",
-        "solution": "Chat with AI assistant via fax for answers and support"
+        "title": "Email Family",
+        "demographic": "Families across generations",
+        "problem": "Hard to stay in touch when one side can't use email",
+        "solution": "Send fax, family replies by email—messages go back and forth seamlessly"
       },
       "viewDetails": "View Details"
     },
@@ -290,11 +289,11 @@
       "steps": {
         "register": {
           "title": "1. Register Your Fax Number",
-          "description": "Sign up online and register your fax machine number. We'll assign you a unique service number."
+          "description": "Sign up online and register your fax machine number. Your fax number becomes your email address."
         },
         "send": {
           "title": "2. Send a Fax",
-          "description": "Write your request on paper and send it to our service number. Use checkmarks, circles, or simple handwriting."
+          "description": "Write your request and send it to 050-5050-8899 (Japan) or 1-302-400-8899 (USA). Use checkmarks, circles, or simple handwriting."
         },
         "process": {
           "title": "3. AI Processes Your Request",
@@ -310,76 +309,42 @@
     },
     "useCases": {
       "title": "What You Can Do with Faxi",
-      "subtitle": "Real-world examples of how Faxi helps with daily tasks",
+      "subtitle": "Simple solutions for everyday needs—all by fax",
+      "howItWorks": "How it works:",
+      "email": {
+        "title": "Email Family & Friends",
+        "tagline": "Stay connected across generations",
+        "story": "Imagine writing a letter to your daughter who lives across the country, and having it arrive in her inbox within seconds. With Faxi, your fax number becomes your email address. Write a note, send a fax, and she gets an email. When she replies, it arrives back as a fax. Your address book is saved, so you never have to remember email addresses.",
+        "steps": ["Write your message on paper", "Send to your Faxi number", "Family receives email instantly—replies come back as fax"],
+        "highlight": "I send my grandchildren drawings by fax and they email me photos back. It's like magic!"
+      },
       "healthcare": {
         "title": "Book Doctor Appointments",
-        "demographic": "For elderly patients",
-        "problem": "Calling clinics during business hours is difficult, and online booking systems are confusing",
-        "solution": "Send a fax anytime to book, reschedule, or cancel appointments. Receive confirmation by fax.",
-        "beforeLabel": "Before: Complex online form",
-        "afterLabel": "After: Simple fax request",
-        "technicalTitle": "How it works",
-        "technicalDetails": {
-          "accuracy": "95% intent detection accuracy",
-          "processingTime": "Average 4 seconds",
-          "intents": ["Book appointment", "Cancel appointment", "Reschedule appointment", "Check availability"]
-        }
+        "tagline": "Healthcare on your schedule",
+        "story": "No more waiting on hold or struggling with online booking systems. Write down your preferred date and time, send a fax, and receive confirmation within minutes. Need to reschedule? Just send another fax.",
+        "steps": ["Write your appointment request", "Fax to the clinic", "Receive confirmation with your appointment details"],
+        "highlight": "I booked my check-up while having morning tea. The confirmation came back before I finished my cup."
       },
       "shopping": {
-        "title": "Shop Online Without Internet",
-        "demographic": "For seniors without computers",
-        "problem": "Cannot access e-commerce websites or mobile apps",
-        "solution": "Browse product catalogs by fax, select items with checkmarks, and place orders. Payment via registered card or cash on delivery.",
-        "beforeLabel": "Before: Complex e-commerce site",
-        "afterLabel": "After: Simple product selection",
-        "technicalTitle": "How it works",
-        "technicalDetails": {
-          "accuracy": "92% product selection accuracy",
-          "processingTime": "Average 5 seconds",
-          "intents": ["Browse products", "Add to cart", "Place order", "Check order status"]
-        }
+        "title": "Shop Online by Fax",
+        "tagline": "Request, choose, delivered",
+        "story": "Want to order from Amazon or other online stores but can't access their websites? Just fax us what you're looking for—be as general or specific as you like. We'll send back matching products with prices. Circle what you want, fax it back, and it arrives at your door.",
+        "steps": ["Fax what you're looking for", "Receive options by fax—circle your choices and send back", "Items delivered to your door"],
+        "highlight": "I ordered birthday presents for all my grandchildren without asking anyone for help."
       },
       "government": {
-        "title": "Access Government Services",
-        "demographic": "For rural residents",
-        "problem": "Government offices are far away and online portals are difficult to navigate",
-        "solution": "Submit forms, request documents, and check application status via fax.",
-        "beforeLabel": "Before: Complex government portal",
-        "afterLabel": "After: Simple form submission",
-        "technicalTitle": "How it works",
-        "technicalDetails": {
-          "accuracy": "94% form processing accuracy",
-          "processingTime": "Average 6 seconds",
-          "intents": ["Submit form", "Request document", "Check status", "Update information"]
-        }
-      },
-      "payment": {
-        "title": "Pay Bills Easily",
-        "demographic": "For seniors managing finances",
-        "problem": "Online banking is confusing and ATMs are inconvenient",
-        "solution": "Receive bills by fax, mark payment amount, and send back. Automatic payment from registered account.",
-        "beforeLabel": "Before: Online banking interface",
-        "afterLabel": "After: Simple payment form",
-        "technicalTitle": "How it works",
-        "technicalDetails": {
-          "accuracy": "96% payment processing accuracy",
-          "processingTime": "Average 3 seconds",
-          "intents": ["Pay bill", "Check balance", "View payment history", "Set up auto-pay"]
-        }
+        "title": "Get Local Information",
+        "tagline": "Your community, delivered",
+        "story": "Need to know the garbage collection schedule? Want to find senior programs at your community center? Looking for a government form? Just ask by fax. We'll send you the information you need—schedules, forms, local events, municipal announcements, and more.",
+        "steps": ["Fax your question or request", "We find the information for you", "Receive answers, forms, or schedules by fax"],
+        "highlight": "I found out about a free health check at my local community center. I would have missed it without Faxi."
       },
       "aiChat": {
-        "title": "Chat with AI Assistant",
-        "demographic": "For isolated seniors",
-        "problem": "Need information, companionship, or help with questions",
-        "solution": "Write questions on paper and fax them. Receive detailed answers and helpful information by fax.",
-        "beforeLabel": "Before: No access to information",
-        "afterLabel": "After: AI-powered answers",
-        "technicalTitle": "How it works",
-        "technicalDetails": {
-          "accuracy": "91% question understanding accuracy",
-          "processingTime": "Average 7 seconds",
-          "intents": ["Ask question", "Get information", "Request advice", "General conversation"]
-        }
+        "title": "Ask Anything",
+        "tagline": "Information at your fingertips",
+        "story": "Have a question? Want to know the weather forecast, a recipe, or what time the store closes? Write it down, fax it, and get a detailed answer back. It's like having a helpful assistant available 24/7.",
+        "steps": ["Write your question on paper", "Send the fax", "Receive a detailed answer by fax"],
+        "highlight": "I asked for advice on caring for my orchids and received helpful instructions within minutes."
       }
     },
     "faq": {
@@ -408,13 +373,13 @@
         },
         "services": {
           "question": "What services are supported?",
-          "answer": "Currently we support healthcare appointments, online shopping, government services, bill payments, and AI chat. We're constantly adding new services based on user needs."
+          "answer": "Currently we support email communication with family, healthcare appointments, online shopping, government services, and AI-powered information assistance. We're constantly adding new services based on user needs."
         }
       },
       "contactTitle": "Still have questions?",
-      "contactDescription": "Contact us by phone or fax",
-      "contactPhone": "Phone: 03-1234-5678 (9am-6pm)",
-      "contactFax": "Fax: 03-1234-5679 (24/7)"
+      "contactDescription": "Send us a fax anytime",
+      "contactFax": "Japan: 050-5050-8899",
+      "contactFaxUS": "USA: 1-302-400-8899"
     }
   },
   "partnering": {
