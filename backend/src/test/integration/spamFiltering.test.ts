@@ -25,8 +25,6 @@ describe('Spam Filtering Integration Tests', () => {
         allowPromotionalEmails: false,
         allowNewsletters: false,
       },
-      createdAt: new Date(),
-      updatedAt: new Date(),
     });
     testUserId = user.id;
   });
@@ -254,8 +252,6 @@ describe('Spam Filtering Integration Tests', () => {
         name: 'John Doe',
         emailAddress: 'john.doe@example.com',
         relationship: 'friend',
-        createdAt: new Date(),
-        updatedAt: new Date(),
       });
 
       const contactEmail = {

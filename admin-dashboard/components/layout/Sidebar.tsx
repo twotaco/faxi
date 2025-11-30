@@ -12,12 +12,14 @@ import {
   Bell, 
   Settings,
   BarChart3,
-  FileSearch
+  FileSearch,
+  ShoppingCart
 } from 'lucide-react';
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { name: 'Fax Jobs', href: '/jobs', icon: FileText },
+  { name: 'Pending Orders', href: '/orders/pending', icon: ShoppingCart },
   { name: 'Users', href: '/users', icon: Users },
   { name: 'MCP Servers', href: '/mcp', icon: Server },
   { name: 'AI Inspector', href: '/ai', icon: Brain },

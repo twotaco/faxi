@@ -69,6 +69,11 @@ class UserInsightsService {
   private mergeInsights(existing: any, newInsights: UserInsights): any {
     const merged = { ...existing };
 
+    // Guard against undefined newInsights
+    if (!newInsights) {
+      return merged;
+    }
+
     // Merge demographics
     if (newInsights.demographics) {
       merged.demographics = merged.demographics || {};
@@ -234,6 +239,11 @@ class UserInsightsService {
     newInsights: UserInsights,
     confidence: number
   ): Promise<void> {
+    // Guard against undefined newInsights
+    if (!newInsights) {
+      return;
+    }
+
     // Record demographic changes
     if (newInsights.demographics) {
       await userInsightsRepository.recordInsight(

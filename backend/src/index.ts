@@ -16,6 +16,8 @@ import { faxProcessorWorker } from './services/faxProcessorWorker';
 import { monitoringService } from './services/monitoringService';
 import { loggingService } from './services/loggingService';
 import { mockFaxSender } from './services/mockFaxSender';
+import { emailQualityMonitor } from './services/emailQualityMonitor';
+import { rateLimitMonitoringService } from './services/rateLimitMonitoringService';
 
 const app = express();
 
@@ -210,7 +212,7 @@ app.get('/admin/disaster-recovery/plans', async (req: Request, res: Response) =>
 // Admin Authentication Endpoints
 import { adminAuthService } from './services/adminAuthService';
 import { adminUserRepository } from './repositories/adminUserRepository';
-import { loginRateLimiter } from './middleware/rateLimiter';
+import { loginRateLimiter, adminDashboardRateLimiter } from './middleware/rateLimiter';
 import { auditLogService } from './services/auditLogService';
 
 // Admin login endpoint (rate limiting disabled for development)
@@ -460,6 +462,9 @@ app.post('/admin/auth/refresh', async (req: Request, res: Response) => {
 // Admin Dashboard Endpoints
 import { requireAdminAuth, requirePermission, hasPermission } from './middleware/adminAuth';
 import { faxJobRepository } from './repositories/faxJobRepository';
+
+// Apply rate limiting to all admin dashboard endpoints (60 req/min)
+app.use('/admin', adminDashboardRateLimiter);
 
 // Dashboard metrics endpoint
 app.get('/admin/dashboard/metrics', requireAdminAuth, requirePermission('dashboard:view'), async (req: Request, res: Response) => {
@@ -864,12 +869,16 @@ app.post('/admin/jobs/:id/retry', requireAdminAuth, requirePermission('jobs:retr
       errorMessage: undefined,
     });
 
-    // Re-enqueue the job
-    const { faxProcessingQueue } = await import('./queue/faxQueue');
-    await faxProcessingQueue.add('process-fax', {
-      faxJobId: id,
+    // Re-enqueue the job - use enqueueFaxProcessing which expects FaxJobData
+    const { enqueueFaxProcessing } = await import('./queue/faxQueue');
+    await enqueueFaxProcessing({
       faxId: job.faxId,
-      userId: job.userId,
+      fromNumber: job.fromNumber,
+      toNumber: job.toNumber,
+      mediaUrl: job.mediaUrl || '',
+      pageCount: job.pageCount || 1,
+      receivedAt: job.createdAt.toISOString(),
+      webhookPayload: job.webhookPayload,
     });
 
     // Log the retry action
@@ -1019,33 +1028,31 @@ app.get('/admin/jobs/:id/fax-image', requireAdminAuth, requirePermission('jobs:v
       }
 
       // Check if the file is a PDF and convert to PNG for browser compatibility
-      let displayBuffer: Buffer;
-      let contentType: string;
-      
+      let displayBuffer: Buffer = imageBuffer;
+      let contentType: string = 'image/png';
+
       // Check if it's a PDF by looking at the magic bytes
       const isPdf = imageBuffer.slice(0, 4).toString() === '%PDF';
-      
+
       if (isPdf) {
         // Convert PDF to PNG using pdf-to-png-converter
         const { pdfToPng } = await import('pdf-to-png-converter');
-        const pngPages = await pdfToPng(imageBuffer, {
+        const pngPages = await pdfToPng(imageBuffer as unknown as ArrayBuffer, {
           disableFontFace: false,
           useSystemFonts: false,
           viewportScale: 2.0,
           outputFolder: undefined, // Return buffer instead of saving
         });
-        
+
         // Use the first page
-        if (pngPages.length > 0) {
-          displayBuffer = pngPages[0].content;
+        if (pngPages.length > 0 && pngPages[0].content) {
+          // Content is a Uint8Array, convert to Buffer
+          const content = pngPages[0].content;
+          displayBuffer = Buffer.from(content.buffer, content.byteOffset, content.byteLength);
           contentType = 'image/png';
         } else {
           throw new Error('PDF conversion resulted in no pages');
         }
-      } else {
-        // Already an image, just serve it
-        displayBuffer = imageBuffer;
-        contentType = 'image/png';
       }
 
       // Set appropriate headers
@@ -1315,6 +1322,7 @@ app.delete('/admin/users/:id/contexts/:contextId', requireAdminAuth, requirePerm
 
 // MCP Monitoring Endpoints
 import { mcpMonitoringService } from './services/mcpMonitoringService';
+import { paApiRateLimiter } from './middleware/rateLimiter';
 
 app.get('/admin/mcp/servers', requireAdminAuth, requirePermission('mcp:view'), async (req: Request, res: Response) => {
   try {
@@ -1336,6 +1344,93 @@ app.get('/admin/mcp/external-apis', requireAdminAuth, requirePermission('mcp:vie
   }
 });
 
+// Rate Limit Monitoring Endpoints
+app.get('/admin/rate-limits/pa-api', requireAdminAuth, requirePermission('mcp:view'), async (req: Request, res: Response) => {
+  try {
+    const metrics = await paApiRateLimiter.getMetrics();
+    res.json({
+      service: 'PA-API',
+      rateLimit: {
+        requestsPerSecond: 1,
+        windowMs: 1000
+      },
+      metrics,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    loggingService.error('Failed to fetch PA-API rate limit metrics', error as Error);
+    res.status(500).json({ error: 'Failed to fetch PA-API rate limit metrics' });
+  }
+});
+
+app.post('/admin/rate-limits/pa-api/reset', requireAdminAuth, requirePermission('admin:manage'), async (req: Request, res: Response) => {
+  try {
+    await paApiRateLimiter.resetMetrics();
+    
+    await auditLogService.log({
+      userId: req.adminUser?.id,
+      eventType: 'admin.rate_limit_reset',
+      eventData: {
+        adminEmail: req.adminUser?.email,
+        service: 'PA-API',
+        timestamp: new Date().toISOString()
+      }
+    });
+
+    res.json({
+      message: 'PA-API rate limit metrics reset successfully',
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    loggingService.error('Failed to reset PA-API rate limit metrics', error as Error);
+    res.status(500).json({ error: 'Failed to reset PA-API rate limit metrics' });
+  }
+});
+
+app.get('/admin/rate-limits/status', requireAdminAuth, requirePermission('mcp:view'), async (req: Request, res: Response) => {
+  try {
+    const status = await rateLimitMonitoringService.getStatus();
+    res.json(status);
+  } catch (error) {
+    loggingService.error('Failed to fetch rate limit status', error as Error);
+    res.status(500).json({ error: 'Failed to fetch rate limit status' });
+  }
+});
+
+app.get('/admin/rate-limits/alerts', requireAdminAuth, requirePermission('mcp:view'), async (req: Request, res: Response) => {
+  try {
+    const limit = parseInt(req.query.limit as string) || 20;
+    const alerts = await rateLimitMonitoringService.getRecentAlerts(limit);
+    res.json({ alerts });
+  } catch (error) {
+    loggingService.error('Failed to fetch rate limit alerts', error as Error);
+    res.status(500).json({ error: 'Failed to fetch rate limit alerts' });
+  }
+});
+
+app.delete('/admin/rate-limits/alerts', requireAdminAuth, requirePermission('admin:manage'), async (req: Request, res: Response) => {
+  try {
+    await rateLimitMonitoringService.clearAlerts();
+    
+    await auditLogService.log({
+      userId: req.adminUser?.id,
+      eventType: 'admin.rate_limit_alerts_cleared',
+      eventData: {
+        adminEmail: req.adminUser?.email,
+        timestamp: new Date().toISOString()
+      }
+    });
+
+    res.json({
+      message: 'Rate limit alerts cleared successfully',
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    loggingService.error('Failed to clear rate limit alerts', error as Error);
+    res.status(500).json({ error: 'Failed to clear rate limit alerts' });
+  }
+});
+
 // Root endpoint
 app.get('/', (req: Request, res: Response) => {
   res.json({
@@ -1348,13 +1443,35 @@ app.get('/', (req: Request, res: Response) => {
 // Demo and Metrics API endpoints (for marketing website)
 import { demoController } from './webhooks/demoController';
 import { metricsController } from './webhooks/metricsController';
+import * as shoppingMetricsController from './webhooks/shoppingMetricsController';
 
 app.use('/api/demo', demoController);
 app.use('/api/metrics', metricsController);
 
+// Shopping Metrics API endpoints (for admin dashboard)
+app.get('/api/admin/shopping/metrics/dashboard', requireAdminAuth, requirePermission('dashboard:view'), shoppingMetricsController.getShoppingDashboard);
+app.get('/api/admin/shopping/metrics/search', requireAdminAuth, requirePermission('dashboard:view'), shoppingMetricsController.getSearchMetrics);
+app.get('/api/admin/shopping/metrics/orders', requireAdminAuth, requirePermission('dashboard:view'), shoppingMetricsController.getOrderMetrics);
+app.get('/api/admin/shopping/metrics/payments', requireAdminAuth, requirePermission('dashboard:view'), shoppingMetricsController.getPaymentMetrics);
+app.get('/api/admin/shopping/metrics/automation', requireAdminAuth, requirePermission('dashboard:view'), shoppingMetricsController.getBrowserAutomationMetrics);
+app.get('/api/admin/shopping/metrics/price-discrepancy', requireAdminAuth, requirePermission('dashboard:view'), shoppingMetricsController.getPriceDiscrepancyMetrics);
+app.get('/api/admin/shopping/metrics/alerts', requireAdminAuth, requirePermission('dashboard:view'), shoppingMetricsController.getShoppingAlerts);
+app.get('/api/admin/shopping/metrics/health', requireAdminAuth, requirePermission('dashboard:view'), shoppingMetricsController.getShoppingHealth);
+
 // Webhook endpoints
+// Single Telnyx webhook endpoint for all fax events (recommended)
+app.post('/webhooks/telnyx/fax', (req: Request, res: Response) => {
+  telnyxWebhookController.handleWebhook(req, res);
+});
+
+// Legacy endpoint for backward compatibility
 app.post('/webhooks/telnyx/fax/received', (req: Request, res: Response) => {
   telnyxWebhookController.handleFaxReceived(req, res);
+});
+
+// Legacy status endpoint for backward compatibility
+app.post('/webhooks/telnyx/fax/status', (req: Request, res: Response) => {
+  telnyxWebhookController.handleFaxStatus(req, res);
 });
 
 app.post('/webhooks/stripe', (req: Request, res: Response) => {
@@ -1363,6 +1480,11 @@ app.post('/webhooks/stripe', (req: Request, res: Response) => {
 
 app.post('/webhooks/email/received', (req: Request, res: Response) => {
   emailWebhookController.handleEmailReceived(req, res);
+});
+
+// AWS SNS webhook endpoint for SES notifications
+app.post('/webhooks/email/sns', (req: Request, res: Response) => {
+  emailWebhookController.handleSnsWebhook(req, res);
 });
 
 // Test endpoints (only available in test mode)
@@ -1497,6 +1619,16 @@ async function start() {
     loggingService.info('Fax processor worker started');
     console.log('✓ Fax processor worker started');
 
+    // Start email quality monitor
+    emailQualityMonitor.start();
+    loggingService.info('Email quality monitor started');
+    console.log('✓ Email quality monitor started');
+
+    // Start rate limit monitoring service
+    rateLimitMonitoringService.start();
+    loggingService.info('Rate limit monitoring service started');
+    console.log('✓ Rate limit monitoring service started');
+
     // Start server
     app.listen(config.app.port, () => {
       loggingService.info('Server started successfully', {}, {
@@ -1533,6 +1665,8 @@ async function gracefulShutdown(signal: string) {
       Promise.all([
         emailToFaxWorker.stop(),
         faxProcessorWorker.shutdown(),
+        emailQualityMonitor.stop(),
+        rateLimitMonitoringService.stop(),
         db.close(),
         redis.close(),
       ]),

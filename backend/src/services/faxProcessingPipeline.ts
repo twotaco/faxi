@@ -793,12 +793,12 @@ export class FaxProcessingPipeline {
       
       // Send detailed help fax for each requested topic
       for (const topic of helpTopics) {
-        const helpFaxBuffers = await WelcomeFaxGenerator.generateDetailedHelpFax(
+        const helpFaxBuffer = await WelcomeFaxGenerator.generateDetailedHelpFax(
           topic as 'email' | 'shopping' | 'payment' | 'ai' | 'address_book'
         );
-        
+
         const mediaUrl = await faxSenderService.uploadPdfForFax(
-          helpFaxBuffers[0],
+          helpFaxBuffer,
           `help_${topic}_${userId}_${Date.now()}`
         );
         
@@ -853,10 +853,10 @@ export class FaxProcessingPipeline {
       const { WelcomeFaxGenerator } = await import('./welcomeFaxGenerator');
       
       // Generate payment registration instructions fax
-      const instructionsFaxBuffers = await WelcomeFaxGenerator.generatePaymentRegistrationInstructionsFax();
-      
+      const instructionsFaxBuffer = await WelcomeFaxGenerator.generatePaymentRegistrationInstructionsFax();
+
       const mediaUrl = await faxSenderService.uploadPdfForFax(
-        instructionsFaxBuffers[0],
+        instructionsFaxBuffer,
         `payment_instructions_${userId}_${Date.now()}`
       );
       

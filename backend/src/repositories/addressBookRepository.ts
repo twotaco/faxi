@@ -68,12 +68,22 @@ export class AddressBookRepository {
     const result = await db.query<AddressBookEntry>(
       `SELECT id, user_id as "userId", name, email_address as "emailAddress",
               relationship, notes, created_at as "createdAt", updated_at as "updatedAt"
-       FROM address_book 
+       FROM address_book
        WHERE user_id = $1 AND email_address = $2`,
       [userId, emailAddress]
     );
 
     return result.rows[0] || null;
+  }
+
+  /**
+   * Find address book entry by email (alias for findByUserAndEmail)
+   */
+  async findByEmail(
+    userId: string,
+    emailAddress: string
+  ): Promise<AddressBookEntry | null> {
+    return this.findByUserAndEmail(userId, emailAddress);
   }
 
   /**

@@ -217,6 +217,7 @@ The marketing website is deployed to Vercel. See [marketing-website/DEPLOYMENT.m
 ## Documentation
 
 - [Monorepo Structure](./MONOREPO.md)
+- [AWS SES Setup Guide](./backend/AWS_SES_SETUP.md)
 - [Marketing Website](./marketing-website/README.md)
 - [Marketing Website Deployment](./marketing-website/DEPLOYMENT.md)
 - [Backend CORS Configuration](./backend/CORS_CONFIGURATION.md)

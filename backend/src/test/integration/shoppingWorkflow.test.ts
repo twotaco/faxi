@@ -25,8 +25,6 @@ describe('Shopping Workflow Integration Tests', () => {
       emailAddress: '1234567890@me.faxi.jp',
       isActive: true,
       preferences: {},
-      createdAt: new Date(),
-      updatedAt: new Date(),
     });
     testUserId = user.id;
   });
@@ -215,13 +213,9 @@ describe('Shopping Workflow Integration Tests', () => {
         userId: testUserId,
         stripePaymentMethodId: 'pm_test_card',
         type: 'card',
+        last4: '4242',
+        brand: 'visa',
         isDefault: true,
-        metadata: {
-          last4: '4242',
-          brand: 'visa',
-        },
-        createdAt: new Date(),
-        updatedAt: new Date(),
       });
 
       // Send shopping request
@@ -319,13 +313,9 @@ describe('Shopping Workflow Integration Tests', () => {
         userId: testUserId,
         stripePaymentMethodId: 'pm_test_card',
         type: 'card',
+        last4: '4242',
+        brand: 'visa',
         isDefault: true,
-        metadata: {
-          last4: '4242',
-          brand: 'visa',
-        },
-        createdAt: new Date(),
-        updatedAt: new Date(),
       });
 
       // Send shopping request and complete purchase flow
@@ -373,19 +363,15 @@ describe('Shopping Workflow Integration Tests', () => {
     it('should generate order confirmation fax', async () => {
       // This test would verify that after a successful purchase,
       // an order confirmation fax is generated and sent
-      
+
       // Add payment method for user
       await paymentMethodRepository.create({
         userId: testUserId,
         stripePaymentMethodId: 'pm_test_card',
         type: 'card',
+        last4: '4242',
+        brand: 'visa',
         isDefault: true,
-        metadata: {
-          last4: '4242',
-          brand: 'visa',
-        },
-        createdAt: new Date(),
-        updatedAt: new Date(),
       });
 
       // Send shopping request

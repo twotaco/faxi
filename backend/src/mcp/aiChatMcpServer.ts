@@ -1,4 +1,4 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { GoogleGenAI } from '@google/genai';
 import { MCPServer, MCPTool } from '../types/agent';
 import { conversationContextRepository, ConversationContext } from '../repositories/conversationContextRepository';
 import { userRepository } from '../repositories/userRepository';
@@ -7,9 +7,9 @@ import { config } from '../config';
 
 /**
  * AI Chat MCP Server - Provides AI conversation tools to the MCP Controller Agent
- * 
+ *
  * This server handles:
- * - AI chat conversations using Google Gemini 2.5 Flash
+ * - AI chat conversations using Google Gemini with Google Search grounding
  * - Conversation context management and history
  * - Response formatting for fax readability
  * - Conversation summarization
@@ -19,12 +19,12 @@ export class AIChatMCPServer implements MCPServer {
   name = 'ai_chat';
   description = 'AI conversation and chat tools';
   tools: MCPTool[] = [];
-  private genAI: GoogleGenerativeAI;
+  private ai: GoogleGenAI;
 
   constructor() {
-    // Initialize Google Gemini AI
-    this.genAI = new GoogleGenerativeAI(config.gemini.apiKey);
-    
+    // Initialize Google GenAI with the new SDK
+    this.ai = new GoogleGenAI({ apiKey: config.gemini.apiKey });
+
     this.initializeTools();
   }
 
@@ -188,37 +188,31 @@ export class AIChatMCPServer implements MCPServer {
 
       // Create system prompt for fax-optimized responses with insights extraction
       const systemPrompt = this.createSystemPromptWithInsights();
-      
-      // Prepare conversation for Gemini with system instruction and JSON schema
-      const model = this.genAI.getGenerativeModel({ 
-        model: config.gemini.model,
-        systemInstruction: {
-          role: 'system',
-          parts: [{ text: systemPrompt }]
-        },
-        generationConfig: {
-          responseMimeType: 'application/json',
-          responseSchema: this.getQAResponseSchema()
-        }
-      });
-      
-      // Build conversation history for Gemini
+
+      // Build conversation history for the new SDK (excludes current message)
       const chatHistory = conversationHistory
+        .slice(0, -1) // Exclude the current message we just added
         .filter((msg: any) => msg.role !== 'system')
         .map((msg: any) => ({
           role: msg.role === 'user' ? 'user' : 'model',
           parts: [{ text: msg.content }]
         }));
 
-      // Start chat session with history
-      const chat = model.startChat({
-        history: chatHistory.slice(0, -1) // Exclude the current message
+      // Create chat session with Google Search grounding enabled
+      const chat = this.ai.chats.create({
+        model: config.gemini.model,
+        config: {
+          systemInstruction: systemPrompt,
+          responseMimeType: 'application/json',
+          responseSchema: this.getQAResponseSchema(),
+          tools: [{ googleSearch: {} }] // Enable Google Search for real-time info
+        },
+        history: chatHistory
       });
 
       // Send message and get response
-      const result = await chat.sendMessage(message);
-      const response = result.response;
-      const aiResponseText = response.text();
+      const response = await chat.sendMessage({ message });
+      const aiResponseText = response.text ?? '';
 
       // Parse JSON response
       let parsedResponse: any;
@@ -399,15 +393,15 @@ export class AIChatMCPServer implements MCPServer {
         .join('\n\n');
 
       // Generate summary using Gemini
-      const model = this.genAI.getGenerativeModel({ model: config.gemini.model });
-      
       const summaryPrompt = `Please provide a concise summary of this conversation. Focus on the main topics discussed and any important information or decisions. Keep it brief and clear for fax delivery:
 
 ${conversationText}`;
 
-      const result = await model.generateContent(summaryPrompt);
-      const response = result.response;
-      const summary = this.formatResponseForFax(response.text());
+      const response = await this.ai.models.generateContent({
+        model: config.gemini.model,
+        contents: summaryPrompt
+      });
+      const summary = this.formatResponseForFax(response.text ?? '');
 
       return {
         success: true,
@@ -576,6 +570,9 @@ ${conversationText}`;
    */
   private createSystemPromptWithInsights(): string {
     return `You are an AI assistant for Faxi, a fax-to-internet bridge service. Your responses will be converted to fax format and sent to users who prefer offline communication.
+
+IMPORTANT - REAL-TIME INFORMATION:
+You have access to Google Search to find real-time information. When users ask about weather, news, prices, current events, store hours, or any time-sensitive information, use your search capability to provide accurate, up-to-date answers. Do NOT say you cannot access real-time information - you CAN search the web!
 
 CRITICAL FORMATTING REQUIREMENTS:
 - Keep responses concise and clear

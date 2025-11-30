@@ -17,6 +17,7 @@ export interface CreateConversationContextData {
   contextType: string;
   contextData: any;
   expiresAt: Date;
+  createdAt?: Date;
 }
 
 export interface UpdateConversationContextData {
@@ -177,9 +178,19 @@ export class ConversationContextRepository {
    */
   async expire(id: string): Promise<void> {
     await db.query(
-      `UPDATE conversation_contexts 
+      `UPDATE conversation_contexts
        SET expires_at = NOW()
        WHERE id = $1`,
+      [id]
+    );
+  }
+
+  /**
+   * Delete a specific conversation context by ID
+   */
+  async delete(id: string): Promise<void> {
+    await db.query(
+      `DELETE FROM conversation_contexts WHERE id = $1`,
       [id]
     );
   }

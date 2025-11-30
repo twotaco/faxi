@@ -160,4 +160,38 @@ export const jobsApi = {
   },
 };
 
+// Orders API functions
+export const ordersApi = {
+  listPending: async (params?: {
+    sortBy?: 'date' | 'price' | 'user';
+    sortOrder?: 'asc' | 'desc';
+    page?: number;
+    limit?: number;
+    search?: string;
+  }) => {
+    const response = await apiClient.get('/api/admin/orders/pending', { params });
+    return response.data;
+  },
+
+  getById: async (id: string) => {
+    const response = await apiClient.get(`/api/admin/orders/${id}`);
+    return response.data;
+  },
+
+  prepareCheckout: async (id: string) => {
+    const response = await apiClient.post(`/api/admin/orders/${id}/prepare-checkout`);
+    return response.data;
+  },
+
+  completePurchase: async (id: string, data: { amazonOrderId: string; actualPrice: number }) => {
+    const response = await apiClient.post(`/api/admin/orders/${id}/complete-purchase`, data);
+    return response.data;
+  },
+
+  cancel: async (id: string, reason?: string) => {
+    const response = await apiClient.post(`/api/admin/orders/${id}/cancel`, { reason });
+    return response.data;
+  },
+};
+
 export default apiClient;

@@ -436,7 +436,7 @@ class LoggingService {
     });
 
     // Add production transports
-    if (config.app.environment === 'production') {
+    if (config.app.env === 'production') {
       // In production, you might add:
       // - Elasticsearch transport
       // - CloudWatch transport

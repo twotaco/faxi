@@ -125,6 +125,7 @@ const configSchema = z.object({
       integrationKey: z.string(),
     }).optional(),
   }).optional(),
+
 });
 
 export type Config = z.infer<typeof configSchema>;

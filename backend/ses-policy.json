@@ -1,0 +1,30 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "SESPermissions",
+      "Effect": "Allow",
+      "Action": [
+        "ses:SendEmail",
+        "ses:SendRawEmail",
+        "ses:GetSendStatistics",
+        "ses:GetSendQuota",
+        "ses:VerifyEmailIdentity",
+        "ses:VerifyDomainIdentity",
+        "ses:GetIdentityVerificationAttributes"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "SNSPermissions",
+      "Effect": "Allow",
+      "Action": [
+        "sns:Publish",
+        "sns:Subscribe",
+        "sns:Unsubscribe",
+        "sns:ListSubscriptionsByTopic"
+      ],
+      "Resource": "arn:aws:sns:*:*:faxi-email-notifications"
+    }
+  ]
+}

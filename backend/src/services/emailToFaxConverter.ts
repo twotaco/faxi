@@ -105,7 +105,10 @@ export class EmailToFaxConverter {
   private static convertHtmlToText(html: string): string {
     if (!html) return '';
 
-    let text = html;
+    // Sanitize HTML first to remove dangerous content
+    let sanitized = this.sanitizeHtml(html);
+
+    let text = sanitized;
 
     // Convert common HTML elements to text equivalents
     text = text
@@ -140,6 +143,57 @@ export class EmailToFaxConverter {
       .trim();
 
     return text;
+  }
+
+  /**
+   * Sanitize HTML to remove potentially dangerous content
+   */
+  private static sanitizeHtml(html: string): string {
+    if (!html) return '';
+
+    let sanitized = html;
+
+    // Remove script tags and their content
+    sanitized = sanitized.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
+    
+    // Remove style tags and their content
+    sanitized = sanitized.replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, '');
+    
+    // Remove iframe tags
+    sanitized = sanitized.replace(/<iframe\b[^<]*(?:(?!<\/iframe>)<[^<]*)*<\/iframe>/gi, '');
+    
+    // Remove object and embed tags
+    sanitized = sanitized.replace(/<object\b[^<]*(?:(?!<\/object>)<[^<]*)*<\/object>/gi, '');
+    sanitized = sanitized.replace(/<embed\b[^>]*>/gi, '');
+    
+    // Remove form tags
+    sanitized = sanitized.replace(/<form\b[^<]*(?:(?!<\/form>)<[^<]*)*<\/form>/gi, '');
+    
+    // Remove dangerous event handlers (onclick, onerror, onload, etc.)
+    sanitized = sanitized.replace(/\s*on\w+\s*=\s*["'][^"']*["']/gi, '');
+    sanitized = sanitized.replace(/\s*on\w+\s*=\s*[^\s>]*/gi, '');
+    
+    // Remove javascript: protocol from href and src attributes
+    sanitized = sanitized.replace(/href\s*=\s*["']javascript:[^"']*["']/gi, 'href="#"');
+    sanitized = sanitized.replace(/src\s*=\s*["']javascript:[^"']*["']/gi, 'src=""');
+    
+    // Remove data: protocol from src attributes (can be used for XSS)
+    sanitized = sanitized.replace(/src\s*=\s*["']data:[^"']*["']/gi, 'src=""');
+    
+    // Remove vbscript: protocol
+    sanitized = sanitized.replace(/href\s*=\s*["']vbscript:[^"']*["']/gi, 'href="#"');
+    sanitized = sanitized.replace(/src\s*=\s*["']vbscript:[^"']*["']/gi, 'src=""');
+    
+    // Remove meta refresh tags
+    sanitized = sanitized.replace(/<meta\b[^>]*http-equiv\s*=\s*["']?refresh["']?[^>]*>/gi, '');
+    
+    // Remove base tags (can be used to hijack relative URLs)
+    sanitized = sanitized.replace(/<base\b[^>]*>/gi, '');
+    
+    // Remove link tags (can load external stylesheets with malicious content)
+    sanitized = sanitized.replace(/<link\b[^>]*>/gi, '');
+
+    return sanitized;
   }
 
   /**

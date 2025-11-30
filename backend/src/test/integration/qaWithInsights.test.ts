@@ -37,7 +37,7 @@ describe('Q&A with Insights Integration Tests', () => {
       testUserId = existingUser.id;
     } catch (error) {
       // If user creation fails, tests will fail appropriately
-      console.error('Failed to create/find test user:', error.message);
+      console.error('Failed to create/find test user:', (error as Error).message);
       throw error;
     }
   });

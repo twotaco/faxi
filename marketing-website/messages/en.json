@@ -39,6 +39,7 @@
     "partnering": "Partnering",
     "demo": "Demo",
     "tech": "Technology",
+    "help": "Help",
     "about": "About",
     "privacy": "Privacy Policy",
     "terms": "Terms of Service"
@@ -852,6 +853,249 @@
           "location": "Lives in Nagoya, parents in Kyoto"
         }
       }
+    }
+  },
+  "help": {
+    "meta": {
+      "title": "Help & Support - Faxi",
+      "description": "Get help using Faxi. Find instructions, FAQs, troubleshooting guides, and support resources."
+    },
+    "title": "Help & Support",
+    "subtitle": "Everything you need to know about using Faxi",
+    "gettingStarted": {
+      "title": "Getting Started",
+      "description": "Learn the basics of using Faxi to access modern services through your fax machine. We'll guide you through registration, sending your first fax, and understanding how the service works."
+    },
+    "instructions": {
+      "title": "How to Use Faxi",
+      "description": "Step-by-step instructions for sending faxes, formatting requests, and using different services like email, shopping, appointments, and Q&A.",
+      "faxNumbers": {
+        "title": "Faxi Fax Numbers",
+        "japan": "Japan: 050-5050-8899",
+        "usa": "USA: 1-302-400-8899",
+        "description": "Send your faxes to these numbers to use Faxi services"
+      },
+      "basicSteps": {
+        "title": "Basic Steps for Sending a Fax",
+        "step1": {
+          "title": "Write Your Request",
+          "description": "Write clearly what you want to do. You can use handwriting or typed text."
+        },
+        "step2": {
+          "title": "Include Your Fax Number",
+          "description": "Make sure your fax number is visible so we can send the response back to you."
+        },
+        "step3": {
+          "title": "Send to Faxi",
+          "description": "Send your fax to 050-5050-8899 (Japan) or 1-302-400-8899 (USA)."
+        },
+        "step4": {
+          "title": "Wait for Response",
+          "description": "You'll receive a confirmation fax within 2-5 minutes with the results of your request."
+        }
+      },
+      "useCaseTabs": {
+        "email": "Email",
+        "shopping": "Shopping",
+        "appointments": "Appointments",
+        "qa": "Q&A"
+      },
+      "email": {
+        "title": "Sending Emails via Fax",
+        "description": "Use your fax machine to send emails to family and friends. Your fax number becomes your email address.",
+        "steps": {
+          "step1": "Write \"Email to:\" followed by the recipient's name or email address",
+          "step2": "Write your message below",
+          "step3": "Send the fax to our number",
+          "step4": "The recipient receives your message as an email"
+        },
+        "example": "Example: \"Email to: daughter@example.com\" followed by your message",
+        "tips": "Tips: You can save contacts in your address book. Just write the person's name and we'll look up their email."
+      },
+      "shopping": {
+        "title": "Shopping Online via Fax",
+        "description": "Browse products and place orders from online stores without using a computer.",
+        "steps": {
+          "step1": "Write \"I want to buy:\" followed by what you're looking for",
+          "step2": "We'll send you a fax with matching products and prices",
+          "step3": "Circle or checkmark the items you want",
+          "step4": "Send the marked fax back to us",
+          "step5": "We'll process your order and send confirmation"
+        },
+        "example": "Example: \"I want to buy: warm winter gloves, size medium\"",
+        "tips": "Tips: Be as specific or general as you like. We'll find options that match your needs."
+      },
+      "appointments": {
+        "title": "Booking Appointments via Fax",
+        "description": "Schedule doctor appointments, salon visits, or other services without calling.",
+        "steps": {
+          "step1": "Write \"Book appointment:\" followed by the service type",
+          "step2": "Include your preferred date and time",
+          "step3": "Add any special requirements or notes",
+          "step4": "We'll check availability and send confirmation"
+        },
+        "example": "Example: \"Book appointment: Dr. Tanaka, next Tuesday afternoon, regular checkup\"",
+        "tips": "Tips: If your preferred time isn't available, we'll suggest alternatives."
+      },
+      "qa": {
+        "title": "Asking Questions via Fax",
+        "description": "Get information, answers, and assistance on any topic by sending a fax.",
+        "steps": {
+          "step1": "Write your question clearly",
+          "step2": "Be as specific as possible",
+          "step3": "Send the fax",
+          "step4": "Receive a detailed answer within minutes"
+        },
+        "example": "Example: \"What's the weather forecast for Tokyo this weekend?\" or \"How do I care for orchid plants?\"",
+        "tips": "Tips: You can ask about anything - weather, recipes, local information, how-to guides, and more."
+      },
+      "responseInfo": {
+        "title": "What to Expect",
+        "processingTime": {
+          "title": "Response Time",
+          "description": "Most requests are processed within 2-5 minutes. Complex requests may take up to 15 minutes."
+        },
+        "confirmationFormat": {
+          "title": "Confirmation Fax",
+          "description": "You'll receive a clearly formatted fax with your results, including a reference number for follow-up questions."
+        },
+        "followUp": {
+          "title": "Follow-Up",
+          "description": "If you need to make changes or have questions, just send another fax referencing your original request."
+        }
+      },
+      "visualExamples": {
+        "title": "Visual Examples",
+        "description": "See examples of properly formatted faxes for each use case",
+        "comingSoon": "Example images coming soon"
+      }
+    },
+    "faq": {
+      "title": "Frequently Asked Questions",
+      "description": "Find answers to common questions about using Faxi, pricing, security, and troubleshooting.",
+      "searchPlaceholder": "Search FAQs...",
+      "noResults": "No FAQs match your search. Try different keywords.",
+      "categories": {
+        "gettingStarted": "Getting Started",
+        "usingService": "Using the Service",
+        "troubleshooting": "Troubleshooting",
+        "billing": "Billing & Pricing",
+        "privacy": "Privacy & Security"
+      },
+      "items": {
+        "registration": {
+          "category": "gettingStarted",
+          "question": "How do I register for Faxi?",
+          "answer": "Registration is simple! Just send a fax to our number (050-5050-8899 in Japan or 1-302-400-8899 in USA) with your name and contact information. We'll send you a welcome fax with your account details and instructions to get started.",
+          "keywords": ["register", "sign up", "account", "start", "begin"]
+        },
+        "cost": {
+          "category": "gettingStarted",
+          "question": "How much does Faxi cost?",
+          "answer": "Faxi charges a small fee per fax transaction. Basic requests (email, Q&A) cost ¥100 per fax. Shopping and appointment services may have additional fees depending on the service provider. You'll always see the cost before confirming any transaction.",
+          "keywords": ["cost", "price", "fee", "charge", "money", "payment"]
+        },
+        "faxMachine": {
+          "category": "gettingStarted",
+          "question": "What kind of fax machine do I need?",
+          "answer": "Any standard fax machine works with Faxi! As long as your fax machine can send and receive faxes, you're all set. No special equipment or modifications needed.",
+          "keywords": ["fax machine", "equipment", "device", "requirements"]
+        },
+        "handwriting": {
+          "category": "usingService",
+          "question": "Can I use handwriting or does it need to be typed?",
+          "answer": "Both handwriting and typed text work perfectly! Our AI can read clear handwriting in Japanese or English. Just write legibly and we'll understand your request.",
+          "keywords": ["handwriting", "typed", "write", "text", "format"]
+        },
+        "languages": {
+          "category": "usingService",
+          "question": "What languages does Faxi support?",
+          "answer": "Faxi currently supports Japanese and English. You can write your requests in either language, and we'll respond in the same language you used.",
+          "keywords": ["language", "japanese", "english", "translation"]
+        },
+        "responseTime": {
+          "category": "usingService",
+          "question": "How long does it take to get a response?",
+          "answer": "Most requests are processed within 2-5 minutes. You'll receive a confirmation fax as soon as your request is complete. Complex requests like shopping or appointments may take up to 15 minutes.",
+          "keywords": ["time", "speed", "fast", "wait", "response", "delay"]
+        },
+        "multipleRequests": {
+          "category": "usingService",
+          "question": "Can I send multiple requests in one fax?",
+          "answer": "Yes! You can include multiple requests in a single fax. Just clearly separate each request and number them (1, 2, 3, etc.). We'll process each one and send back a comprehensive response.",
+          "keywords": ["multiple", "several", "many", "batch"]
+        },
+        "followUp": {
+          "category": "usingService",
+          "question": "How do I follow up on a previous request?",
+          "answer": "Each response fax includes a reference number. To follow up, just mention that reference number in your new fax. For example: \"Regarding request #12345, I'd like to...\" This helps us find your previous conversation quickly.",
+          "keywords": ["follow up", "reference", "previous", "continue", "conversation"]
+        },
+        "notReceived": {
+          "category": "troubleshooting",
+          "question": "I sent a fax but didn't receive a response. What should I do?",
+          "answer": "First, check that your fax was sent successfully (your fax machine should show a confirmation). If it was sent but you haven't received a response after 15 minutes, send another fax with \"RESEND REQUEST\" and your original fax details. We'll investigate and respond promptly.",
+          "keywords": ["not received", "missing", "lost", "no response", "didn't get"]
+        },
+        "unclear": {
+          "category": "troubleshooting",
+          "question": "The response fax was unclear or hard to read. What can I do?",
+          "answer": "Send us a fax saying \"REQUEST CLEARER RESPONSE\" with your reference number. We'll resend the information in a larger, clearer format. You can also request information by phone if needed.",
+          "keywords": ["unclear", "blurry", "hard to read", "can't read", "illegible"]
+        },
+        "wrongInfo": {
+          "category": "troubleshooting",
+          "question": "The response had incorrect information. How do I fix this?",
+          "answer": "Send a correction fax with your reference number and explain what was incorrect. For example: \"Regarding #12345, the email address should be...\" We'll update the information and send a corrected response.",
+          "keywords": ["wrong", "incorrect", "mistake", "error", "fix", "correct"]
+        },
+        "pricing": {
+          "category": "billing",
+          "question": "How am I billed for Faxi services?",
+          "answer": "You'll receive a monthly invoice by fax showing all your transactions. You can pay by bank transfer, convenience store payment, or have a family member pay online. We also offer prepaid packages for discounted rates.",
+          "keywords": ["billing", "invoice", "payment", "pay", "charge"]
+        },
+        "paymentMethods": {
+          "category": "billing",
+          "question": "What payment methods can I use for shopping?",
+          "answer": "For online shopping through Faxi, you can pay by: (1) Credit card - register once and we'll charge automatically, (2) Bank transfer - we'll send you bank details by fax, or (3) Convenience store payment - bring the barcode fax to any konbini. You choose your preferred method when you first shop with us.",
+          "keywords": ["payment", "credit card", "bank transfer", "konbini", "convenience store", "shopping", "pay"]
+        },
+        "paymentSecurity": {
+          "category": "billing",
+          "question": "Is my payment information safe?",
+          "answer": "Yes, absolutely. We use Stripe, a trusted international payment processor used by millions of businesses. Your credit card information is encrypted and never stored on our servers. For bank transfers and convenience store payments, no sensitive information is needed.",
+          "keywords": ["security", "safe", "payment", "credit card", "privacy", "stripe"]
+        },
+        "refund": {
+          "category": "billing",
+          "question": "Can I get a refund if something goes wrong?",
+          "answer": "Yes! If we make an error or you're not satisfied with the service, we'll refund the transaction fee. Just send a fax explaining the issue within 7 days of the transaction.",
+          "keywords": ["refund", "money back", "return", "dissatisfied"]
+        },
+        "dataPrivacy": {
+          "category": "privacy",
+          "question": "Is my information kept private and secure?",
+          "answer": "Absolutely! All faxes are encrypted and stored securely. We never share your personal information with third parties without your permission. Your data is protected by Japanese privacy laws and our strict security policies.",
+          "keywords": ["privacy", "security", "safe", "confidential", "data protection"]
+        },
+        "dataRetention": {
+          "category": "privacy",
+          "question": "How long do you keep my fax records?",
+          "answer": "We keep your fax records for 90 days to help with follow-up requests and support. After 90 days, records are automatically deleted unless you request longer retention. You can request deletion of your records at any time.",
+          "keywords": ["retention", "storage", "keep", "delete", "records", "history"]
+        },
+        "whoCanSee": {
+          "category": "privacy",
+          "question": "Who can see my faxes and personal information?",
+          "answer": "Only authorized Faxi staff who need to process your requests can see your faxes. All staff sign confidentiality agreements. We use AI to process most requests automatically, minimizing human access to your information.",
+          "keywords": ["access", "see", "view", "staff", "employees", "who"]
+        }
+      }
+    },
+    "troubleshooting": {
+      "title": "Troubleshooting",
+      "description": "Having issues? Find solutions to common problems like faxes not being received, delayed responses, or unclear results."
     }
   }
 }

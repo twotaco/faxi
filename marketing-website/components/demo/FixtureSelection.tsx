@@ -75,7 +75,7 @@ export function FixtureSelection({
                     <img
                       src={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}${fixture.thumbnailUrl}`}
                       alt={`Sample fax demonstrating ${fixture.name}: ${fixture.description}`}
-                      className="w-full h-full object-cover"
+                      className="w-full h-auto scale-[2] origin-top-left"
                       loading="lazy"
                     />
                   </div>

@@ -4,20 +4,24 @@ import { TelnyxWebhookPayload } from './types';
 import { webhookHandlerService } from '../services/webhookHandlerService';
 import { faxJobRepository } from '../repositories/faxJobRepository';
 import { auditLogService } from '../services/auditLogService';
+import { loggingService } from '../services/loggingService';
 
 export class TelnyxWebhookController {
   /**
-   * Handle incoming fax webhook from Telnyx
-   * POST /webhooks/telnyx/fax/received
+   * Handle all Telnyx fax webhooks (single endpoint for all event types)
+   * POST /webhooks/telnyx/fax
    */
-  async handleFaxReceived(req: Request, res: Response): Promise<void> {
+  async handleWebhook(req: Request, res: Response): Promise<void> {
     try {
       // Extract signature headers
       const signature = req.headers['telnyx-signature-ed25519'] as string;
       const timestamp = req.headers['telnyx-timestamp'] as string;
 
       if (!signature || !timestamp) {
-        console.error('Missing Telnyx signature headers');
+        loggingService.warn('Missing Telnyx signature headers', undefined, {
+          hasSignature: !!signature,
+          hasTimestamp: !!timestamp,
+        });
         res.status(401).json({ error: 'Missing signature headers' });
         return;
       }
@@ -28,7 +32,7 @@ export class TelnyxWebhookController {
       // Verify signature
       const isValid = verifyTelnyxSignature(signature, timestamp, rawBody);
       if (!isValid) {
-        console.error('Invalid Telnyx webhook signature');
+        loggingService.warn('Invalid Telnyx webhook signature');
         res.status(401).json({ error: 'Invalid signature' });
         return;
       }
@@ -38,22 +42,39 @@ export class TelnyxWebhookController {
 
       // Validate payload structure
       if (!payload.data || !payload.data.payload) {
-        console.error('Invalid webhook payload structure');
+        loggingService.warn('Invalid webhook payload structure', undefined, {
+          hasData: !!payload.data,
+          hasPayload: !!(payload.data?.payload),
+        });
         res.status(400).json({ error: 'Invalid payload structure' });
         return;
       }
 
+      const eventType = payload.data.event_type;
+      const faxId = payload.data.payload.fax_id;
+
+      loggingService.info('Telnyx webhook received', undefined, {
+        eventType,
+        faxId,
+        from: payload.data.payload.from,
+        to: payload.data.payload.to,
+        occurredAt: payload.data.occurred_at,
+      });
+
       // Return 200 OK immediately (within 5 seconds requirement)
-      res.status(200).json({ received: true });
+      res.status(200).json({ received: true, eventType });
 
       // Process webhook asynchronously
       // Don't await - let it run in background
       this.processWebhookAsync(payload).catch((error) => {
-        console.error('Error processing webhook asynchronously:', error);
+        loggingService.error('Error processing webhook asynchronously', error as Error, {
+          eventType,
+          faxId,
+        });
       });
     } catch (error) {
-      console.error('Error handling Telnyx webhook:', error);
-      
+      loggingService.error('Error handling Telnyx webhook', error as Error);
+
       // Still return 200 to prevent retries if we've already started processing
       if (!res.headersSent) {
         res.status(500).json({ error: 'Internal server error' });
@@ -62,82 +83,171 @@ export class TelnyxWebhookController {
   }
 
   /**
+   * Legacy handler for backward compatibility
+   * @deprecated Use handleWebhook instead
+   */
+  async handleFaxReceived(req: Request, res: Response): Promise<void> {
+    return this.handleWebhook(req, res);
+  }
+
+  /**
    * Handle fax delivery status webhook from Telnyx
+   * @deprecated Use handleWebhook instead - kept for backward compatibility
    * POST /webhooks/telnyx/fax/status
    */
   async handleFaxStatus(req: Request, res: Response): Promise<void> {
-    try {
-      // Extract signature headers
-      const signature = req.headers['telnyx-signature-ed25519'] as string;
-      const timestamp = req.headers['telnyx-timestamp'] as string;
-
-      if (!signature || !timestamp) {
-        console.error('Missing Telnyx signature headers');
-        res.status(401).json({ error: 'Missing signature headers' });
-        return;
-      }
-
-      // Get raw body for signature verification
-      const rawBody = JSON.stringify(req.body);
-
-      // Verify signature
-      const isValid = verifyTelnyxSignature(signature, timestamp, rawBody);
-      if (!isValid) {
-        console.error('Invalid Telnyx webhook signature');
-        res.status(401).json({ error: 'Invalid signature' });
-        return;
-      }
-
-      // Parse webhook payload
-      const payload: TelnyxWebhookPayload = req.body;
-
-      // Validate payload structure
-      if (!payload.data || !payload.data.payload) {
-        console.error('Invalid webhook payload structure');
-        res.status(400).json({ error: 'Invalid payload structure' });
-        return;
-      }
-
-      // Return 200 OK immediately
-      res.status(200).json({ received: true });
-
-      // Process webhook asynchronously
-      this.handleFaxDeliveryStatus(payload).catch((error) => {
-        console.error('Error processing fax status webhook:', error);
-      });
-    } catch (error) {
-      console.error('Error handling Telnyx fax status webhook:', error);
-      
-      if (!res.headersSent) {
-        res.status(500).json({ error: 'Internal server error' });
-      }
-    }
+    return this.handleWebhook(req, res);
   }
 
   /**
    * Process webhook asynchronously after responding to Telnyx
    */
   private async processWebhookAsync(payload: TelnyxWebhookPayload): Promise<void> {
-    try {
-      const eventType = payload.data.event_type;
+    const eventType = payload.data.event_type;
+    const faxId = payload.data.payload.fax_id;
+    const occurredAt = payload.data.occurred_at;
 
+    try {
       // Handle different event types
       switch (eventType) {
+        // === Inbound fax events ===
         case 'fax.received':
+          loggingService.info('Processing inbound fax', undefined, { faxId, occurredAt });
           await webhookHandlerService.processInboundFax(payload);
           break;
 
-        case 'fax.sending':
-        case 'fax.sent':
-        case 'fax.failed':
+        case 'fax.receiving.started':
+          loggingService.info('Fax receiving started', undefined, {
+            faxId,
+            from: payload.data.payload.from,
+            to: payload.data.payload.to,
+            occurredAt,
+          });
+          // Log to audit for tracking
+          await auditLogService.log({
+            eventType: 'fax.receiving.started',
+            eventData: {
+              faxId,
+              from: payload.data.payload.from,
+              to: payload.data.payload.to,
+              occurredAt,
+            },
+          });
+          break;
+
+        // === Media processing events ===
+        case 'fax.media.processing.started':
+          loggingService.info('Fax media processing started', undefined, { faxId, occurredAt });
+          await auditLogService.log({
+            eventType: 'fax.media.processing.started',
+            eventData: { faxId, occurredAt },
+          });
+          break;
+
+        case 'fax.media.processed':
+          loggingService.info('Fax media processed', undefined, { faxId, occurredAt });
+          await auditLogService.log({
+            eventType: 'fax.media.processed',
+            eventData: { faxId, occurredAt },
+          });
+          break;
+
+        // === Outbound fax events ===
+        case 'fax.queued':
+          loggingService.info('Fax queued for sending', undefined, {
+            faxId,
+            to: payload.data.payload.to,
+            occurredAt,
+          });
+          await auditLogService.log({
+            eventType: 'fax.queued',
+            eventData: {
+              faxId,
+              to: payload.data.payload.to,
+              occurredAt,
+            },
+          });
+          break;
+
+        case 'fax.sending.started':
+          loggingService.info('Fax sending started', undefined, {
+            faxId,
+            to: payload.data.payload.to,
+            occurredAt,
+          });
           await this.handleFaxDeliveryStatus(payload);
           break;
 
+        case 'fax.sending':
+          loggingService.info('Fax sending in progress', undefined, { faxId, occurredAt });
+          await this.handleFaxDeliveryStatus(payload);
+          break;
+
+        case 'fax.sent':
+          loggingService.info('Fax sent successfully', undefined, {
+            faxId,
+            to: payload.data.payload.to,
+            pageCount: payload.data.payload.page_count,
+            callDuration: payload.data.payload.call_duration_secs,
+            occurredAt,
+          });
+          await this.handleFaxDeliveryStatus(payload);
+          break;
+
+        case 'fax.delivered':
+          loggingService.info('Fax delivered', undefined, {
+            faxId,
+            to: payload.data.payload.to,
+            occurredAt,
+          });
+          await this.handleFaxDeliveryStatus(payload);
+          break;
+
+        case 'fax.failed':
+          loggingService.error('Fax failed', undefined, {
+            faxId,
+            from: payload.data.payload.from,
+            to: payload.data.payload.to,
+            status: payload.data.payload.status,
+            failureReason: payload.data.payload.failure_reason,
+            connectionId: payload.data.payload.connection_id,
+            occurredAt,
+          });
+          await this.handleFaxDeliveryStatus(payload);
+          break;
+
+        // === Email notification events ===
+        case 'fax.email.delivered':
+          loggingService.info('Fax email notification delivered', undefined, { faxId, occurredAt });
+          await auditLogService.log({
+            eventType: 'fax.email.delivered',
+            eventData: { faxId, occurredAt },
+          });
+          break;
+
         default:
-          console.log('Unknown Telnyx event type', { eventType });
+          loggingService.warn('Unknown Telnyx event type', undefined, {
+            eventType,
+            faxId,
+            occurredAt,
+          });
+          // Still log unknown events for debugging
+          await auditLogService.log({
+            eventType: 'fax.unknown',
+            eventData: {
+              originalEventType: eventType,
+              faxId,
+              payload: payload.data.payload,
+              occurredAt,
+            },
+          });
       }
     } catch (error) {
-      console.error('Error in async webhook processing:', error);
+      loggingService.error('Error in async webhook processing', error as Error, {
+        eventType,
+        faxId,
+        occurredAt,
+      });
       // Error is logged but not thrown since response already sent
     }
   }
@@ -147,15 +257,27 @@ export class TelnyxWebhookController {
    */
   private async handleFaxDeliveryStatus(payload: TelnyxWebhookPayload): Promise<void> {
     try {
-      const { fax_id, status, from, to } = payload.data.payload;
+      const {
+        fax_id,
+        status,
+        from,
+        to,
+        failure_reason,
+        call_duration_secs,
+        connection_id,
+      } = payload.data.payload;
       const eventType = payload.data.event_type;
+      const occurredAt = payload.data.occurred_at;
 
-      console.log('Processing fax delivery status', { 
-        faxId: fax_id, 
-        status, 
+      loggingService.info('Processing fax delivery status', undefined, {
+        faxId: fax_id,
+        status,
         eventType,
         from,
-        to 
+        to,
+        failureReason: failure_reason,
+        callDuration: call_duration_secs,
+        occurredAt,
       });
 
       // Find the fax job by Telnyx fax ID
@@ -179,7 +301,12 @@ export class TelnyxWebhookController {
       }
 
       if (!matchingFaxJobId) {
-        console.warn('No matching fax job found for Telnyx fax ID', { faxId: fax_id });
+        loggingService.warn('No matching fax job found for Telnyx fax ID', undefined, {
+          faxId: fax_id,
+          eventType,
+          from,
+          to,
+        });
         return;
       }
 
@@ -189,10 +316,12 @@ export class TelnyxWebhookController {
       let isFailed = false;
 
       switch (eventType) {
+        case 'fax.sending.started':
         case 'fax.sending':
           internalStatus = 'sending';
           break;
         case 'fax.sent':
+        case 'fax.delivered':
           internalStatus = 'delivered';
           isDelivered = true;
           break;
@@ -205,16 +334,29 @@ export class TelnyxWebhookController {
           internalStatus = 'processing';
       }
 
+      // Build detailed error message for failures
+      let errorMessage: string | undefined;
+      if (isFailed) {
+        const failureDetails = [
+          failure_reason ? `Reason: ${failure_reason}` : null,
+          status ? `Status: ${status}` : null,
+          connection_id ? `Connection: ${connection_id}` : null,
+          occurredAt ? `Time: ${occurredAt}` : null,
+        ].filter(Boolean).join(', ');
+
+        errorMessage = `Fax delivery failed. ${failureDetails}`;
+      }
+
       // Update fax job status
       await faxJobRepository.update(matchingFaxJobId, {
         status: internalStatus,
         deliveredAt: isDelivered ? new Date() : undefined,
-        errorMessage: isFailed ? `Delivery failed: ${status}` : undefined,
+        errorMessage,
       });
 
       // Log the delivery status update
-      const auditStatus: 'attempting' | 'queued' | 'sent' | 'failed' | 'retry' | 'failed_final' | 'mock_sent' = 
-        internalStatus === 'delivered' ? 'sent' : 
+      const auditStatus: 'attempting' | 'queued' | 'sent' | 'failed' | 'retry' | 'failed_final' | 'mock_sent' =
+        internalStatus === 'delivered' ? 'sent' :
         internalStatus === 'failed' ? 'failed' :
         internalStatus === 'sending' ? 'queued' : 'sent';
 
@@ -225,7 +367,7 @@ export class TelnyxWebhookController {
         toNumber: to,
         status: auditStatus,
         telnyxFaxId: fax_id,
-        errorMessage: isFailed ? `Telnyx delivery failed: ${status}` : undefined,
+        errorMessage: isFailed ? errorMessage : undefined,
       });
 
       // Check for repeated failures and alert operators
@@ -233,16 +375,20 @@ export class TelnyxWebhookController {
         await this.checkForRepeatedFailures(to, matchingUserId || undefined);
       }
 
-      console.log('Fax delivery status updated', {
+      loggingService.info('Fax delivery status updated', undefined, {
         faxJobId: matchingFaxJobId,
         telnyxFaxId: fax_id,
         status: internalStatus,
         isDelivered,
         isFailed,
+        failureReason: failure_reason,
       });
     } catch (error) {
-      console.error('Error handling fax delivery status:', error);
-      
+      loggingService.error('Error handling fax delivery status', error as Error, {
+        faxId: payload.data.payload.fax_id,
+        eventType: payload.data.event_type,
+      });
+
       // Log the error for monitoring
       await auditLogService.logSystemError({
         errorType: 'fax_delivery_status_error',
@@ -250,6 +396,7 @@ export class TelnyxWebhookController {
         context: {
           payload: payload.data.payload,
           eventType: payload.data.event_type,
+          occurredAt: payload.data.occurred_at,
         },
       });
     }
@@ -281,7 +428,7 @@ export class TelnyxWebhookController {
 
       // Alert if 3 or more failures in 24 hours
       if (recentFailures.length >= 3) {
-        console.error('ALERT: Repeated fax delivery failures detected', {
+        loggingService.error('ALERT: Repeated fax delivery failures detected', undefined, {
           toNumber,
           userId,
           failureCount: recentFailures.length,
@@ -310,7 +457,10 @@ export class TelnyxWebhookController {
         // - Automatic escalation procedures
       }
     } catch (error) {
-      console.error('Error checking for repeated failures:', error);
+      loggingService.error('Error checking for repeated failures', error as Error, {
+        toNumber,
+        userId,
+      });
     }
   }
 }

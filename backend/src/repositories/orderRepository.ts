@@ -5,12 +5,22 @@ export interface Order {
   userId: string;
   referenceId: string;
   externalOrderId: string | null;
-  status: 'pending' | 'paid' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
+  status: 'pending' | 'paid' | 'processing' | 'shipped' | 'delivered' | 'cancelled' | 'pending_payment' | 'pending_purchase' | 'purchased';
   totalAmount: number;
   currency: string;
   items: any;
   shippingAddress: any;
   trackingNumber: string | null;
+  // Shopping-specific fields
+  productAsin?: string | null;
+  productTitle?: string | null;
+  productImageUrl?: string | null;
+  quantity?: number;
+  quotedPrice?: number | null;
+  actualPrice?: number | null;
+  stripePaymentIntentId?: string | null;
+  adminUserId?: string | null;
+  purchasedAt?: Date | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -19,19 +29,33 @@ export interface CreateOrderData {
   userId: string;
   referenceId: string;
   externalOrderId?: string;
-  status?: 'pending' | 'paid' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
+  status?: 'pending' | 'paid' | 'processing' | 'shipped' | 'delivered' | 'cancelled' | 'pending_payment' | 'pending_purchase' | 'purchased';
   totalAmount: number;
   currency?: string;
   items: any;
   shippingAddress?: any;
   trackingNumber?: string;
+  // Shopping-specific fields
+  productAsin?: string;
+  productTitle?: string;
+  productImageUrl?: string;
+  quantity?: number;
+  quotedPrice?: number;
+  actualPrice?: number;
+  stripePaymentIntentId?: string;
+  adminUserId?: string;
+  purchasedAt?: Date;
 }
 
 export interface UpdateOrderData {
   externalOrderId?: string;
-  status?: 'pending' | 'paid' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
+  status?: 'pending' | 'paid' | 'processing' | 'shipped' | 'delivered' | 'cancelled' | 'pending_payment' | 'pending_purchase' | 'purchased';
   trackingNumber?: string;
   shippingAddress?: any;
+  // Shopping-specific fields
+  actualPrice?: number;
+  adminUserId?: string;
+  purchasedAt?: Date;
 }
 
 export class OrderRepository {
@@ -43,8 +67,13 @@ export class OrderRepository {
       `SELECT id, user_id as "userId", reference_id as "referenceId",
               external_order_id as "externalOrderId", status, total_amount as "totalAmount",
               currency, items, shipping_address as "shippingAddress",
-              tracking_number as "trackingNumber", created_at as "createdAt", 
-              updated_at as "updatedAt"
+              tracking_number as "trackingNumber",
+              product_asin as "productAsin", product_title as "productTitle",
+              product_image_url as "productImageUrl", quantity,
+              quoted_price as "quotedPrice", actual_price as "actualPrice",
+              stripe_payment_intent_id as "stripePaymentIntentId",
+              admin_user_id as "adminUserId", purchased_at as "purchasedAt",
+              created_at as "createdAt", updated_at as "updatedAt"
        FROM orders 
        WHERE id = $1`,
       [id]
@@ -61,8 +90,13 @@ export class OrderRepository {
       `SELECT id, user_id as "userId", reference_id as "referenceId",
               external_order_id as "externalOrderId", status, total_amount as "totalAmount",
               currency, items, shipping_address as "shippingAddress",
-              tracking_number as "trackingNumber", created_at as "createdAt", 
-              updated_at as "updatedAt"
+              tracking_number as "trackingNumber",
+              product_asin as "productAsin", product_title as "productTitle",
+              product_image_url as "productImageUrl", quantity,
+              quoted_price as "quotedPrice", actual_price as "actualPrice",
+              stripe_payment_intent_id as "stripePaymentIntentId",
+              admin_user_id as "adminUserId", purchased_at as "purchasedAt",
+              created_at as "createdAt", updated_at as "updatedAt"
        FROM orders 
        WHERE external_order_id = $1`,
       [externalOrderId]
@@ -79,8 +113,13 @@ export class OrderRepository {
       `SELECT id, user_id as "userId", reference_id as "referenceId",
               external_order_id as "externalOrderId", status, total_amount as "totalAmount",
               currency, items, shipping_address as "shippingAddress",
-              tracking_number as "trackingNumber", created_at as "createdAt", 
-              updated_at as "updatedAt"
+              tracking_number as "trackingNumber",
+              product_asin as "productAsin", product_title as "productTitle",
+              product_image_url as "productImageUrl", quantity,
+              quoted_price as "quotedPrice", actual_price as "actualPrice",
+              stripe_payment_intent_id as "stripePaymentIntentId",
+              admin_user_id as "adminUserId", purchased_at as "purchasedAt",
+              created_at as "createdAt", updated_at as "updatedAt"
        FROM orders 
        WHERE reference_id = $1`,
       [referenceId]
@@ -97,8 +136,13 @@ export class OrderRepository {
       `SELECT id, user_id as "userId", reference_id as "referenceId",
               external_order_id as "externalOrderId", status, total_amount as "totalAmount",
               currency, items, shipping_address as "shippingAddress",
-              tracking_number as "trackingNumber", created_at as "createdAt", 
-              updated_at as "updatedAt"
+              tracking_number as "trackingNumber",
+              product_asin as "productAsin", product_title as "productTitle",
+              product_image_url as "productImageUrl", quantity,
+              quoted_price as "quotedPrice", actual_price as "actualPrice",
+              stripe_payment_intent_id as "stripePaymentIntentId",
+              admin_user_id as "adminUserId", purchased_at as "purchasedAt",
+              created_at as "createdAt", updated_at as "updatedAt"
        FROM orders 
        WHERE user_id = $1
        ORDER BY created_at DESC
@@ -113,15 +157,20 @@ export class OrderRepository {
    * Find orders by status
    */
   async findByStatus(
-    status: 'pending' | 'paid' | 'processing' | 'shipped' | 'delivered' | 'cancelled',
+    status: 'pending' | 'paid' | 'processing' | 'shipped' | 'delivered' | 'cancelled' | 'pending_payment' | 'pending_purchase' | 'purchased',
     limit: number = 100
   ): Promise<Order[]> {
     const result = await db.query<Order>(
       `SELECT id, user_id as "userId", reference_id as "referenceId",
               external_order_id as "externalOrderId", status, total_amount as "totalAmount",
               currency, items, shipping_address as "shippingAddress",
-              tracking_number as "trackingNumber", created_at as "createdAt", 
-              updated_at as "updatedAt"
+              tracking_number as "trackingNumber",
+              product_asin as "productAsin", product_title as "productTitle",
+              product_image_url as "productImageUrl", quantity,
+              quoted_price as "quotedPrice", actual_price as "actualPrice",
+              stripe_payment_intent_id as "stripePaymentIntentId",
+              admin_user_id as "adminUserId", purchased_at as "purchasedAt",
+              created_at as "createdAt", updated_at as "updatedAt"
        FROM orders 
        WHERE status = $1
        ORDER BY created_at DESC
@@ -139,14 +188,22 @@ export class OrderRepository {
     const result = await db.query<Order>(
       `INSERT INTO orders (
         user_id, reference_id, external_order_id, status, total_amount,
-        currency, items, shipping_address, tracking_number
+        currency, items, shipping_address, tracking_number,
+        product_asin, product_title, product_image_url, quantity,
+        quoted_price, actual_price, stripe_payment_intent_id,
+        admin_user_id, purchased_at
        )
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
        RETURNING id, user_id as "userId", reference_id as "referenceId",
                  external_order_id as "externalOrderId", status, total_amount as "totalAmount",
                  currency, items, shipping_address as "shippingAddress",
-                 tracking_number as "trackingNumber", created_at as "createdAt", 
-                 updated_at as "updatedAt"`,
+                 tracking_number as "trackingNumber",
+                 product_asin as "productAsin", product_title as "productTitle",
+                 product_image_url as "productImageUrl", quantity,
+                 quoted_price as "quotedPrice", actual_price as "actualPrice",
+                 stripe_payment_intent_id as "stripePaymentIntentId",
+                 admin_user_id as "adminUserId", purchased_at as "purchasedAt",
+                 created_at as "createdAt", updated_at as "updatedAt"`,
       [
         data.userId,
         data.referenceId,
@@ -157,6 +214,15 @@ export class OrderRepository {
         JSON.stringify(data.items),
         data.shippingAddress ? JSON.stringify(data.shippingAddress) : null,
         data.trackingNumber || null,
+        data.productAsin || null,
+        data.productTitle || null,
+        data.productImageUrl || null,
+        data.quantity || 1,
+        data.quotedPrice || null,
+        data.actualPrice || null,
+        data.stripePaymentIntentId || null,
+        data.adminUserId || null,
+        data.purchasedAt || null,
       ]
     );
 
@@ -191,6 +257,21 @@ export class OrderRepository {
       values.push(JSON.stringify(data.shippingAddress));
     }
 
+    if (data.actualPrice !== undefined) {
+      updates.push(`actual_price = $${paramIndex++}`);
+      values.push(data.actualPrice);
+    }
+
+    if (data.adminUserId !== undefined) {
+      updates.push(`admin_user_id = $${paramIndex++}`);
+      values.push(data.adminUserId);
+    }
+
+    if (data.purchasedAt !== undefined) {
+      updates.push(`purchased_at = $${paramIndex++}`);
+      values.push(data.purchasedAt);
+    }
+
     if (updates.length === 0) {
       throw new Error('No fields to update');
     }
@@ -204,8 +285,13 @@ export class OrderRepository {
        RETURNING id, user_id as "userId", reference_id as "referenceId",
                  external_order_id as "externalOrderId", status, total_amount as "totalAmount",
                  currency, items, shipping_address as "shippingAddress",
-                 tracking_number as "trackingNumber", created_at as "createdAt", 
-                 updated_at as "updatedAt"`,
+                 tracking_number as "trackingNumber",
+                 product_asin as "productAsin", product_title as "productTitle",
+                 product_image_url as "productImageUrl", quantity,
+                 quoted_price as "quotedPrice", actual_price as "actualPrice",
+                 stripe_payment_intent_id as "stripePaymentIntentId",
+                 admin_user_id as "adminUserId", purchased_at as "purchasedAt",
+                 created_at as "createdAt", updated_at as "updatedAt"`,
       values
     );
 
@@ -217,7 +303,7 @@ export class OrderRepository {
    */
   async updateStatus(
     id: string,
-    status: 'pending' | 'paid' | 'processing' | 'shipped' | 'delivered' | 'cancelled'
+    status: 'pending' | 'paid' | 'processing' | 'shipped' | 'delivered' | 'cancelled' | 'pending_payment' | 'pending_purchase' | 'purchased'
   ): Promise<Order> {
     return await this.update(id, { status });
   }

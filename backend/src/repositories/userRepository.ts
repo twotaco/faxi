@@ -7,6 +7,7 @@ export interface User {
   name: string | null;
   stripeCustomerId: string | null;
   preferences: Record<string, any>;
+  isActive?: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -17,6 +18,7 @@ export interface CreateUserData {
   name?: string;
   stripeCustomerId?: string;
   preferences?: Record<string, any>;
+  isActive?: boolean;
 }
 
 export class UserRepository {

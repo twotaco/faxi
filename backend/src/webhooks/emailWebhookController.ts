@@ -2,12 +2,36 @@ import { Request, Response } from 'express';
 import { EmailWebhookPayload, ParsedEmailData } from './types';
 import { extractPhoneFromEmail, isFaxiUserEmail } from '../config/email';
 import { userRepository } from '../repositories/userRepository';
+import { addressBookRepository } from '../repositories/addressBookRepository';
+import { blocklistService } from '../services/blocklistService';
 import { enqueueEmailToFax } from '../queue/faxQueue';
 import { auditLogService } from '../services/auditLogService';
+import { snsWebhookHandler } from '../services/snsWebhookHandler';
 import crypto from 'crypto';
 import { config } from '../config';
 
 export class EmailWebhookController {
+  /**
+   * Handle SNS webhook for AWS SES notifications
+   * POST /webhooks/email/sns
+   */
+  async handleSnsWebhook(req: Request, res: Response): Promise<void> {
+    try {
+      // Delegate to SNS webhook handler
+      await snsWebhookHandler.handleSnsNotification(req, res);
+      
+      // If response not already sent, the handler will have sent it
+      // This method handles subscription confirmations and notifications
+      
+    } catch (error) {
+      console.error('Error handling SNS webhook:', error);
+      
+      if (!res.headersSent) {
+        res.status(500).json({ error: 'Internal server error' });
+      }
+    }
+  }
+
   /**
    * Handle incoming email webhook
    * POST /webhooks/email/received
@@ -185,19 +209,56 @@ export class EmailWebhookController {
     // AWS SES sends SNS notifications
     if (payload.Type === 'Notification') {
       const message = JSON.parse(payload.Message);
-      const mail = message.mail;
-      const content = message.content;
+      
+      // Handle inbound email notifications
+      if (message.notificationType === 'Received') {
+        const mail = message.mail;
+        const content = message.content;
 
-      return {
-        to: mail.destination?.[0] || '',
-        from: mail.source || '',
-        subject: content?.subject || '',
-        body: content?.textPart || this.stripHtml(content?.htmlPart || ''),
-        html: content?.htmlPart,
-        attachments: [], // AWS SES attachments need special handling
-        receivedAt: mail.timestamp,
-        provider: 'ses'
-      };
+        // Extract sender name from commonHeaders.from
+        // Format: ["Name <email@example.com>"] or ["email@example.com"]
+        let fromName: string | undefined;
+        if (mail.commonHeaders?.from && mail.commonHeaders.from.length > 0) {
+          const fromHeader = mail.commonHeaders.from[0];
+          const nameMatch = fromHeader.match(/^(.+?)\s*<.+>$/);
+          if (nameMatch) {
+            fromName = nameMatch[1].trim();
+          }
+        }
+
+        return {
+          to: mail.destination?.[0] || '',
+          from: mail.source || '',
+          fromName,
+          subject: mail.commonHeaders?.subject || '',
+          body: content || '',
+          html: undefined,
+          attachments: [], // AWS SES attachments need special handling
+          receivedAt: mail.timestamp,
+          provider: 'ses'
+        };
+      }
+
+      // Handle delivery notifications (for future use)
+      if (message.notificationType === 'Delivery') {
+        console.log('Received delivery notification:', message);
+        // Will be handled by EmailDeliveryTracker in future tasks
+        return null;
+      }
+
+      // Handle bounce notifications (for future use)
+      if (message.notificationType === 'Bounce') {
+        console.log('Received bounce notification:', message);
+        // Will be handled by BounceComplaintHandler in future tasks
+        return null;
+      }
+
+      // Handle complaint notifications (for future use)
+      if (message.notificationType === 'Complaint') {
+        console.log('Received complaint notification:', message);
+        // Will be handled by BounceComplaintHandler in future tasks
+        return null;
+      }
     }
 
     return null;
@@ -258,6 +319,42 @@ export class EmailWebhookController {
         phoneNumber: user.phoneNumber,
         isNew
       });
+
+      // Check if sender is blocked (Requirements 15.2, 15.3)
+      const isBlocked = await blocklistService.isBlocked(user.id, emailData.from);
+      if (isBlocked) {
+        console.log('Email from blocked sender rejected:', {
+          userId: user.id,
+          senderEmail: emailData.from
+        });
+        await auditLogService.log({
+          userId: user.id,
+          eventType: 'email.blocked_sender_rejected',
+          eventData: {
+            senderEmail: emailData.from,
+            subject: emailData.subject
+          }
+        });
+        // Reject silently - no error response
+        return;
+      }
+
+      // Register sender as contact automatically
+      try {
+        await addressBookRepository.addFromEmail(
+          user.id,
+          emailData.from,
+          emailData.fromName // Use sender name if available
+        );
+        console.log('Contact registered/updated:', {
+          userId: user.id,
+          email: emailData.from,
+          name: emailData.fromName
+        });
+      } catch (error) {
+        console.error('Failed to register contact:', error);
+        // Don't fail the whole process if contact registration fails
+      }
 
       // Log email receipt
       await auditLogService.logEmailReceived({

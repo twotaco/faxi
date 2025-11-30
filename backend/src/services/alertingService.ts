@@ -314,6 +314,51 @@ class AlertingService {
       channels: ['console', 'email'],
       enabled: true,
     });
+
+    // Email quality monitoring rules
+    this.addRule({
+      id: 'email-high-bounce-rate',
+      name: 'High Email Bounce Rate',
+      description: 'Email bounce rate exceeds 5%',
+      severity: 'warning',
+      condition: 'metrics.emailBounceRate > 0.05',
+      cooldownMinutes: 60,
+      channels: ['console', 'email'],
+      enabled: true,
+    });
+
+    this.addRule({
+      id: 'email-high-complaint-rate',
+      name: 'High Email Complaint Rate',
+      description: 'Email complaint rate exceeds 0.1%',
+      severity: 'critical',
+      condition: 'metrics.emailComplaintRate > 0.001',
+      cooldownMinutes: 30,
+      channels: ['console', 'email', 'pagerduty'],
+      enabled: true,
+    });
+
+    this.addRule({
+      id: 'email-low-delivery-rate',
+      name: 'Low Email Delivery Rate',
+      description: 'Email delivery rate below 95%',
+      severity: 'warning',
+      condition: 'metrics.emailDeliveryRate < 0.95',
+      cooldownMinutes: 60,
+      channels: ['console', 'email'],
+      enabled: true,
+    });
+
+    this.addRule({
+      id: 'email-quality-issue',
+      name: 'Email Quality Issue',
+      description: 'General email quality issue detected',
+      severity: 'warning',
+      condition: 'false', // Manually triggered only
+      cooldownMinutes: 60,
+      channels: ['console', 'email'],
+      enabled: true,
+    });
   }
 
   private async sendAlert(alert: Alert, channelNames: string[]): Promise<void> {

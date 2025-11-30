@@ -22,3 +22,5 @@ export * from './confirmationFaxGenerator';
 export * from './clarificationFaxGenerator';
 export * from './welcomeFaxGenerator';
 export * from './faxSenderService';
+export * from './emailMetricsService';
+export * from './emailQualityMonitor';

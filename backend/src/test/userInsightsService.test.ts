@@ -535,7 +535,7 @@ describe('UserInsightsService', () => {
 
     it('should retrieve insight history with custom limit', async () => {
       const userId = 'user123';
-      const mockHistory = [];
+      const mockHistory: any[] = [];
 
       vi.mocked(userInsightsRepository.getHistory).mockResolvedValue(mockHistory);
 
@@ -546,7 +546,7 @@ describe('UserInsightsService', () => {
 
     it('should retrieve insight history filtered by type', async () => {
       const userId = 'user123';
-      const mockHistory = [];
+      const mockHistory: any[] = [];
 
       vi.mocked(userInsightsRepository.getHistory).mockResolvedValue(mockHistory);
 

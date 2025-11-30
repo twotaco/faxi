@@ -249,7 +249,7 @@ export class AIVisionInterpreter {
       }
       
       console.log(`Converted PDF to ${pngPages.length} PNG pages`);
-      return pngPages.map(page => page.content);
+      return pngPages.map((page: { content: Buffer }) => page.content);
     } catch (error) {
       console.error('PDF to PNG conversion error:', error);
       throw error;

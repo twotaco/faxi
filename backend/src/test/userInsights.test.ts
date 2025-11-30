@@ -535,14 +535,15 @@ describe('User Insights Infrastructure', () => {
 
     it('should create insights with empty nested objects', () => {
       const insights = createEmptyInsights();
+      expect(insights).toBeDefined();
 
-      expect(insights.demographics).toEqual({});
-      expect(insights.lifeEvents).toEqual({});
-      expect(insights.intentSignals).toEqual({});
-      expect(insights.behavioral).toEqual({});
-      expect(insights.consumerProfile).toEqual({});
-      expect(insights.digitalProfile).toEqual({});
-      expect(insights.confidenceScores).toEqual({});
+      expect(insights!.demographics).toEqual({});
+      expect(insights!.lifeEvents).toEqual({});
+      expect(insights!.intentSignals).toEqual({});
+      expect(insights!.behavioral).toEqual({});
+      expect(insights!.consumerProfile).toEqual({});
+      expect(insights!.digitalProfile).toEqual({});
+      expect(insights!.confidenceScores).toEqual({});
     });
 
     it('should create valid insights according to schema', () => {

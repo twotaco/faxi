@@ -119,8 +119,6 @@ describe('Automatic User Registration Integration Tests', () => {
         emailAddress: `${existingUserPhone.replace('+', '')}@me.faxi.jp`,
         isActive: true,
         preferences: {},
-        createdAt: new Date(),
-        updatedAt: new Date(),
       });
 
       const userCountBefore = await userRepository.findByPhoneNumber(existingUserPhone);

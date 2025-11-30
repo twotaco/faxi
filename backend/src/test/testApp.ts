@@ -40,26 +40,32 @@ export async function createTestApp(): Promise<Express> {
     const { emailWebhookController } = await import('../webhooks/emailWebhookController');
     const { stripeWebhookController } = await import('../webhooks/stripeWebhookController');
 
-    if (telnyxWebhookController?.handleInboundFax) {
-      app.post('/webhooks/telnyx/fax/received', telnyxWebhookController.handleInboundFax.bind(telnyxWebhookController));
+    if (telnyxWebhookController?.handleWebhook) {
+      // Single endpoint for all Telnyx fax events
+      app.post('/webhooks/telnyx/fax', telnyxWebhookController.handleWebhook.bind(telnyxWebhookController));
+      // Legacy endpoint for backward compatibility
+      app.post('/webhooks/telnyx/fax/received', telnyxWebhookController.handleFaxReceived.bind(telnyxWebhookController));
     }
-    if (emailWebhookController?.handleInboundEmail) {
-      app.post('/webhooks/email/received', emailWebhookController.handleInboundEmail.bind(emailWebhookController));
+    if (emailWebhookController?.handleEmailReceived) {
+      app.post('/webhooks/email/received', emailWebhookController.handleEmailReceived.bind(emailWebhookController));
     }
-    if (stripeWebhookController?.handlePaymentWebhook) {
-      app.post('/webhooks/stripe/payment', stripeWebhookController.handlePaymentWebhook.bind(stripeWebhookController));
+    if (stripeWebhookController?.handleWebhook) {
+      app.post('/webhooks/stripe', stripeWebhookController.handleWebhook.bind(stripeWebhookController));
     }
   } catch (error) {
-    console.warn('Some webhook controllers not available in test mode:', error.message);
+    console.warn('Some webhook controllers not available in test mode:', (error as Error).message);
     
     // Provide mock webhook endpoints for testing
+    app.post('/webhooks/telnyx/fax', (req, res) => {
+      res.json({ success: true, message: 'Mock Telnyx webhook (single endpoint)' });
+    });
     app.post('/webhooks/telnyx/fax/received', (req, res) => {
-      res.json({ success: true, message: 'Mock Telnyx webhook' });
+      res.json({ success: true, message: 'Mock Telnyx webhook (legacy endpoint)' });
     });
     app.post('/webhooks/email/received', (req, res) => {
       res.json({ success: true, message: 'Mock email webhook' });
     });
-    app.post('/webhooks/stripe/payment', (req, res) => {
+    app.post('/webhooks/stripe', (req, res) => {
       res.json({ success: true, message: 'Mock Stripe webhook' });
     });
   }

@@ -4,9 +4,19 @@ import { useEffect, useState } from 'react';
 import { useDemo } from '@/lib/hooks/useDemo';
 import { FixtureSelection } from '@/components/demo/FixtureSelection';
 import { FileUpload } from '@/components/demo/FileUpload';
+import { CustomFaxCreator } from '@/components/demo/CustomFaxCreator';
 import { ProcessingStatus } from '@/components/demo/ProcessingStatus';
 import { ResultsDisplay } from '@/components/demo/ResultsDisplay';
 import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+  DialogClose,
+} from '@/components/ui/dialog';
 import type { DemoFixture } from '@/lib/api/types';
 
 export default function DemoPage() {
@@ -20,10 +30,13 @@ export default function DemoPage() {
     processingError,
     processFixture,
     processUpload,
+    processImageData,
+    reset,
   } = useDemo();
 
   const [selectedFixture, setSelectedFixture] = useState<DemoFixture | null>(null);
-  const [mode, setMode] = useState<'fixture' | 'upload'>('fixture');
+  const [mode, setMode] = useState<'fixture' | 'upload' | 'create'>('fixture');
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   useEffect(() => {
     fetchFixtures();
@@ -32,10 +45,16 @@ export default function DemoPage() {
   const handleFixtureSelect = (fixture: DemoFixture) => {
     setSelectedFixture(fixture);
     setMode('fixture');
+    setIsDialogOpen(true);
+  };
+
+  const handleCloseDialog = () => {
+    setIsDialogOpen(false);
   };
 
   const handleProcessFixture = () => {
     if (selectedFixture) {
+      setIsDialogOpen(false);
       processFixture(selectedFixture.id);
     }
   };
@@ -46,7 +65,13 @@ export default function DemoPage() {
     processUpload(file);
   };
 
+  const handleCustomFax = (imageData: string) => {
+    setSelectedFixture(null);
+    processImageData(imageData);
+  };
+
   const handleReset = () => {
+    reset(); // Clear processing result from hook
     setSelectedFixture(null);
     setMode('fixture');
   };
@@ -94,7 +119,7 @@ export default function DemoPage() {
         {!isProcessing && !processingResult && (
           <div className="space-y-12">
             {/* Mode Toggle */}
-            <div className="flex justify-center space-x-4">
+            <div className="flex justify-center flex-wrap gap-2">
               <Button
                 variant={mode === 'fixture' ? 'default' : 'outline'}
                 onClick={() => setMode('fixture')}
@@ -102,30 +127,35 @@ export default function DemoPage() {
                 Sample Faxes
               </Button>
               <Button
+                variant={mode === 'create' ? 'default' : 'outline'}
+                onClick={() => setMode('create')}
+              >
+                Create Your Own
+              </Button>
+              <Button
                 variant={mode === 'upload' ? 'default' : 'outline'}
                 onClick={() => setMode('upload')}
               >
-                Upload Your Own
+                Upload File
               </Button>
             </div>
 
             {/* Fixture Selection */}
             {mode === 'fixture' && (
-              <div>
-                <FixtureSelection
-                  fixtures={fixtures}
-                  selectedFixture={selectedFixture}
-                  onSelect={handleFixtureSelect}
-                  isLoading={isLoadingFixtures}
-                />
-                {selectedFixture && (
-                  <div className="mt-6 text-center">
-                    <Button onClick={handleProcessFixture} size="lg">
-                      Process Selected Fax
-                    </Button>
-                  </div>
-                )}
-              </div>
+              <FixtureSelection
+                fixtures={fixtures}
+                selectedFixture={selectedFixture}
+                onSelect={handleFixtureSelect}
+                isLoading={isLoadingFixtures}
+              />
+            )}
+
+            {/* Create Your Own */}
+            {mode === 'create' && (
+              <CustomFaxCreator
+                onSubmit={handleCustomFax}
+                isProcessing={isProcessing}
+              />
             )}
 
             {/* File Upload */}
@@ -137,6 +167,39 @@ export default function DemoPage() {
             )}
           </div>
         )}
+
+        {/* Fixture Preview Dialog */}
+        <Dialog open={isDialogOpen} onClose={handleCloseDialog}>
+          <DialogContent className="h-[50vh] flex flex-col">
+            <DialogClose onClose={handleCloseDialog} />
+            {selectedFixture && (
+              <>
+                <DialogHeader className="flex-shrink-0">
+                  <DialogTitle>{selectedFixture.name}</DialogTitle>
+                  <DialogDescription>{selectedFixture.description}</DialogDescription>
+                </DialogHeader>
+                <div className="flex-1 overflow-y-auto p-6">
+                  <div className="bg-gray-100 rounded-lg overflow-hidden">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}${selectedFixture.thumbnailUrl}`}
+                      alt={`Sample fax: ${selectedFixture.name}`}
+                      className="w-full h-auto scale-125 origin-top-left"
+                    />
+                  </div>
+                </div>
+                <DialogFooter className="flex-shrink-0">
+                  <Button variant="outline" onClick={handleCloseDialog}>
+                    Cancel
+                  </Button>
+                  <Button onClick={handleProcessFixture}>
+                    Process Selected Fax
+                  </Button>
+                </DialogFooter>
+              </>
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );

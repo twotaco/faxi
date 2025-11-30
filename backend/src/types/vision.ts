@@ -19,7 +19,7 @@ export interface ConversationContext {
 }
 
 export interface InterpretationResult {
-  intent: 'email' | 'shopping' | 'ai_chat' | 'payment_registration' | 'reply' | 'unknown';
+  intent: 'email' | 'shopping' | 'ai_chat' | 'payment_registration' | 'reply' | 'blocklist_management' | 'unknown';
   confidence: number; // 0-1
   parameters: IntentParameters;
   visualAnnotations?: VisualAnnotation[];
@@ -43,10 +43,16 @@ export interface IntentParameters {
   body?: string;
   
   // Shopping intent
+  shoppingSubIntent?: 'product_search' | 'product_selection' | 'order_status';
   productQuery?: string;
   selectedProductIds?: string[]; // From circled/checked items
   quantity?: number;
   deliveryPreferences?: string;
+  priceRange?: {
+    min?: number;
+    max?: number;
+  };
+  referenceId?: string; // For order status queries
   
   // AI chat intent
   question?: string;
@@ -59,6 +65,11 @@ export interface IntentParameters {
   // Reply intent (for form responses)
   selectedOptions?: string[]; // Circled options like A, B, C
   freeformText?: string; // Handwritten additional text
+  
+  // Blocklist management intent
+  blocklistAction?: 'block' | 'unblock';
+  targetEmail?: string; // Email address to block/unblock
+  targetName?: string; // Contact name to block/unblock (requires lookup)
 }
 
 export interface VisualAnnotation {

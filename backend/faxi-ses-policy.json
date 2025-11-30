@@ -1,0 +1,38 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "SESPermissions",
+      "Effect": "Allow",
+      "Action": [
+        "ses:SendEmail",
+        "ses:SendRawEmail",
+        "ses:GetSendStatistics",
+        "ses:GetSendQuota",
+        "ses:GetAccountSendingEnabled",
+        "ses:VerifyEmailIdentity",
+        "ses:VerifyDomainIdentity",
+        "ses:GetIdentityVerificationAttributes",
+        "ses:SetIdentityNotificationTopic",
+        "ses:CreateReceiptRule",
+        "ses:CreateReceiptRuleSet",
+        "ses:SetActiveReceiptRuleSet",
+        "ses:VerifyDomainDkim"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "SNSPermissions",
+      "Effect": "Allow",
+      "Action": [
+        "sns:Publish",
+        "sns:Subscribe",
+        "sns:Unsubscribe",
+        "sns:ListSubscriptionsByTopic",
+        "sns:CreateTopic",
+        "sns:GetTopicAttributes"
+      ],
+      "Resource": "arn:aws:sns:*:*:faxi-email-notifications"
+    }
+  ]
+}

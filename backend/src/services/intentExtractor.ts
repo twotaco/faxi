@@ -39,7 +39,8 @@ export class IntentExtractor {
       this.detectShoppingIntent(text, visualAnnotations),
       this.detectAIChatIntent(text, visualAnnotations),
       this.detectPaymentIntent(text, visualAnnotations),
-      this.detectReplyIntent(text, visualAnnotations)
+      this.detectReplyIntent(text, visualAnnotations),
+      this.detectBlocklistIntent(text, visualAnnotations)
     ]);
 
     // Find the highest confidence intent
@@ -181,19 +182,72 @@ export class IntentExtractor {
 
   /**
    * Detect shopping intent
+   * Supports: product_search, product_selection, order_status
    */
   private async detectShoppingIntent(text: string, annotations: VisualAnnotation[]): Promise<{
     intent: string;
     confidence: number;
     parameters: IntentParameters;
   }> {
+    // Check for order status queries first
+    const orderStatusKeywords = [
+      'order status', 'track order', 'where is my order', 'delivery status',
+      'when will it arrive', 'shipping status', 'order tracking', 'status of my order',
+      'check order', 'order update'
+    ];
+    
+    const hasOrderStatusKeyword = orderStatusKeywords.some(keyword => text.includes(keyword));
+    const hasReferenceId = /(?:ref|reference|order)(?:\s+id)?:\s*FX-\d{4}-\d{6}/i.test(text);
+    
+    if (hasOrderStatusKeyword || hasReferenceId) {
+      let confidence = hasOrderStatusKeyword ? 0.7 : 0.5;
+      const parameters: IntentParameters = {
+        shoppingSubIntent: 'order_status'
+      };
+      
+      // Look for reference ID
+      const refIdPattern = /(?:ref|reference|order)(?:\s+id)?:\s*(FX-\d{4}-\d{6})/i;
+      const refMatch = text.match(refIdPattern);
+      if (refMatch) {
+        parameters.referenceId = refMatch[1].toUpperCase(); // Normalize to uppercase
+        confidence += 0.3;
+      }
+      
+      return {
+        intent: 'shopping',
+        confidence: Math.min(confidence, 1.0),
+        parameters
+      };
+    }
+
+    // Check for selected product IDs from visual annotations (circled items)
+    const selectedOptions = annotations
+      .filter(ann => ann.type === 'circle' || ann.type === 'checkmark')
+      .map(ann => ann.associatedText)
+      .filter((text): text is string => text !== undefined && /^[A-Z]$/.test(text));
+
+    if (selectedOptions.length > 0) {
+      // This is a product selection
+      return {
+        intent: 'shopping',
+        confidence: 0.9,
+        parameters: {
+          shoppingSubIntent: 'product_selection',
+          selectedProductIds: selectedOptions
+        }
+      };
+    }
+
+    // Check for product search keywords
     const shoppingKeywords = [
       'buy', 'purchase', 'order', 'shop', 'need', 'want',
       'get me', 'find', 'looking for', 'search for'
     ];
 
     let confidence = 0;
-    const parameters: IntentParameters = {};
+    const parameters: IntentParameters = {
+      shoppingSubIntent: 'product_search'
+    };
 
     // Check for shopping keywords
     const keywordMatches = shoppingKeywords.filter(keyword => text.includes(keyword));
@@ -201,8 +255,9 @@ export class IntentExtractor {
 
     // Extract product information
     const productPatterns = [
-      /(?:buy|purchase|order|need|want|get me|find|looking for|search for)\s+([a-zA-Z0-9\s,.-]+?)(?:\s|$|and|from|at|for)/i,
-      /(?:i need|i want)\s+([a-zA-Z0-9\s,.-]+?)(?:\s|$|and|from|at|for)/i
+      /(?:buy|purchase|order|need|want)\s+(?:to\s+buy\s+)?(?:a\s+)?([a-zA-Z0-9\s,.-]+?)(?:\s+under|\s+below|\s+less|\s+between|$)/i,
+      /(?:get me|find|looking for|search for)\s+(?:a\s+)?([a-zA-Z0-9\s,.-]+?)(?:\s+under|\s+below|\s+less|\s+between|$)/i,
+      /(?:i need|i want)\s+(?:a\s+)?([a-zA-Z0-9\s,.-]+?)(?:\s+under|\s+below|\s+less|\s+between|$)/i
     ];
 
     for (const pattern of productPatterns) {
@@ -229,6 +284,34 @@ export class IntentExtractor {
       }
     }
 
+    // Extract price range
+    const pricePatterns = [
+      /under\s+[¥￥]?(\d+(?:,\d{3})*)/i,
+      /less than\s+[¥￥]?(\d+(?:,\d{3})*)/i,
+      /below\s+[¥￥]?(\d+(?:,\d{3})*)/i,
+      /between\s+[¥￥]?(\d+(?:,\d{3})*)\s+and\s+[¥￥]?(\d+(?:,\d{3})*)/i
+    ];
+
+    for (const pattern of pricePatterns) {
+      const match = text.match(pattern);
+      if (match) {
+        if (match[2]) {
+          // Range pattern
+          parameters.priceRange = {
+            min: parseInt(match[1].replace(/,/g, ''), 10),
+            max: parseInt(match[2].replace(/,/g, ''), 10)
+          };
+        } else {
+          // Max only pattern
+          parameters.priceRange = {
+            max: parseInt(match[1].replace(/,/g, ''), 10)
+          };
+        }
+        confidence += 0.15;
+        break;
+      }
+    }
+
     // Extract delivery preferences
     const deliveryPatterns = [
       /(?:deliver to|ship to|send to)\s+([^\n\r]+)/i,
@@ -243,17 +326,6 @@ export class IntentExtractor {
         confidence += 0.15;
         break;
       }
-    }
-
-    // Check for selected product IDs from visual annotations (circled items)
-    const selectedOptions = annotations
-      .filter(ann => ann.type === 'circle' || ann.type === 'checkmark')
-      .map(ann => ann.associatedText)
-      .filter((text): text is string => text !== undefined && /^[A-Z]$/.test(text));
-
-    if (selectedOptions.length > 0) {
-      parameters.selectedProductIds = selectedOptions;
-      confidence += 0.3;
     }
 
     return {
@@ -417,6 +489,79 @@ export class IntentExtractor {
   }
 
   /**
+   * Detect blocklist management intent (block/unblock email senders)
+   * Requirements: 15.1, 15.4, 15.5
+   */
+  private async detectBlocklistIntent(text: string, annotations: VisualAnnotation[]): Promise<{
+    intent: string;
+    confidence: number;
+    parameters: IntentParameters;
+  }> {
+    let confidence = 0;
+    const parameters: IntentParameters = {};
+
+    // Block keywords
+    const blockKeywords = [
+      'block', 'stop', 'unsubscribe', 'spam', 'dont want', 'no more',
+      'ブロック', '停止', '拒否', '迷惑'
+    ];
+
+    // Unblock keywords
+    const unblockKeywords = [
+      'unblock', 'allow', 'permit', 'resume', 'restore',
+      'ブロック解除', '許可', '再開'
+    ];
+
+    // Check for block intent
+    const hasBlockKeyword = blockKeywords.some(keyword => text.includes(keyword));
+    const hasUnblockKeyword = unblockKeywords.some(keyword => text.includes(keyword));
+
+    if (hasBlockKeyword) {
+      parameters.blocklistAction = 'block';
+      confidence += 0.6;
+    } else if (hasUnblockKeyword) {
+      parameters.blocklistAction = 'unblock';
+      confidence += 0.6;
+    }
+
+    // Extract email address to block/unblock
+    // Look for patterns like "block emails from X" or "block X"
+    const emailPattern = /([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/;
+    const emailMatch = text.match(emailPattern);
+    
+    if (emailMatch) {
+      parameters.targetEmail = emailMatch[1];
+      confidence += 0.3;
+    }
+
+    // Look for "from" patterns to extract email or name
+    const fromPattern = /(?:from|sender|address)\s+([^\s,]+(?:@[^\s,]+)?)/i;
+    const fromMatch = text.match(fromPattern);
+    
+    if (fromMatch && !parameters.targetEmail) {
+      const extracted = fromMatch[1];
+      if (extracted.includes('@')) {
+        parameters.targetEmail = extracted;
+        confidence += 0.2;
+      } else {
+        parameters.targetName = extracted;
+        confidence += 0.1;
+      }
+    }
+
+    // If we have an action but no target, reduce confidence
+    if (parameters.blocklistAction && !parameters.targetEmail && !parameters.targetName) {
+      confidence *= 0.5;
+    }
+
+    return {
+      intent: 'blocklist_management',
+      confidence: Math.min(confidence, 1.0),
+      parameters
+    };
+  }
+
+  /**
    * Extract implicit email body when no explicit body is found
    */
   private extractImplicitEmailBody(text: string, parameters: IntentParameters): string | undefined {
@@ -480,9 +625,24 @@ export class IntentExtractor {
 
       case 'shopping':
         let shoppingScore = 0;
-        if (parameters.productQuery) shoppingScore += 0.6;
-        if (parameters.quantity) shoppingScore += 0.2;
-        if (parameters.deliveryPreferences) shoppingScore += 0.2;
+        const subIntent = parameters.shoppingSubIntent;
+        
+        if (subIntent === 'product_search') {
+          if (parameters.productQuery) shoppingScore += 0.6;
+          if (parameters.quantity) shoppingScore += 0.2;
+          if (parameters.deliveryPreferences || parameters.priceRange) shoppingScore += 0.2;
+        } else if (subIntent === 'product_selection') {
+          if (parameters.selectedProductIds && parameters.selectedProductIds.length > 0) shoppingScore += 1.0;
+        } else if (subIntent === 'order_status') {
+          if (parameters.referenceId) shoppingScore += 1.0;
+          else shoppingScore += 0.5; // Can still look up recent orders
+        } else {
+          // Generic shopping intent
+          if (parameters.productQuery) shoppingScore += 0.6;
+          if (parameters.quantity) shoppingScore += 0.2;
+          if (parameters.deliveryPreferences) shoppingScore += 0.2;
+        }
+        
         return shoppingScore;
 
       case 'ai_chat':
@@ -496,6 +656,13 @@ export class IntentExtractor {
         if (parameters.selectedOptions && parameters.selectedOptions.length > 0) replyScore += 0.7;
         if (parameters.freeformText) replyScore += 0.3;
         return replyScore;
+
+      case 'blocklist_management':
+        let blocklistScore = 0;
+        if (parameters.blocklistAction) blocklistScore += 0.5;
+        if (parameters.targetEmail) blocklistScore += 0.5;
+        else if (parameters.targetName) blocklistScore += 0.3;
+        return blocklistScore;
 
       default:
         return 0.1;
@@ -511,7 +678,8 @@ export class IntentExtractor {
       shopping: 'Contains product or purchase-related keywords',
       ai_chat: 'Contains question patterns or inquiry keywords',
       payment_registration: 'Contains payment or billing-related keywords',
-      reply: 'Contains circled options or reference to previous communication'
+      reply: 'Contains circled options or reference to previous communication',
+      blocklist_management: 'Contains block/unblock keywords and email address'
     };
     return reasons[intent] || 'Pattern match detected';
   }

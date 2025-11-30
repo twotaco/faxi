@@ -8,7 +8,7 @@
  * - Performance metrics
  */
 
-import { logger } from './loggingService';
+import { loggingService } from './loggingService';
 
 export interface ValidationMetric {
   useCase: string;
@@ -72,7 +72,7 @@ class PromptMonitoringService {
 
     // Log validation failures
     if (!metric.success) {
-      logger.warn('Schema validation failed', {
+      loggingService.warn('Schema validation failed', {
         useCase: metric.useCase,
         attemptNumber: metric.attemptNumber,
         errors: metric.validationErrors,
@@ -93,7 +93,7 @@ class PromptMonitoringService {
     this.cleanOldMetrics();
 
     // Log insights extraction
-    logger.info('Insights extracted', {
+    loggingService.info('Insights extracted', {
       useCase: metric.useCase,
       fieldsExtracted: metric.fieldsExtracted,
       confidenceScores: metric.confidenceScores,
@@ -114,7 +114,7 @@ class PromptMonitoringService {
 
     // Alert on slow operations
     if (metric.operation === 'total' && metric.durationMs > 5000) {
-      logger.warn('Slow response time', {
+      loggingService.warn('Slow response time', {
         useCase: metric.useCase,
         durationMs: metric.durationMs,
         userId: metric.userId,
@@ -123,7 +123,7 @@ class PromptMonitoringService {
     }
 
     if (metric.operation === 'validation' && metric.durationMs > 100) {
-      logger.warn('Slow validation', {
+      loggingService.warn('Slow validation', {
         useCase: metric.useCase,
         durationMs: metric.durationMs
       });
@@ -137,7 +137,7 @@ class PromptMonitoringService {
     this.errorMetrics.push(metric);
     this.cleanOldMetrics();
 
-    logger.error('Prompt system error', {
+    loggingService.error('Prompt system error', undefined, {
       useCase: metric.useCase,
       errorType: metric.errorType,
       errorMessage: metric.errorMessage,
@@ -331,7 +331,7 @@ class PromptMonitoringService {
     const threshold = 0.95;
 
     if (successRate < threshold) {
-      logger.error('Validation success rate below threshold', {
+      loggingService.error('Validation success rate below threshold', undefined, {
         useCase,
         successRate,
         threshold,
@@ -351,7 +351,7 @@ class PromptMonitoringService {
       .filter(([_, score]) => score !== undefined && score < minConfidence);
 
     if (lowConfidence.length > 0) {
-      logger.warn('Low confidence insights extracted', {
+      loggingService.warn('Low confidence insights extracted', {
         useCase: metric.useCase,
         lowConfidenceFields: lowConfidence,
         userId: metric.userId,
@@ -368,7 +368,7 @@ class PromptMonitoringService {
     const threshold = 0.05;
 
     if (errorRate > threshold) {
-      logger.error('Error rate above threshold', {
+      loggingService.error('Error rate above threshold', undefined, {
         useCase,
         errorRate,
         threshold,

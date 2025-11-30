@@ -115,7 +115,7 @@ export interface Contact {
 // Workflow orchestration types
 export interface WorkflowStep {
   id: string;
-  type: 'tool_call' | 'decision' | 'user_input';
+  type: 'tool_call' | 'decision' | 'user_input' | 'custom';
   description: string;
   dependencies?: string[];
   toolCall?: {
@@ -123,6 +123,7 @@ export interface WorkflowStep {
     tool: string;
     input: any;
   };
+  handler?: () => Promise<any>; // For custom type
   condition?: (context: any) => boolean;
 }
 

@@ -439,6 +439,286 @@ export class VisualAnnotationDetector {
     };
     return colorMap[type] || '#6B7280'; // Gray default
   }
+
+  /**
+   * Detect product selection from annotations and shopping context
+   * Looks for circles around A, B, C, D, E markers or checkmarks next to products
+   */
+  async detectProductSelection(
+    annotations: VisualAnnotation[],
+    extractedText: string,
+    shoppingContext: any
+  ): Promise<ProductSelectionResult> {
+    // Validate shopping context
+    if (!shoppingContext || !shoppingContext.searchResults || !Array.isArray(shoppingContext.searchResults)) {
+      return {
+        success: false,
+        error: 'No shopping context available',
+        needsClarification: true,
+        clarificationMessage: 'I could not find the product options you are referring to. Please ensure you are responding to a product selection fax.'
+      };
+    }
+
+    // Extract selection markers from annotations
+    const selectionMarkers = this.extractSelectionMarkers(annotations, extractedText);
+
+    // Log detected markers
+    await auditLogService.logOperation({
+      entityType: 'product_selection',
+      entityId: 'system',
+      operation: 'markers_detected',
+      details: {
+        markerCount: selectionMarkers.length,
+        markers: selectionMarkers.map(m => m.marker),
+        confidence: selectionMarkers.map(m => m.confidence)
+      }
+    });
+
+    // Handle no selection detected
+    if (selectionMarkers.length === 0) {
+      return {
+        success: false,
+        error: 'No selection markers detected',
+        needsClarification: true,
+        clarificationMessage: 'I could not detect which product you selected. Please circle one of the options (A, B, C, D, or E) clearly and send the fax again.'
+      };
+    }
+
+    // Handle multiple selections
+    if (selectionMarkers.length > 1) {
+      return {
+        success: false,
+        error: 'Multiple selections detected',
+        needsClarification: true,
+        clarificationMessage: `I detected multiple selections: ${selectionMarkers.map(m => m.marker).join(', ')}. Please select only one product option and send the fax again.`,
+        detectedMarkers: selectionMarkers.map(m => m.marker)
+      };
+    }
+
+    // Single selection - map to product
+    const selectedMarker = selectionMarkers[0];
+    const product = this.mapMarkerToProduct(selectedMarker.marker, shoppingContext.searchResults);
+
+    if (!product) {
+      return {
+        success: false,
+        error: 'Selected marker does not match available options',
+        needsClarification: true,
+        clarificationMessage: `I detected selection "${selectedMarker.marker}", but this option is not available in the product list. Available options are: ${shoppingContext.searchResults.map((p: any) => p.selectionMarker).join(', ')}.`,
+        detectedMarkers: [selectedMarker.marker]
+      };
+    }
+
+    // Success - return selected product
+    await auditLogService.logOperation({
+      entityType: 'product_selection',
+      entityId: product.asin,
+      operation: 'selection_confirmed',
+      details: {
+        marker: selectedMarker.marker,
+        asin: product.asin,
+        title: product.title,
+        price: product.price,
+        confidence: selectedMarker.confidence
+      }
+    });
+
+    return {
+      success: true,
+      selectedProduct: {
+        asin: product.asin,
+        title: product.title,
+        price: product.price,
+        selectionMarker: selectedMarker.marker,
+        imageUrl: product.imageUrl,
+        primeEligible: product.primeEligible,
+        deliveryEstimate: product.deliveryEstimate
+      },
+      confidence: selectedMarker.confidence,
+      needsClarification: false
+    };
+  }
+
+  /**
+   * Extract selection markers (A, B, C, D, E) from annotations
+   * Looks for circles or checkmarks associated with these letters
+   * Also tracks invalid markers for better error messages
+   */
+  private extractSelectionMarkers(
+    annotations: VisualAnnotation[],
+    extractedText: string
+  ): SelectionMarker[] {
+    const markers: SelectionMarker[] = [];
+    const validMarkers = ['A', 'B', 'C', 'D', 'E'];
+
+    // Look for circles or checkmarks with associated single letters
+    for (const annotation of annotations) {
+      if (annotation.type !== 'circle' && annotation.type !== 'checkmark') {
+        continue;
+      }
+
+      // Check if associated text is a single letter
+      const text = annotation.associatedText?.trim().toUpperCase();
+      if (text && /^[A-Z]$/.test(text)) {
+        // Include both valid and invalid markers for better error handling
+        markers.push({
+          marker: text,
+          confidence: annotation.confidence,
+          annotationType: annotation.type,
+          boundingBox: annotation.boundingBox
+        });
+      }
+    }
+
+    // If no markers found in annotations, try to extract from text patterns
+    if (markers.length === 0) {
+      const textMarkers = this.extractMarkersFromText(extractedText);
+      markers.push(...textMarkers);
+    }
+
+    // Remove duplicates (keep highest confidence)
+    const uniqueMarkers = new Map<string, SelectionMarker>();
+    for (const marker of markers) {
+      const existing = uniqueMarkers.get(marker.marker);
+      if (!existing || marker.confidence > existing.confidence) {
+        uniqueMarkers.set(marker.marker, marker);
+      }
+    }
+
+    return Array.from(uniqueMarkers.values());
+  }
+
+  /**
+   * Extract selection markers from text patterns
+   * Looks for patterns like "○A", "✓B", "選択: C", etc.
+   */
+  private extractMarkersFromText(extractedText: string): SelectionMarker[] {
+    const markers: SelectionMarker[] = [];
+    const validMarkers = ['A', 'B', 'C', 'D', 'E'];
+
+    // Pattern 1: Circle or checkmark followed by letter (○A, ✓B)
+    const pattern1 = /[○◯⭕✓✔☑][　\s]?([A-E])/gi;
+    let match;
+    while ((match = pattern1.exec(extractedText)) !== null) {
+      const marker = match[1].toUpperCase();
+      if (validMarkers.includes(marker)) {
+        markers.push({
+          marker,
+          confidence: 0.7,
+          annotationType: 'text_pattern',
+          boundingBox: { x: 0, y: 0, width: 0, height: 0 }
+        });
+      }
+    }
+
+    // Pattern 2: Japanese selection text (選択: A, 選ぶ: B)
+    const pattern2 = /(?:選択|選ぶ|これ)[　\s]*[:：][　\s]*([A-E])/gi;
+    while ((match = pattern2.exec(extractedText)) !== null) {
+      const marker = match[1].toUpperCase();
+      if (validMarkers.includes(marker)) {
+        markers.push({
+          marker,
+          confidence: 0.8,
+          annotationType: 'text_pattern',
+          boundingBox: { x: 0, y: 0, width: 0, height: 0 }
+        });
+      }
+    }
+
+    // Pattern 3: Standalone letter with emphasis (A!, A。, A を選びます)
+    const pattern3 = /\b([A-E])[!！。．を]/gi;
+    while ((match = pattern3.exec(extractedText)) !== null) {
+      const marker = match[1].toUpperCase();
+      if (validMarkers.includes(marker)) {
+        markers.push({
+          marker,
+          confidence: 0.6,
+          annotationType: 'text_pattern',
+          boundingBox: { x: 0, y: 0, width: 0, height: 0 }
+        });
+      }
+    }
+
+    return markers;
+  }
+
+  /**
+   * Map a selection marker to a product from the search results
+   */
+  private mapMarkerToProduct(marker: string, searchResults: any[]): any | null {
+    for (const product of searchResults) {
+      if (product.selectionMarker === marker) {
+        return product;
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Detect ambiguous selections that need clarification
+   * Returns true if the annotations suggest uncertainty
+   */
+  detectAmbiguousSelection(annotations: VisualAnnotation[]): boolean {
+    // Check for multiple high-confidence circles/checkmarks
+    const highConfidenceSelections = annotations.filter(ann =>
+      (ann.type === 'circle' || ann.type === 'checkmark') &&
+      ann.confidence > 0.7 &&
+      /^[A-E]$/.test(ann.associatedText || '')
+    );
+
+    return highConfidenceSelections.length > 1;
+  }
+
+  /**
+   * Generate clarification message for ambiguous selections
+   */
+  generateClarificationMessage(
+    annotations: VisualAnnotation[],
+    extractedText: string
+  ): string {
+    const markers = this.extractSelectionMarkers(annotations, extractedText);
+
+    if (markers.length === 0) {
+      return 'I could not detect which product you selected. Please circle one of the options (A, B, C, D, or E) clearly and send the fax again.';
+    }
+
+    if (markers.length > 1) {
+      return `I detected multiple selections: ${markers.map(m => m.marker).join(', ')}. Please select only one product option and send the fax again.`;
+    }
+
+    return 'I could not understand your selection. Please circle one of the options (A, B, C, D, or E) clearly and send the fax again.';
+  }
+}
+
+// Type definitions for product selection
+export interface ProductSelectionResult {
+  success: boolean;
+  selectedProduct?: {
+    asin: string;
+    title: string;
+    price: number;
+    selectionMarker: string;
+    imageUrl: string;
+    primeEligible: boolean;
+    deliveryEstimate: string;
+  };
+  confidence?: number;
+  error?: string;
+  needsClarification: boolean;
+  clarificationMessage?: string;
+  detectedMarkers?: string[];
+}
+
+interface SelectionMarker {
+  marker: string;
+  confidence: number;
+  annotationType: string;
+  boundingBox: {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  };
 }
 
 // Export singleton instance

@@ -6,7 +6,7 @@
  */
 
 import { ShoppingExamples } from '../schemas/shopping.js';
-import { FAX_FORMATTING_RULES, INSIGHTS_EXTRACTION_GUIDELINES } from './qa.js';
+import { FAX_FORMATTING_RULES, INSIGHTS_EXTRACTION_GUIDELINES, buildCompletePrompt } from './base.js';
 
 /**
  * Shopping-specific response guidelines

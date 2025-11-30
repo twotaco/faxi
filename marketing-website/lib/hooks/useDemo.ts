@@ -33,8 +33,7 @@ export function useDemo() {
     
     try {
       const response = await apiClient.post<ProcessResponse>('/api/demo/process', {
-        image: fixtureId,
-        includeVisualization: true,
+        fixtureId,
       });
 
       if (response.status === 'completed' && response.result) {
@@ -56,13 +55,19 @@ export function useDemo() {
     setIsProcessing(true);
     setProcessingError(null);
     setProcessingResult(null);
-    
-    try {
-      const formData = new FormData();
-      formData.append('image', file);
-      formData.append('includeVisualization', 'true');
 
-      const response = await apiClient.postFormData<ProcessResponse>('/api/demo/process', formData);
+    try {
+      // Convert file to base64 data URL
+      const imageData = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+
+      const response = await apiClient.post<ProcessResponse>('/api/demo/process', {
+        imageData,
+      });
 
       if (response.status === 'completed' && response.result) {
         setProcessingResult(response.result);
@@ -78,6 +83,36 @@ export function useDemo() {
       setIsProcessing(false);
     }
   };
+
+  const processImageData = async (imageData: string) => {
+    setIsProcessing(true);
+    setProcessingError(null);
+    setProcessingResult(null);
+
+    try {
+      const response = await apiClient.post<ProcessResponse>('/api/demo/process', {
+        imageData,
+      });
+
+      if (response.status === 'completed' && response.result) {
+        setProcessingResult(response.result);
+      } else if (response.status === 'failed') {
+        setProcessingError(response.error || 'Processing failed');
+      } else {
+        // Poll for result
+        await pollForResult(response.faxId);
+      }
+    } catch (error) {
+      setProcessingError(error instanceof Error ? error.message : 'Failed to process fax');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const reset = useCallback(() => {
+    setProcessingResult(null);
+    setProcessingError(null);
+  }, []);
 
   const pollForResult = async (faxId: string, maxAttempts = 30) => {
     for (let i = 0; i < maxAttempts; i++) {
@@ -111,5 +146,7 @@ export function useDemo() {
     processingError,
     processFixture,
     processUpload,
+    processImageData,
+    reset,
   };
 }

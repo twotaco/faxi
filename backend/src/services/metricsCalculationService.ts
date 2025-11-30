@@ -1,5 +1,20 @@
-import { Pool } from 'pg';
-import { pool } from '../database/connection';
+import { db } from '../database/connection';
+
+// Type for database row results
+interface MetricRow {
+  metric_type?: string;
+  avg_accuracy?: string;
+  use_case?: string;
+  sample_count?: string;
+  date?: string;
+  accuracy?: string;
+  avg_processing_time?: string;
+  avg_confidence?: string;
+  success_count?: string;
+  total_count?: string;
+  confidence_range?: string;
+  count?: string;
+}
 
 export interface AccuracyMetrics {
   overall: number;
@@ -38,10 +53,8 @@ export interface ProcessingStats {
 }
 
 export class MetricsCalculationService {
-  private dbPool: Pool;
-
   constructor() {
-    this.dbPool = pool;
+    // Uses db singleton from connection module
   }
 
   /**
@@ -50,7 +63,7 @@ export class MetricsCalculationService {
   async calculateAccuracyMetrics(): Promise<AccuracyMetrics> {
     try {
       // Calculate overall accuracy
-      const overallResult = await this.dbPool.query(`
+      const overallResult = await db.query(`
         SELECT AVG(accuracy) as avg_accuracy
         FROM processing_metrics
         WHERE success = true AND accuracy IS NOT NULL
@@ -58,7 +71,7 @@ export class MetricsCalculationService {
       const overall = parseFloat(overallResult.rows[0]?.avg_accuracy || '0');
 
       // Calculate accuracy by category
-      const categoryResult = await this.dbPool.query(`
+      const categoryResult = await db.query(`
         SELECT 
           metric_type,
           AVG(accuracy) as avg_accuracy
@@ -73,15 +86,15 @@ export class MetricsCalculationService {
         intent: 0
       };
 
-      categoryResult.rows.forEach(row => {
-        const accuracy = parseFloat(row.avg_accuracy);
+      categoryResult.rows.forEach((row: MetricRow) => {
+        const accuracy = parseFloat(row.avg_accuracy || '0');
         if (row.metric_type === 'ocr') byCategory.ocr = accuracy;
         if (row.metric_type === 'annotation') byCategory.annotation = accuracy;
         if (row.metric_type === 'intent') byCategory.intent = accuracy;
       });
 
       // Calculate accuracy by use case (from fax_jobs intent)
-      const useCaseResult = await this.dbPool.query(`
+      const useCaseResult = await db.query(`
         SELECT 
           fj.intent as use_case,
           AVG(pm.accuracy) as avg_accuracy,
@@ -93,14 +106,14 @@ export class MetricsCalculationService {
         ORDER BY sample_count DESC
       `);
 
-      const byUseCase = useCaseResult.rows.map(row => ({
+      const byUseCase = useCaseResult.rows.map((row: MetricRow) => ({
         useCase: row.use_case || 'unknown',
-        accuracy: parseFloat(row.avg_accuracy),
-        sampleCount: parseInt(row.sample_count, 10)
+        accuracy: parseFloat(row.avg_accuracy || '0'),
+        sampleCount: parseInt(row.sample_count || '0', 10)
       }));
 
       // Get accuracy trend over time (last 30 days)
-      const trendResult = await this.dbPool.query(`
+      const trendResult = await db.query(`
         SELECT 
           DATE(created_at) as date,
           AVG(accuracy) as avg_accuracy
@@ -112,9 +125,9 @@ export class MetricsCalculationService {
         ORDER BY date ASC
       `);
 
-      const trend = trendResult.rows.map(row => ({
+      const trend = trendResult.rows.map((row: MetricRow & { date: Date }) => ({
         date: row.date.toISOString().split('T')[0],
-        accuracy: parseFloat(row.avg_accuracy)
+        accuracy: parseFloat(row.avg_accuracy || '0')
       }));
 
       return {
@@ -135,7 +148,7 @@ export class MetricsCalculationService {
   async calculateProcessingStats(): Promise<ProcessingStats> {
     try {
       // Calculate average, median, and p95 processing time
-      const timeResult = await this.dbPool.query(`
+      const timeResult = await db.query(`
         SELECT 
           AVG(processing_time_ms) as avg_time,
           PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY processing_time_ms) as median_time,
@@ -149,7 +162,7 @@ export class MetricsCalculationService {
       const p95Time = parseInt(timeResult.rows[0]?.p95_time || '0', 10);
 
       // Calculate success rate
-      const successResult = await this.dbPool.query(`
+      const successResult = await db.query(`
         SELECT 
           COUNT(*) as total,
           SUM(CASE WHEN success = true THEN 1 ELSE 0 END) as successful
@@ -161,7 +174,7 @@ export class MetricsCalculationService {
       const successRate = total > 0 ? (successful / total) * 100 : 0;
 
       // Calculate confidence distribution
-      const confidenceResult = await this.dbPool.query(`
+      const confidenceResult = await db.query(`
         SELECT 
           CASE 
             WHEN confidence >= 0.9 THEN '0.9-1.0'
@@ -177,8 +190,8 @@ export class MetricsCalculationService {
         ORDER BY range DESC
       `);
 
-      const totalWithConfidence = confidenceResult.rows.reduce((sum, row) => sum + parseInt(row.count, 10), 0);
-      const confidenceDistribution = confidenceResult.rows.map(row => {
+      const totalWithConfidence = confidenceResult.rows.reduce((sum: number, row: { count: string }) => sum + parseInt(row.count, 10), 0);
+      const confidenceDistribution = confidenceResult.rows.map((row: { range: string; count: string }) => {
         const count = parseInt(row.count, 10);
         return {
           range: row.range,
@@ -188,7 +201,7 @@ export class MetricsCalculationService {
       });
 
       // Calculate stats by use case
-      const useCaseStatsResult = await this.dbPool.query(`
+      const useCaseStatsResult = await db.query(`
         SELECT 
           fj.intent as use_case,
           AVG(pm.processing_time_ms) as avg_time,
@@ -199,7 +212,7 @@ export class MetricsCalculationService {
         GROUP BY fj.intent
       `);
 
-      const byUseCase = useCaseStatsResult.rows.map(row => ({
+      const byUseCase = useCaseStatsResult.rows.map((row: { use_case: string; avg_time: string; success_rate: string }) => ({
         useCase: row.use_case || 'unknown',
         avgTime: parseInt(row.avg_time || '0', 10),
         successRate: parseFloat(row.success_rate || '0')
@@ -228,7 +241,7 @@ export class MetricsCalculationService {
       const metrics = await this.calculateAccuracyMetrics();
       const stats = await this.calculateProcessingStats();
 
-      await this.dbPool.query(`
+      await db.query(`
         INSERT INTO accuracy_snapshots (
           snapshot_date,
           overall_accuracy,
@@ -281,7 +294,7 @@ export class MetricsCalculationService {
     metadata?: any
   ): Promise<void> {
     try {
-      await this.dbPool.query(`
+      await db.query(`
         INSERT INTO processing_metrics (
           fax_job_id,
           metric_type,

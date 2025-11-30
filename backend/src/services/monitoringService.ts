@@ -31,6 +31,12 @@ interface HealthStatus {
       faxProcessing: number;
       emailToFax: number;
     };
+    cache?: {
+      hits: number;
+      misses: number;
+      invalidations: number;
+      hitRate: number;
+    };
   };
 }
 
@@ -75,11 +81,11 @@ class MonitoringService {
       this.requestCount++;
 
       // Override res.end to capture response metrics
-      const originalEnd = res.end;
-      res.end = function(this: Response, ...args: any[]) {
+      const originalEnd = res.end.bind(res);
+      (res as any).end = (chunk?: any, encoding?: BufferEncoding | (() => void), cb?: () => void) => {
         const endTime = performance.now();
         const responseTime = endTime - startTime;
-        
+
         const monitoring = MonitoringService.getInstance();
         monitoring.activeRequests--;
         monitoring.responseTimeSum += responseTime;
@@ -105,7 +111,7 @@ class MonitoringService {
           });
         }
 
-        originalEnd.apply(this, args);
+        return originalEnd(chunk, encoding as BufferEncoding, cb);
       };
 
       next();
@@ -149,6 +155,7 @@ class MonitoringService {
       ]);
 
       const queueSizes = await this.getQueueSizes();
+      const cacheMetrics = await this.getCacheMetrics();
       const memoryUsage = process.memoryUsage();
       const cpuUsage = process.cpuUsage();
       const uptime = Date.now() - this.startTime.getTime();
@@ -184,6 +191,7 @@ class MonitoringService {
           cpuUsage,
           activeConnections: this.activeRequests,
           queueSizes,
+          cache: cacheMetrics,
         },
       };
     } catch (error) {
@@ -236,6 +244,31 @@ class MonitoringService {
     lines.push(`# HELP faxi_avg_response_time_ms Average response time in milliseconds`);
     lines.push(`# TYPE faxi_avg_response_time_ms gauge`);
     lines.push(`faxi_avg_response_time_ms ${avgResponseTime}`);
+
+    // Add cache metrics
+    try {
+      const { productCacheService } = require('./productCacheService');
+      const cacheMetrics = productCacheService.getCacheMetrics();
+      const hitRate = productCacheService.getCacheHitRate();
+      
+      lines.push(`# HELP faxi_cache_hits_total Total cache hits`);
+      lines.push(`# TYPE faxi_cache_hits_total counter`);
+      lines.push(`faxi_cache_hits_total ${cacheMetrics.hits}`);
+      
+      lines.push(`# HELP faxi_cache_misses_total Total cache misses`);
+      lines.push(`# TYPE faxi_cache_misses_total counter`);
+      lines.push(`faxi_cache_misses_total ${cacheMetrics.misses}`);
+      
+      lines.push(`# HELP faxi_cache_invalidations_total Total cache invalidations`);
+      lines.push(`# TYPE faxi_cache_invalidations_total counter`);
+      lines.push(`faxi_cache_invalidations_total ${cacheMetrics.invalidations}`);
+      
+      lines.push(`# HELP faxi_cache_hit_rate Cache hit rate (0-1)`);
+      lines.push(`# TYPE faxi_cache_hit_rate gauge`);
+      lines.push(`faxi_cache_hit_rate ${hitRate}`);
+    } catch (error) {
+      // Cache service not available, skip metrics
+    }
 
     // Add memory metrics
     const memory = process.memoryUsage();
@@ -465,9 +498,9 @@ class MonitoringService {
     try {
       // Store alert in database for audit trail
       await db.query(
-        `INSERT INTO audit_logs (level, message, metadata, created_at) 
-         VALUES ($1, $2, $3, $4)`,
-        ['error', `Alert: ${alert.message}`, JSON.stringify(alertData), new Date()]
+        `INSERT INTO application_logs (level, message, context, metadata, created_at)
+         VALUES ($1, $2, $3, $4, $5)`,
+        ['error', `Alert: ${alert.message}`, JSON.stringify({ source: 'monitoring' }), JSON.stringify(alertData), new Date()]
       );
     } catch (error) {
       console.error('Failed to store alert in database:', error);
@@ -503,6 +536,35 @@ class MonitoringService {
         this.metrics.set(name, filtered);
       }
     }, 60 * 60 * 1000);
+  }
+  /**
+   * Get product cache metrics
+   */
+  public async getCacheMetrics(): Promise<{
+    hits: number;
+    misses: number;
+    invalidations: number;
+    hitRate: number;
+  }> {
+    try {
+      // Import here to avoid circular dependency
+      const { productCacheService } = await import('./productCacheService');
+      const metrics = productCacheService.getCacheMetrics();
+      const hitRate = productCacheService.getCacheHitRate();
+      
+      return {
+        ...metrics,
+        hitRate
+      };
+    } catch (error) {
+      console.error('Failed to get cache metrics:', error);
+      return {
+        hits: 0,
+        misses: 0,
+        invalidations: 0,
+        hitRate: 0
+      };
+    }
   }
 }
 

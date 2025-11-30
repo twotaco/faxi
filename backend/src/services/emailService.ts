@@ -2,6 +2,8 @@ import axios from 'axios';
 import { config } from '../config';
 import { auditLogService } from './auditLogService';
 import { emailThreadRepository, emailMessageRepository } from '../repositories/emailThreadRepository';
+import { awsSesService } from './awsSesService';
+import { emailMetricsService } from './emailMetricsService';
 
 export interface EmailMessage {
   to: string;
@@ -66,13 +68,79 @@ export class EmailService {
         await this.storeEmailInDatabase(message, result.messageId, userId, 'outbound');
       }
 
+      // Log successful send
+      if (result.success) {
+        await auditLogService.log({
+          userId,
+          eventType: 'email.sent',
+          eventData: {
+            messageId: result.messageId,
+            to: message.to,
+            from: message.from,
+            subject: message.subject,
+            provider: config.email.provider
+          }
+        });
+
+        // Record 'sent' event for metrics tracking (Requirement 17.1)
+        await emailMetricsService.recordEmailEvent({
+          eventType: 'sent',
+          userId,
+          messageId: result.messageId,
+          details: {
+            to: message.to,
+            from: message.from,
+            provider: config.email.provider
+          }
+        });
+      }
+
       return result;
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown email error';
+      
+      // Log error with full context (Requirement 12.1)
+      await auditLogService.log({
+        userId,
+        eventType: 'email.send_failed',
+        eventData: {
+          error: errorMessage,
+          to: message.to,
+          from: message.from,
+          subject: message.subject,
+          provider: config.email.provider,
+          timestamp: new Date().toISOString()
+        }
+      });
+
+      // Check if this is a critical error that requires admin alert (Requirement 12.7)
+      if (this.isCriticalError(errorMessage)) {
+        console.error(`CRITICAL EMAIL ERROR: ${errorMessage}`);
+        // In production, this would trigger alertingService.sendAlert()
+      }
+
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown email error'
+        error: errorMessage
       };
     }
+  }
+
+  /**
+   * Determine if an error is critical and requires admin notification
+   */
+  private isCriticalError(errorMessage: string): boolean {
+    const criticalPatterns = [
+      'suspended',
+      'database connection',
+      'queue system',
+      'storage service',
+      'authentication failed',
+      'credentials invalid'
+    ];
+    
+    const lowerMessage = errorMessage.toLowerCase();
+    return criticalPatterns.some(pattern => lowerMessage.includes(pattern));
   }
 
   /**
@@ -216,9 +284,67 @@ export class EmailService {
    * Send email via AWS SES
    */
   private async sendViaSES(message: EmailMessage): Promise<EmailSendResult> {
-    // This would use AWS SDK to send via SES
-    // For now, throw error as AWS SDK is not included in dependencies
-    throw new Error('AWS SES integration not yet implemented - requires AWS SDK');
+    try {
+      // Check if AWS SES is configured
+      if (!awsSesService.isConfigured()) {
+        throw new Error('AWS SES is not configured. Set AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY');
+      }
+
+      // Send email via AWS SES
+      const result = await awsSesService.sendEmail({
+        from: message.from,
+        to: message.to,
+        subject: message.subject,
+        body: message.body
+      });
+
+      return {
+        success: true,
+        messageId: result.messageId
+      };
+    } catch (error) {
+      // Handle AWS-specific error codes
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      
+      // Log AWS SES specific error
+      await auditLogService.log({
+        eventType: 'email.aws_ses_error',
+        eventData: {
+          error: errorMessage,
+          to: message.to,
+          from: message.from,
+          subject: message.subject
+        }
+      });
+      
+      // Check for specific AWS error types
+      if (errorMessage.includes('Throttling') || errorMessage.includes('rate limit')) {
+        return {
+          success: false,
+          error: 'Email sending rate limit exceeded. Please try again later.'
+        };
+      }
+      
+      if (errorMessage.includes('InvalidParameterValue') || errorMessage.includes('invalid')) {
+        return {
+          success: false,
+          error: 'Invalid email address or parameters'
+        };
+      }
+      
+      if (errorMessage.includes('MessageRejected')) {
+        return {
+          success: false,
+          error: 'Email was rejected by AWS SES. Check sender verification.'
+        };
+      }
+
+      // Generic error
+      return {
+        success: false,
+        error: `Failed to send email via AWS SES: ${errorMessage}`
+      };
+    }
   }
 
   /**

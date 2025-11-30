@@ -21,8 +21,6 @@ describe('Email-to-Fax Bridge Integration Tests', () => {
         spamFilterLevel: 'medium',
         enableSmartReplies: true,
       },
-      createdAt: new Date(),
-      updatedAt: new Date(),
     });
   });
 
@@ -191,8 +189,6 @@ describe('Email-to-Fax Bridge Integration Tests', () => {
         name: 'John Doe',
         emailAddress: 'john.doe@example.com',
         relationship: 'friend',
-        createdAt: new Date(),
-        updatedAt: new Date(),
       });
 
       const contactEmail = {

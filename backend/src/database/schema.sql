@@ -78,13 +78,23 @@ CREATE TABLE IF NOT EXISTS orders (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID REFERENCES users(id) NOT NULL,
   reference_id VARCHAR(20) NOT NULL,
-  external_order_id VARCHAR(255), -- From e-commerce platform
-  status VARCHAR(20) NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled')),
+  external_order_id VARCHAR(255), -- From e-commerce platform (Amazon Order ID)
+  status VARCHAR(20) NOT NULL DEFAULT 'pending' CHECK (status IN ('pending_payment', 'paid', 'pending_purchase', 'purchased', 'shipped', 'delivered', 'cancelled', 'pending', 'processing')),
   total_amount DECIMAL(10, 2) NOT NULL,
   currency VARCHAR(3) DEFAULT 'JPY',
   items JSONB NOT NULL,
   shipping_address JSONB,
   tracking_number VARCHAR(255),
+  -- Shopping-specific columns
+  product_asin VARCHAR(20), -- Amazon Standard Identification Number
+  product_title VARCHAR(255), -- Product title from Amazon
+  product_image_url TEXT, -- URL to product image
+  quantity INTEGER DEFAULT 1, -- Number of items ordered
+  quoted_price DECIMAL(10, 2), -- Price quoted to user in Product Options Fax
+  actual_price DECIMAL(10, 2), -- Actual price at checkout
+  stripe_payment_intent_id VARCHAR(255), -- Stripe payment intent ID
+  admin_user_id UUID REFERENCES admin_users(id), -- Admin who completed purchase
+  purchased_at TIMESTAMP WITH TIME ZONE, -- When admin completed purchase
   created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
@@ -92,6 +102,9 @@ CREATE TABLE IF NOT EXISTS orders (
 CREATE INDEX idx_orders_user_id ON orders(user_id);
 CREATE INDEX idx_orders_reference_id ON orders(reference_id);
 CREATE INDEX idx_orders_status ON orders(status);
+CREATE INDEX idx_orders_status_paid ON orders(status) WHERE status = 'paid';
+CREATE INDEX idx_orders_admin_user_id ON orders(admin_user_id) WHERE admin_user_id IS NOT NULL;
+CREATE INDEX idx_orders_stripe_payment_intent_id ON orders(stripe_payment_intent_id) WHERE stripe_payment_intent_id IS NOT NULL;
 
 -- Address book table
 CREATE TABLE IF NOT EXISTS address_book (

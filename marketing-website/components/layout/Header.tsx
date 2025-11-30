@@ -16,8 +16,8 @@ export function Header({ locale }: { locale: string }) {
 
   // Check if we're on the home page (which has a dark hero background)
   const isHomePage = pathname === `/${locale}` || pathname === `/${locale}/`;
-  // Use light text only on home page when not scrolled
-  const useLightText = isHomePage && !isScrolled;
+  // Always use light text since header is always dark (or transparent over dark image)
+  const useLightText = true;
 
   useEffect(() => {
     const handleScroll = () => {
@@ -39,6 +39,7 @@ export function Header({ locale }: { locale: string }) {
     { href: `/${locale}/partnering`, label: t('partnering') },
     { href: `/${locale}/demo`, label: t('demo') },
     { href: `/${locale}/tech`, label: t('tech') },
+    { href: `/${locale}/help`, label: t('help') },
     { href: `/${locale}/about`, label: t('about') },
   ];
 
@@ -53,9 +54,9 @@ export function Header({ locale }: { locale: string }) {
     <>
       <header
         className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-          isScrolled
-            ? 'bg-white/95 dark:bg-faxi-footer/95 backdrop-blur-md shadow-lg'
-            : 'bg-transparent'
+          isHomePage && !isScrolled
+            ? 'bg-transparent'
+            : 'bg-faxi-footer shadow-lg'
         }`}
       >
         <div className="container mx-auto px-4 lg:px-8">
@@ -107,11 +108,7 @@ export function Header({ locale }: { locale: string }) {
                 onClick={toggleLocale}
                 variant="outline"
                 size="sm"
-                className={`font-semibold transition-all ${
-                  useLightText
-                    ? 'border-white text-white hover:bg-white hover:text-faxi-brown'
-                    : 'border-faxi-brown text-faxi-brown hover:bg-faxi-brown hover:text-white'
-                }`}
+                className="font-semibold transition-all border-white bg-white text-faxi-brown hover:bg-white/90"
               >
                 {locale === 'ja' ? 'EN' : '日本語'}
               </Button>
@@ -140,7 +137,7 @@ export function Header({ locale }: { locale: string }) {
             isMobileMenuOpen ? 'max-h-screen' : 'max-h-0'
           }`}
         >
-          <nav className="bg-white dark:bg-faxi-footer shadow-lg px-4 py-6 space-y-2">
+          <nav className="bg-faxi-footer shadow-lg px-4 py-6 space-y-2">
             {navItems.map((item) => (
               <Link
                 key={item.href}
@@ -148,8 +145,8 @@ export function Header({ locale }: { locale: string }) {
                 onClick={() => setIsMobileMenuOpen(false)}
                 className={`block px-4 py-3 rounded-lg text-base font-medium transition-colors ${
                   isActive(item.href)
-                    ? 'bg-faxi-brown text-white'
-                    : 'text-faxi-brown hover:bg-faxi-brown/10'
+                    ? 'bg-white/20 text-white'
+                    : 'text-white/90 hover:text-white hover:bg-white/10'
                 }`}
               >
                 {item.label}

@@ -86,10 +86,10 @@ describe('End-to-End Validation Tests', () => {
             results.push({ message, success: false, error: 'No response' });
           }
         } catch (error) {
-          results.push({ message, success: false, error: error.message });
+          results.push({ message, success: false, error: (error as Error).message });
         }
       }
-      
+
       const successRate = (successCount / testCases.length) * 100;
       console.log(`Q&A Schema Validation Success Rate: ${successRate}%`);
       console.log('Results:', results);
@@ -140,10 +140,10 @@ describe('End-to-End Validation Tests', () => {
             results.push({ message, success: false, error: 'No response' });
           }
         } catch (error) {
-          results.push({ message, success: false, error: error.message });
+          results.push({ message, success: false, error: (error as Error).message });
         }
       }
-      
+
       const successRate = (successCount / testCases.length) * 100;
       console.log(`Shopping Schema Validation Success Rate: ${successRate}%`);
       console.log('Results:', results);
@@ -196,10 +196,10 @@ describe('End-to-End Validation Tests', () => {
             results.push({ message, success: false, error: 'No response' });
           }
         } catch (error) {
-          results.push({ message, success: false, error: error.message });
+          results.push({ message, success: false, error: (error as Error).message });
         }
       }
-      
+
       const successRate = (successCount / testCases.length) * 100;
       console.log(`Email Schema Validation Success Rate: ${successRate}%`);
       console.log('Results:', results);
@@ -250,10 +250,10 @@ describe('End-to-End Validation Tests', () => {
             results.push({ message, success: false, error: 'No response' });
           }
         } catch (error) {
-          results.push({ message, success: false, error: error.message });
+          results.push({ message, success: false, error: (error as Error).message });
         }
       }
-      
+
       const successRate = (successCount / testCases.length) * 100;
       console.log(`Appointment Schema Validation Success Rate: ${successRate}%`);
       console.log('Results:', results);
@@ -715,10 +715,10 @@ describe('End-to-End Validation Tests', () => {
             results.push({ message: testCase.message, success: false, error: 'No result' });
           }
         } catch (error) {
-          results.push({ message: testCase.message, success: false, error: error.message });
+          results.push({ message: testCase.message, success: false, error: (error as Error).message });
         }
       }
-      
+
       const successRate = (successCount / edgeCases.length) * 100;
       const errorRate = 100 - successRate;
       console.log(`Error Rate: ${errorRate}%`);

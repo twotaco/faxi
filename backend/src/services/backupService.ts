@@ -778,8 +778,10 @@ class BackupService {
     return new Promise((resolve, reject) => {
       const chunks: Buffer[] = [];
       const readStream = createReadStream(filePath);
-      
-      readStream.on('data', chunk => chunks.push(chunk));
+
+      readStream.on('data', (chunk: string | Buffer) => {
+        chunks.push(typeof chunk === 'string' ? Buffer.from(chunk) : chunk);
+      });
       readStream.on('end', () => resolve(Buffer.concat(chunks)));
       readStream.on('error', reject);
     });

@@ -49,16 +49,16 @@ export class MCPControllerAgent {
   private initializeMCPServers(): void {
     // Register Email MCP Server
     this.registerMCPServer(emailMCPServer);
-    
+
     // Register Shopping MCP Server
     this.registerMCPServer(shoppingMCPServer);
-    
+
     // Register Payment MCP Server
     this.registerMCPServer(paymentMCPServer);
-    
+
     // Register AI Chat MCP Server
     this.registerMCPServer(aiChatMCPServer);
-    
+
     // Register User Profile MCP Server
     this.registerMCPServer(userProfileMCPServer);
   }
@@ -458,19 +458,7 @@ export class MCPControllerAgent {
         }];
       
       case 'shopping':
-        return [{
-          id: 'checkout_immediate',
-          type: 'tool_call',
-          description: 'Complete purchase immediately',
-          toolCall: {
-            server: 'shopping',
-            tool: 'checkout',
-            input: {
-              productIds: interpretation.parameters.selectedProductIds,
-              userId: context.userId
-            }
-          }
-        }];
+        return await this.createShoppingWorkflow(context);
       
       case 'ai_chat':
         return [{
@@ -487,9 +475,222 @@ export class MCPControllerAgent {
           }
         }];
       
+      case 'blocklist_management':
+        // Handle block/unblock requests
+        const action = interpretation.parameters.blocklistAction;
+        const targetEmail = interpretation.parameters.targetEmail;
+        const targetName = interpretation.parameters.targetName;
+        
+        if (!action || (!targetEmail && !targetName)) {
+          // Missing required parameters - need clarification
+          return [];
+        }
+        
+        return [{
+          id: 'blocklist_action',
+          type: 'custom',
+          description: `${action === 'block' ? 'Block' : 'Unblock'} email sender`,
+          handler: async () => {
+            const { blocklistService } = await import('./blocklistService');
+            const { addressBookRepository } = await import('../repositories/addressBookRepository');
+            const { FaxGenerator } = await import('./faxGenerator');
+            const { FaxTemplateEngine } = await import('./faxTemplateEngine');
+            const { faxSenderService } = await import('./faxSenderService');
+            const { userRepository } = await import('../repositories/userRepository');
+            
+            let emailToProcess = targetEmail;
+            
+            // If target is a name, look it up in address book
+            if (!emailToProcess && targetName) {
+              const contacts = await addressBookRepository.searchByNameOrRelationship(
+                context.userId,
+                targetName
+              );
+              
+              if (contacts.length === 0) {
+                // No contact found - send error fax
+                return {
+                  success: false,
+                  error: 'Contact not found',
+                  requiresClarification: true
+                };
+              } else if (contacts.length > 1) {
+                // Multiple contacts found - send clarification fax
+                return {
+                  success: false,
+                  error: 'Multiple contacts found',
+                  requiresClarification: true,
+                  contacts
+                };
+              }
+              
+              emailToProcess = contacts[0].emailAddress;
+            }
+            
+            // Perform block/unblock action
+            if (action === 'block') {
+              await blocklistService.blockSender(context.userId, emailToProcess!);
+            } else {
+              await blocklistService.unblockSender(context.userId, emailToProcess!);
+            }
+            
+            // Log the action (confirmation fax generation would be handled by the response generator)
+            const confirmationText = action === 'block'
+              ? `Email address ${emailToProcess} has been blocked. You will no longer receive emails from this sender.`
+              : `Email address ${emailToProcess} has been unblocked. You will now receive emails from this sender.`;
+            
+            console.log('Blocklist action completed:', {
+              userId: context.userId,
+              action,
+              email: emailToProcess,
+              confirmationText
+            });
+            
+            return {
+              success: true,
+              action,
+              email: emailToProcess
+            };
+          }
+        }];
+      
       default:
         return [];
     }
+  }
+
+  /**
+   * Create shopping workflow based on sub-intent
+   * Handles: product_search, product_selection, order_status
+   */
+  private async createShoppingWorkflow(context: DecisionContext): Promise<WorkflowStep[]> {
+    const { interpretation } = context;
+    const subIntent = interpretation.parameters.shoppingSubIntent;
+    
+    console.log('[MCP Agent] Creating shopping workflow:', {
+      subIntent,
+      parameters: interpretation.parameters
+    });
+
+    switch (subIntent) {
+      case 'product_search':
+        // Search for products and save context
+        return [{
+          id: 'search_products',
+          type: 'tool_call',
+          description: 'Search for products on Amazon',
+          toolCall: {
+            server: 'shopping',
+            tool: 'search_products',
+            input: {
+              query: interpretation.parameters.productQuery,
+              filters: {
+                primeOnly: true,
+                minRating: 3.5,
+                priceMin: interpretation.parameters.priceRange?.min,
+                priceMax: interpretation.parameters.priceRange?.max
+              },
+              userId: context.userId
+            }
+          }
+        }];
+      
+      case 'product_selection':
+        // User selected a product - create order
+        return await this.createProductSelectionWorkflow(context);
+      
+      case 'order_status':
+        // Check order status
+        return [{
+          id: 'get_order_status',
+          type: 'tool_call',
+          description: 'Get order status',
+          toolCall: {
+            server: 'shopping',
+            tool: 'get_order_status',
+            input: {
+              referenceId: interpretation.parameters.referenceId,
+              userId: context.userId
+            }
+          }
+        }];
+      
+      default:
+        // Generic shopping - treat as product search
+        return [{
+          id: 'search_products',
+          type: 'tool_call',
+          description: 'Search for products on Amazon',
+          toolCall: {
+            server: 'shopping',
+            tool: 'search_products',
+            input: {
+              query: interpretation.parameters.productQuery || 'general products',
+              filters: {
+                primeOnly: true,
+                minRating: 3.5
+              },
+              userId: context.userId
+            }
+          }
+        }];
+    }
+  }
+
+  /**
+   * Create workflow for product selection
+   * Retrieves shopping context and creates order
+   */
+  private async createProductSelectionWorkflow(context: DecisionContext): Promise<WorkflowStep[]> {
+    const { conversationContextRepository } = await import('../repositories/conversationContextRepository');
+    
+    // Find recent shopping context
+    const recentContexts = await conversationContextRepository.findRecentByUser(context.userId, 7);
+    const shoppingContext = recentContexts.find(ctx => ctx.contextType === 'shopping');
+    
+    if (!shoppingContext) {
+      console.log('[MCP Agent] No shopping context found for product selection');
+      return [];
+    }
+    
+    const contextData = shoppingContext.contextData;
+    const selectedMarkers = context.interpretation.parameters.selectedProductIds || [];
+    
+    console.log('[MCP Agent] Found shopping context:', {
+      referenceId: shoppingContext.referenceId,
+      selectedMarkers,
+      availableProducts: contextData.searchResults?.length
+    });
+    
+    // Map selection markers to ASINs
+    const selectedProducts = selectedMarkers
+      .map(marker => {
+        const product = contextData.searchResults?.find((p: any) => p.selectionMarker === marker);
+        return product ? product.asin : null;
+      })
+      .filter((asin): asin is string => asin !== null);
+    
+    if (selectedProducts.length === 0) {
+      console.log('[MCP Agent] No valid products found for selection markers');
+      return [];
+    }
+    
+    // Create order for selected product(s)
+    return [{
+      id: 'create_order',
+      type: 'tool_call',
+      description: 'Create order for selected product',
+      toolCall: {
+        server: 'shopping',
+        tool: 'create_order',
+        input: {
+          userId: context.userId,
+          productAsin: selectedProducts[0], // For now, handle single product
+          quantity: context.interpretation.parameters.quantity || 1,
+          referenceId: shoppingContext.referenceId
+        }
+      }
+    }];
   }
 
   /**
@@ -671,7 +872,7 @@ AVAILABLE MCP TOOLS:
 - Email: send_email, get_email_thread, search_emails
 - Shopping: search_products, get_product_details, add_to_cart, get_cart, update_cart_item, remove_from_cart, checkout, get_complementary_products, get_bundle_deals
 - Payment: get_payment_methods, register_payment_method, process_payment, generate_konbini_barcode, check_payment_status
-- AI Chat: chat, get_conversation, summarize_conversation
+- AI Chat: chat (has Google Search grounding for real-time info), get_conversation, summarize_conversation
 - User Profile: get_user_profile, update_delivery_address, get_address_book, add_contact, update_contact, delete_contact, lookup_contact, get_order_history, track_order
 
 Always log your reasoning and tool calls for audit purposes.

@@ -24,8 +24,6 @@ describe('Context Recovery Integration Tests', () => {
       emailAddress: '1234567890@me.faxi.jp',
       isActive: true,
       preferences: {},
-      createdAt: new Date(),
-      updatedAt: new Date(),
     });
     testUserId = user.id;
   });
@@ -438,8 +436,6 @@ describe('Context Recovery Integration Tests', () => {
           subject: 'Old Email',
         },
         expiresAt: new Date(Date.now() - 24 * 60 * 60 * 1000), // 1 day ago
-        createdAt: new Date(Date.now() - 25 * 60 * 60 * 1000), // 25 hours ago
-        updatedAt: new Date(Date.now() - 25 * 60 * 60 * 1000),
       });
 
       // Send a fax that might try to reference the expired context

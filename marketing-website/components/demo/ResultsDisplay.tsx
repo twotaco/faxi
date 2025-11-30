@@ -16,6 +16,7 @@ export function ResultsDisplay({ result }: ResultsDisplayProps) {
     confidence,
     processingTime,
     visualizationData,
+    generatedResponse,
   } = result;
 
   return (
@@ -135,6 +136,34 @@ export function ResultsDisplay({ result }: ResultsDisplayProps) {
                   </div>
                 </div>
               ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Generated Fax Response */}
+      {generatedResponse && (
+        <Card className="border-green-600 bg-green-50">
+          <CardHeader>
+            <CardTitle className="text-green-900">📠 Faxi&apos;s Response</CardTitle>
+            <CardDescription className="text-green-700">
+              This is what Faxi would fax back to the user
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="bg-white border-2 border-dashed border-green-300 rounded-lg p-6">
+                <div className="text-center text-xs text-gray-400 mb-4 pb-2 border-b border-gray-200">
+                  ━━━ FAX RESPONSE ━━━
+                </div>
+                <pre className="whitespace-pre-wrap font-mono text-sm text-gray-800 leading-relaxed">
+                  {generatedResponse.faxContent}
+                </pre>
+              </div>
+              <div className="flex items-center gap-2 text-sm text-green-700 bg-green-100 rounded-lg p-3">
+                <span className="font-semibold">Action taken:</span>
+                <span>{generatedResponse.actionTaken}</span>
+              </div>
             </div>
           </CardContent>
         </Card>

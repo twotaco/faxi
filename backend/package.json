@@ -12,7 +12,8 @@
     "generate-fixtures": "tsx src/test/generateFixtures.ts",
     "test": "vitest --run",
     "test:watch": "vitest",
-    "test:integration": "vitest --run src/test/integration"
+    "test:integration": "vitest --run src/test/integration",
+    "test-ses-connection": "tsx scripts/test-ses-connection.ts"
   },
   "keywords": [
     "fax",
@@ -23,9 +24,13 @@
   "license": "MIT",
   "dependencies": {
     "@aws-sdk/client-s3": "^3.478.0",
+    "@aws-sdk/client-ses": "^3.940.0",
+    "@aws-sdk/client-sns": "^3.940.0",
     "@aws-sdk/s3-request-presigner": "^3.478.0",
+    "@google/genai": "^1.30.0",
     "@google/generative-ai": "^0.24.1",
     "@langchain/core": "^0.2.31",
+    "@playwright/test": "^1.57.0",
     "@types/pdfkit": "^0.17.3",
     "axios": "^1.6.2",
     "bcrypt": "^5.1.1",
@@ -45,6 +50,7 @@
     "pdf-to-png-converter": "^3.11.0",
     "pdfkit": "^0.17.2",
     "pg": "^8.11.3",
+    "playwright": "^1.57.0",
     "sharp": "^0.34.5",
     "stripe": "^19.3.1",
     "telnyx": "^4.2.1",

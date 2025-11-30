@@ -533,7 +533,7 @@ export class PaymentMCPServer implements MCPServer {
       // Log the bank transfer initiation
       await auditLogService.logBankTransferInitiated({
         userId,
-        paymentIntentId: paymentIntent.id,
+        transferId: paymentIntent.id,
         amount,
         currency
       });

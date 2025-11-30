@@ -93,7 +93,7 @@ export class AuditLogService {
    */
   async logMCPToolCall(data: {
     userId: string;
-    faxJobId: string;
+    faxJobId: string | null;
     toolName: string;
     toolServer: string;
     input: any;
@@ -203,6 +203,25 @@ export class AuditLogService {
   }
 
   /**
+   * Log email event (bounced, complained, delivered)
+   */
+  async logEmailEvent(data: {
+    userId: string;
+    eventType: 'email.bounced' | 'email.complained' | 'email.delivered';
+    messageId: string;
+    details: any;
+  }): Promise<void> {
+    await auditLogRepository.create({
+      userId: data.userId,
+      eventType: data.eventType,
+      eventData: {
+        messageId: data.messageId,
+        ...data.details,
+      },
+    });
+  }
+
+  /**
    * Log order created
    */
   async logOrderCreated(data: {
@@ -285,7 +304,7 @@ export class AuditLogService {
     userId: string;
     faxJobId?: string;
     paymentMethodId: string;
-    type: 'card' | 'konbini';
+    type: 'card' | 'konbini' | 'bank_transfer';
     isDefault: boolean;
   }): Promise<void> {
     await auditLogRepository.create({
@@ -296,6 +315,31 @@ export class AuditLogService {
         paymentMethodId: data.paymentMethodId,
         type: data.type,
         isDefault: data.isDefault,
+        timestamp: new Date().toISOString(),
+      },
+    });
+  }
+
+  /**
+   * Log bank transfer initiated
+   */
+  async logBankTransferInitiated(data: {
+    userId: string;
+    faxJobId?: string;
+    transferId: string;
+    amount: number;
+    currency: string;
+    bankName?: string;
+  }): Promise<void> {
+    await auditLogRepository.create({
+      userId: data.userId,
+      faxJobId: data.faxJobId,
+      eventType: 'payment.bank_transfer_initiated',
+      eventData: {
+        transferId: data.transferId,
+        amount: data.amount,
+        currency: data.currency,
+        bankName: data.bankName,
         timestamp: new Date().toISOString(),
       },
     });
@@ -556,6 +600,96 @@ export class AuditLogService {
       eventData: {
         ...data.details,
         entityId: data.entityId, // Store the actual entity ID in event data
+        timestamp: new Date().toISOString(),
+      },
+    });
+  }
+
+  /**
+   * Log product search
+   */
+  async logProductSearch(data: {
+    userId: string;
+    query: string;
+    filters: any;
+    resultCount: number;
+  }): Promise<void> {
+    await auditLogRepository.create({
+      userId: data.userId,
+      eventType: 'product.search',
+      eventData: {
+        query: data.query,
+        filters: data.filters,
+        resultCount: data.resultCount,
+        timestamp: new Date().toISOString(),
+      },
+    });
+  }
+
+  /**
+   * Log product selection
+   */
+  async logProductSelection(data: {
+    userId: string;
+    faxJobId?: string;
+    asin: string;
+    productTitle: string;
+    price: number;
+  }): Promise<void> {
+    await auditLogRepository.create({
+      userId: data.userId,
+      faxJobId: data.faxJobId,
+      eventType: 'product.selected',
+      eventData: {
+        asin: data.asin,
+        productTitle: data.productTitle,
+        price: data.price,
+        timestamp: new Date().toISOString(),
+      },
+    });
+  }
+
+  /**
+   * Log admin purchase action
+   */
+  async logAdminPurchase(data: {
+    userId: string;
+    orderId: string;
+    adminUserId: string;
+    amazonOrderId: string;
+    actualPrice: number;
+  }): Promise<void> {
+    await auditLogRepository.create({
+      userId: data.userId,
+      eventType: 'admin.purchase_completed',
+      eventData: {
+        orderId: data.orderId,
+        adminUserId: data.adminUserId,
+        amazonOrderId: data.amazonOrderId,
+        actualPrice: data.actualPrice,
+        timestamp: new Date().toISOString(),
+      },
+    });
+  }
+
+  /**
+   * Log order status change
+   */
+  async logOrderStatusChange(data: {
+    userId: string;
+    orderId: string;
+    previousStatus: string;
+    newStatus: string;
+    reason?: string;
+  }): Promise<void> {
+    await auditLogRepository.create({
+      userId: data.userId,
+      eventType: 'order.status_changed',
+      eventData: {
+        orderId: data.orderId,
+        previousStatus: data.previousStatus,
+        newStatus: data.newStatus,
+        reason: data.reason,
         timestamp: new Date().toISOString(),
       },
     });

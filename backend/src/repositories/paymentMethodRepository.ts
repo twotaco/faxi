@@ -19,6 +19,7 @@ export interface CreatePaymentMethodData {
   last4?: string;
   brand?: string;
   isDefault?: boolean;
+  metadata?: Record<string, any>;
 }
 
 export interface UpdatePaymentMethodData {

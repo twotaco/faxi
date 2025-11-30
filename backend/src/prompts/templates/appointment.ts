@@ -6,7 +6,7 @@
  */
 
 import { AppointmentExamples } from '../schemas/appointment.js';
-import { FAX_FORMATTING_RULES, INSIGHTS_EXTRACTION_GUIDELINES } from './qa.js';
+import { FAX_FORMATTING_RULES, INSIGHTS_EXTRACTION_GUIDELINES, buildCompletePrompt } from './base.js';
 
 /**
  * Appointment-specific response guidelines

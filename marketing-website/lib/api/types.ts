@@ -40,6 +40,11 @@ export interface VisualizationData {
   }>;
 }
 
+export interface GeneratedResponse {
+  faxContent: string;
+  actionTaken: string;
+}
+
 export interface ProcessingResult {
   faxId: string;
   extractedText: string;
@@ -48,6 +53,7 @@ export interface ProcessingResult {
   confidence: number;
   processingTime: number;
   visualizationData: VisualizationData;
+  generatedResponse?: GeneratedResponse;
 }
 
 export interface ProcessResponse {

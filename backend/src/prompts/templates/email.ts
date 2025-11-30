@@ -6,7 +6,7 @@
  */
 
 import { EmailExamples } from '../schemas/email.js';
-import { FAX_FORMATTING_RULES, INSIGHTS_EXTRACTION_GUIDELINES } from './qa.js';
+import { FAX_FORMATTING_RULES, INSIGHTS_EXTRACTION_GUIDELINES, buildCompletePrompt } from './base.js';
 
 /**
  * Email-specific response guidelines

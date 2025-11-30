@@ -68,6 +68,7 @@ Core business logic organized by domain:
   - `faxSenderService.ts` - Telnyx fax sending
   - `mockFaxSender.ts` - Test mode mock
   - `emailService.ts` - Email integration
+  - `awsSesService.ts` - AWS SES email sending
   - `emailToFaxConverter.ts` - Email-to-fax conversion
   - `emailToFaxWorker.ts` - Email processing worker
   - `ecommerceService.ts` - Shopping integration

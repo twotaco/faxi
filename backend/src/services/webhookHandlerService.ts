@@ -5,29 +5,34 @@ import { auditLogRepository } from '../repositories/auditLogRepository';
 import { faxDownloadService } from './faxDownloadService';
 import { s3Storage } from '../storage/s3';
 import { enqueueFaxProcessing } from '../queue/faxQueue';
+import { loggingService } from './loggingService';
 
 export class WebhookHandlerService {
   /**
    * Process incoming fax webhook from Telnyx
    */
   async processInboundFax(payload: TelnyxWebhookPayload): Promise<void> {
-    const { fax_id, from, to, media_url, page_count } = payload.data.payload;
+    const { fax_id, from, to, media_url, page_count, call_duration_secs, connection_id } = payload.data.payload;
+    const occurredAt = payload.data.occurred_at; // Telnyx event timestamp
 
     // Check for duplicate delivery (idempotency)
     const existingJob = await faxJobRepository.findByFaxId(fax_id);
     if (existingJob) {
-      console.log('Duplicate fax delivery detected, skipping', { faxId: fax_id });
+      loggingService.info('Duplicate fax delivery detected, skipping', undefined, {
+        faxId: fax_id,
+        existingJobId: existingJob.id,
+      });
       return;
     }
 
     // Find or create user (automatic registration)
     const { user, isNew } = await userRepository.findOrCreate(from);
-    
+
     if (isNew) {
-      console.log('New user registered', { 
-        userId: user.id, 
+      loggingService.info('New user registered via fax', undefined, {
+        userId: user.id,
         phoneNumber: user.phoneNumber,
-        emailAddress: user.emailAddress 
+        emailAddress: user.emailAddress,
       });
     }
 
@@ -44,13 +49,17 @@ export class WebhookHandlerService {
       webhookPayload: payload,
     });
 
-    console.log('Fax job created', { 
-      faxJobId: faxJob.id, 
+    loggingService.info('Fax job created', undefined, {
+      faxJobId: faxJob.id,
       faxId: fax_id,
-      userId: user.id 
+      userId: user.id,
+      from,
+      to,
+      pageCount: page_count,
+      occurredAt,
     });
 
-    // Log webhook receipt in audit log
+    // Log webhook receipt in audit log with occurred_at timestamp
     await auditLogRepository.create({
       userId: user.id,
       faxJobId: faxJob.id,
@@ -60,7 +69,10 @@ export class WebhookHandlerService {
         fromNumber: from,
         toNumber: to,
         pageCount: page_count,
+        callDurationSecs: call_duration_secs,
+        connectionId: connection_id,
         isNewUser: isNew,
+        occurredAt, // Telnyx event timestamp for accurate timing
       },
     });
 
@@ -68,12 +80,17 @@ export class WebhookHandlerService {
     let faxImageBuffer: Buffer;
     try {
       faxImageBuffer = await faxDownloadService.downloadFaxImage(media_url);
-      console.log('Fax image downloaded', { 
-        faxJobId: faxJob.id, 
-        size: faxImageBuffer.length 
+      loggingService.info('Fax image downloaded', undefined, {
+        faxJobId: faxJob.id,
+        size: faxImageBuffer.length,
+        faxId: fax_id,
       });
     } catch (error) {
-      console.error('Failed to download fax image', { faxJobId: faxJob.id, error });
+      loggingService.error('Failed to download fax image', error as Error, {
+        faxJobId: faxJob.id,
+        faxId: fax_id,
+        mediaUrl: media_url,
+      });
       await faxJobRepository.update(faxJob.id, {
         status: 'failed',
         errorMessage: 'Failed to download fax image from Telnyx',
@@ -85,9 +102,10 @@ export class WebhookHandlerService {
     const storageKey = s3Storage.generateFaxKey(fax_id);
     try {
       await s3Storage.uploadFile(storageKey, faxImageBuffer, 'application/pdf');
-      console.log('Fax image uploaded to S3', { 
-        faxJobId: faxJob.id, 
-        storageKey 
+      loggingService.info('Fax image uploaded to S3', undefined, {
+        faxJobId: faxJob.id,
+        storageKey,
+        faxId: fax_id,
       });
 
       // Update fax job with storage key
@@ -95,7 +113,11 @@ export class WebhookHandlerService {
         storageKey,
       });
     } catch (error) {
-      console.error('Failed to upload fax image to S3', { faxJobId: faxJob.id, error });
+      loggingService.error('Failed to upload fax image to S3', error as Error, {
+        faxJobId: faxJob.id,
+        faxId: fax_id,
+        storageKey,
+      });
       await faxJobRepository.update(faxJob.id, {
         status: 'failed',
         errorMessage: 'Failed to upload fax image to storage',
@@ -111,16 +133,17 @@ export class WebhookHandlerService {
         toNumber: to,
         mediaUrl: media_url,
         pageCount: page_count,
-        receivedAt: payload.data.occurred_at,
+        receivedAt: occurredAt, // Use extracted occurred_at
         webhookPayload: payload,
       });
 
-      console.log('Fax processing job enqueued', { 
+      loggingService.info('Fax processing job enqueued', undefined, {
         faxJobId: faxJob.id,
-        faxId: fax_id 
+        faxId: fax_id,
+        occurredAt,
       });
 
-      // Log job enqueued
+      // Log job enqueued with occurred_at for timing analysis
       await auditLogRepository.create({
         userId: user.id,
         faxJobId: faxJob.id,
@@ -128,10 +151,14 @@ export class WebhookHandlerService {
         eventData: {
           faxId: fax_id,
           storageKey,
+          occurredAt,
         },
       });
     } catch (error) {
-      console.error('Failed to enqueue fax processing', { faxJobId: faxJob.id, error });
+      loggingService.error('Failed to enqueue fax processing', error as Error, {
+        faxJobId: faxJob.id,
+        faxId: fax_id,
+      });
       await faxJobRepository.update(faxJob.id, {
         status: 'failed',
         errorMessage: 'Failed to enqueue processing job',

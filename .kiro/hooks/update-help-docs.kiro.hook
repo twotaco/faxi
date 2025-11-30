@@ -1,0 +1,19 @@
+{
+  "enabled": true,
+  "name": "Update Help Documentation",
+  "description": "When functionality changes or is added in the backend services, MCP servers, or core features, automatically prompt to update the help and FAQ pages in the marketing website to reflect the new capabilities",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "backend/src/services/**/*.ts",
+      "backend/src/mcp/**/*.ts",
+      "backend/src/webhooks/**/*.ts",
+      "backend/src/prompts/**/*.ts"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "A file has been modified that may affect user-facing functionality: {{filePath}}\n\nPlease review the changes and determine if the help documentation needs to be updated. Consider:\n\n1. Are there new features or capabilities that users should know about?\n2. Have any existing features changed in a way that affects user instructions?\n3. Should new FAQ entries be added to address common questions about this functionality?\n4. Do any existing help sections need clarification or updates?\n\nIf updates are needed, please modify the following files in marketing-website/components/help/:\n- FAQAccordion.tsx (for FAQ entries)\n- GettingStarted.tsx (for onboarding instructions)\n- Instructions.tsx (for step-by-step guides)\n- HelpHero.tsx (for overview content)\n\nFocus on making the documentation clear, accurate, and helpful for elderly users with limited technical knowledge."
+  }
+}

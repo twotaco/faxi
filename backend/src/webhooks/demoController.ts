@@ -1,11 +1,174 @@
 import { Request, Response, Router } from 'express';
 import { v4 as uuidv4 } from 'uuid';
-import { pool } from '../database/connection';
+import { db } from '../database/connection';
 import { aiVisionInterpreter } from '../services/aiVisionInterpreter';
-import { faxJobRepository } from '../repositories/faxJobRepository';
+import { geminiAgentService } from '../services/geminiAgentService';
 import { loggingService } from '../services/loggingService';
-import path from 'path';
-import fs from 'fs/promises';
+import { productCacheService } from '../services/productCacheService';
+import { GoogleGenAI } from '@google/genai';
+import { config } from '../config';
+import * as path from 'path';
+import * as fs from 'fs/promises';
+
+// Initialize Gemini for fallback responses
+const ai = new GoogleGenAI({ apiKey: config.gemini.apiKey });
+
+// Demo user UUID from migration 014_add_demo_user.sql
+const DEMO_USER_ID = '00000000-0000-0000-0000-000000000001';
+
+/**
+ * Generate response using Gemini Agent Service
+ *
+ * This uses Gemini's native function calling to:
+ * 1. Intelligently interpret the OCR text
+ * 2. Extract proper parameters (e.g., "shampoo" from "I need shampoo")
+ * 3. Call the appropriate MCP tool
+ * 4. Return clarification if confidence is low
+ */
+async function generateDemoResponse(
+  extractedText: string,
+  visualAnnotations: any[] = []
+): Promise<{
+  responseText: string;
+  actionTaken: string;
+}> {
+  try {
+    console.log('\n\n=== DEMO PROCESSING START ===');
+    console.log('Extracted text:', extractedText.substring(0, 200));
+    console.log('Demo User ID:', DEMO_USER_ID);
+
+    loggingService.info('Processing with Gemini Agent', {
+      textLength: extractedText.length,
+      annotationCount: visualAnnotations.length,
+      extractedTextPreview: extractedText.substring(0, 200),
+      demoUserId: DEMO_USER_ID
+    });
+
+    // Use Gemini Agent Service for intelligent tool calling
+    const agentResult = await geminiAgentService.processRequest(
+      extractedText,
+      visualAnnotations,
+      DEMO_USER_ID
+    );
+
+    loggingService.info('Gemini Agent result', {
+      success: agentResult.success,
+      needsClarification: agentResult.needsClarification,
+      toolCallCount: agentResult.toolCalls?.length || 0,
+      hasAggregatedResponse: !!agentResult.aggregatedResponse,
+      error: agentResult.error
+    });
+
+    // Handle clarification needed
+    if (agentResult.needsClarification) {
+      return {
+        responseText: agentResult.clarificationFax || generateDefaultClarification(),
+        actionTaken: 'Requested clarification - intent unclear'
+      };
+    }
+
+    // Handle errors
+    if (!agentResult.success) {
+      loggingService.warn('Gemini Agent failed, using fallback', undefined, {
+        error: agentResult.error
+      });
+      return await generateFallbackResponse(extractedText);
+    }
+
+    // Aggregate successful tool call results
+    if (agentResult.aggregatedResponse) {
+      const toolNames = agentResult.toolCalls
+        .filter(t => t.success)
+        .map(t => t.toolName)
+        .join(', ');
+
+      return {
+        responseText: agentResult.aggregatedResponse,
+        actionTaken: `Executed tools: ${toolNames}`
+      };
+    }
+
+    // No response generated - fallback
+    return await generateFallbackResponse(extractedText);
+
+  } catch (error) {
+    console.log('\n=== DEMO ERROR ===');
+    console.log('Error:', (error as Error).message);
+    console.log('Stack:', (error as Error).stack?.substring(0, 500));
+
+    loggingService.error('Failed to generate demo response', error as Error, undefined, {
+      errorMessage: (error as Error).message,
+      errorStack: (error as Error).stack?.substring(0, 500)
+    });
+    return await generateFallbackResponse(extractedText);
+  }
+}
+
+/**
+ * Generate default clarification fax
+ */
+function generateDefaultClarification(): string {
+  return `
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ご確認のお願い / Clarification Needed
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+ご依頼の内容を確認させてください。
+Please clarify your request.
+
+何をご希望ですか？
+What would you like to do?
+
+1. 商品を探す (Shopping)
+2. メールを送る (Send Email)
+3. 質問する (Ask a Question)
+4. その他 (Other)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+番号に○をつけてFAXでご返信ください。
+Circle your choice and fax back.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+`.trim();
+}
+
+/**
+ * Fallback response when Gemini Agent fails
+ */
+async function generateFallbackResponse(extractedText: string): Promise<{
+  responseText: string;
+  actionTaken: string;
+}> {
+  try {
+    const prompt = `You are Faxi, a helpful AI assistant that responds to fax messages.
+The user sent a fax with this content: "${extractedText}"
+
+Please provide a helpful response that would be suitable to fax back to an elderly person in Japan.
+If you can identify what they want (shopping, email, question), help them with that.
+If unclear, politely ask for clarification.
+Keep the response concise but informative. Use simple language.
+Format the response nicely for a fax (no markdown, use plain text).
+Include both Japanese and English where appropriate.`;
+
+    const response = await ai.models.generateContent({
+      model: config.gemini.model,
+      contents: prompt,
+      config: {
+        tools: [{ googleSearch: {} }]
+      }
+    });
+
+    return {
+      responseText: response.text ?? generateDefaultClarification(),
+      actionTaken: 'Generated fallback response'
+    };
+  } catch (error) {
+    loggingService.error('Fallback response generation failed', error as Error);
+    return {
+      responseText: generateDefaultClarification(),
+      actionTaken: 'Error - sent clarification request'
+    };
+  }
+}
 
 const router = Router();
 
@@ -179,7 +342,7 @@ router.post('/process', async (req: Request, res: Response) => {
     }
 
     // Create demo session record
-    await pool.query(`
+    await db.query(`
       INSERT INTO demo_sessions (session_id, fixture_id, visitor_ip, user_agent)
       VALUES ($1, $2, $3, $4)
     `, [sessionId, fixtureId || null, visitorIp, userAgent]);
@@ -190,12 +353,18 @@ router.post('/process', async (req: Request, res: Response) => {
       userId: `demo-${sessionId}`
     });
 
+    // Generate the actual response using Gemini Agent (intelligent tool calling)
+    const demoResponse = await generateDemoResponse(
+      interpretation.extractedText || '',
+      interpretation.visualAnnotations || []
+    );
+
     // Update demo session with result
-    await pool.query(`
+    await db.query(`
       UPDATE demo_sessions
       SET processing_result = $1, completed_at = NOW()
       WHERE session_id = $2
-    `, [JSON.stringify(interpretation), sessionId]);
+    `, [JSON.stringify({ ...interpretation, demoResponse }), sessionId]);
 
     // Return processing result
     res.json({
@@ -219,7 +388,12 @@ router.post('/process', async (req: Request, res: Response) => {
         confidence: interpretation.confidence,
         processingTime: interpretation.processingTime,
         visualizationData: interpretation.visualizationData,
-        textRegions: interpretation.textRegions
+        textRegions: interpretation.textRegions,
+        // The actual response that would be faxed back
+        generatedResponse: {
+          faxContent: demoResponse.responseText,
+          actionTaken: demoResponse.actionTaken
+        }
       }
     });
   } catch (error) {
@@ -239,7 +413,7 @@ router.get('/result/:sessionId', async (req: Request, res: Response) => {
   try {
     const { sessionId } = req.params;
 
-    const result = await pool.query(`
+    const result = await db.query(`
       SELECT processing_result, completed_at
       FROM demo_sessions
       WHERE session_id = $1
@@ -270,6 +444,24 @@ router.get('/result/:sessionId', async (req: Request, res: Response) => {
   } catch (error) {
     loggingService.error('Failed to fetch demo result', error as Error);
     res.status(500).json({ error: 'Failed to fetch result' });
+  }
+});
+
+/**
+ * Clear product cache (for testing)
+ * POST /api/demo/clear-cache
+ */
+router.post('/clear-cache', async (req: Request, res: Response) => {
+  try {
+    const result = await productCacheService.clearAllCache();
+    loggingService.info('Product cache cleared via API', result);
+    res.json({
+      success: true,
+      cleared: result
+    });
+  } catch (error) {
+    loggingService.error('Failed to clear cache', error as Error);
+    res.status(500).json({ error: 'Failed to clear cache' });
   }
 });
 

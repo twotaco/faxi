@@ -375,4 +375,62 @@ This is a temporary problem on our end, not something you did wrong.`;
       referenceId
     );
   }
+
+  /**
+   * Generate contact not found error fax
+   */
+  static async generateContactNotFoundFax(
+    searchQuery: string,
+    referenceId?: string
+  ): Promise<Buffer> {
+    const question = `We couldn't find a contact matching "${searchQuery}" in your address book.
+
+To send an email, you can:`;
+
+    const requiredInfo = [
+      'Write the full email address (e.g., john@example.com)',
+      'Check the spelling and try again',
+      'Add this contact to your address book first'
+    ];
+
+    return await this.generateClarificationFax(
+      question,
+      requiredInfo,
+      [],
+      { includeExamples: true },
+      referenceId
+    );
+  }
+
+  /**
+   * Generate multiple contacts found clarification fax
+   */
+  static async generateMultipleContactsFoundFax(
+    searchQuery: string,
+    matchingContacts: Array<{ name: string; email: string; relationship?: string }>,
+    referenceId?: string
+  ): Promise<Buffer> {
+    const question = `We found multiple contacts matching "${searchQuery}":
+
+${matchingContacts.map((contact, index) => {
+  const label = String.fromCharCode(65 + index); // A, B, C, etc.
+  const relationship = contact.relationship ? ` (${contact.relationship})` : '';
+  return `${label}. ${contact.name}${relationship}\n   ${contact.email}`;
+}).join('\n\n')}
+
+Which contact did you mean?`;
+
+    const requiredInfo = [
+      'Circle the letter of the correct contact',
+      'OR write the full email address if none of these are correct'
+    ];
+
+    return await this.generateClarificationFax(
+      question,
+      requiredInfo,
+      [],
+      { includeExamples: false },
+      referenceId
+    );
+  }
 }

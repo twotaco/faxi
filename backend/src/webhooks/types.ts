@@ -20,6 +20,13 @@ export interface TelnyxFaxPayload {
   status: string;
   quality?: string;
   duration?: number;
+  // Additional Telnyx fields
+  call_duration_secs?: number;
+  user_id?: string;           // Telnyx user ID
+  caller_id?: string;
+  failure_reason?: string;    // Critical for fax.failed events
+  partial_content?: boolean;
+  occurred_at?: string;       // Timestamp at payload level
   // Test mode fields
   test_mode?: boolean;
   test_user_phone?: string;
@@ -55,6 +62,7 @@ export interface EmailAttachment {
 export interface ParsedEmailData {
   to: string;
   from: string;
+  fromName?: string; // Sender's display name extracted from email headers
   subject: string;
   body: string;
   html?: string;

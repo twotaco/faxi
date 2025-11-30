@@ -22,8 +22,6 @@ describe('Smart Reply Generation Integration Tests', () => {
         enableSmartReplies: true,
         spamFilterLevel: 'medium',
       },
-      createdAt: new Date(),
-      updatedAt: new Date(),
     });
     testUserId = user.id;
   });
