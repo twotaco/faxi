@@ -1322,7 +1322,7 @@ app.delete('/admin/users/:id/contexts/:contextId', requireAdminAuth, requirePerm
 
 // MCP Monitoring Endpoints
 import { mcpMonitoringService } from './services/mcpMonitoringService';
-import { paApiRateLimiter } from './middleware/rateLimiter';
+import { scrapingRateLimitService } from './services/scrapingRateLimitService';
 
 app.get('/admin/mcp/servers', requireAdminAuth, requirePermission('mcp:view'), async (req: Request, res: Response) => {
   try {
@@ -1345,45 +1345,47 @@ app.get('/admin/mcp/external-apis', requireAdminAuth, requirePermission('mcp:vie
 });
 
 // Rate Limit Monitoring Endpoints
-app.get('/admin/rate-limits/pa-api', requireAdminAuth, requirePermission('mcp:view'), async (req: Request, res: Response) => {
+app.get('/admin/rate-limits/scraping', requireAdminAuth, requirePermission('mcp:view'), async (req: Request, res: Response) => {
   try {
-    const metrics = await paApiRateLimiter.getMetrics();
+    const status = await scrapingRateLimitService.getStatus();
     res.json({
-      service: 'PA-API',
+      service: 'Scraping',
       rateLimit: {
-        requestsPerSecond: 1,
-        windowMs: 1000
+        maxSearchesPerHour: status.maxSearchesPerHour
       },
-      metrics,
+      metrics: {
+        searchesInLastHour: status.searchesInLastHour,
+        allowed: status.allowed
+      },
       timestamp: new Date().toISOString()
     });
   } catch (error) {
-    loggingService.error('Failed to fetch PA-API rate limit metrics', error as Error);
-    res.status(500).json({ error: 'Failed to fetch PA-API rate limit metrics' });
+    loggingService.error('Failed to fetch scraping rate limit metrics', error as Error);
+    res.status(500).json({ error: 'Failed to fetch scraping rate limit metrics' });
   }
 });
 
-app.post('/admin/rate-limits/pa-api/reset', requireAdminAuth, requirePermission('admin:manage'), async (req: Request, res: Response) => {
+app.post('/admin/rate-limits/scraping/reset', requireAdminAuth, requirePermission('admin:manage'), async (req: Request, res: Response) => {
   try {
-    await paApiRateLimiter.resetMetrics();
-    
+    await scrapingRateLimitService.reset();
+
     await auditLogService.log({
       userId: req.adminUser?.id,
       eventType: 'admin.rate_limit_reset',
       eventData: {
         adminEmail: req.adminUser?.email,
-        service: 'PA-API',
+        service: 'Scraping',
         timestamp: new Date().toISOString()
       }
     });
 
     res.json({
-      message: 'PA-API rate limit metrics reset successfully',
+      message: 'Scraping rate limit metrics reset successfully',
       timestamp: new Date().toISOString()
     });
   } catch (error) {
-    loggingService.error('Failed to reset PA-API rate limit metrics', error as Error);
-    res.status(500).json({ error: 'Failed to reset PA-API rate limit metrics' });
+    loggingService.error('Failed to reset scraping rate limit metrics', error as Error);
+    res.status(500).json({ error: 'Failed to reset scraping rate limit metrics' });
   }
 });
 

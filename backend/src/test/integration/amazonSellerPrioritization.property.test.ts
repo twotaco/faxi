@@ -9,7 +9,7 @@
 
 import { describe, it, expect } from 'vitest';
 import * as fc from 'fast-check';
-import { productSearchService, PAAPIProduct } from '../../services/productSearchService';
+import { productSearchService, ScrapedProduct } from '../../services/productSearchService';
 
 describe('Property 18: Amazon.co.jp Seller Prioritization', () => {
   /**
@@ -99,7 +99,7 @@ describe('Property 18: Amazon.co.jp Seller Prioritization', () => {
         // Mix the products randomly
         const allProducts = [...amazonProducts, ...thirdPartyProducts].sort(() => Math.random() - 0.5);
         
-        const curated = await productSearchService.curateProducts(allProducts as PAAPIProduct[], query);
+        const curated = await productSearchService.curateProducts(allProducts as ScrapedProduct[], query);
         
         // Property: Amazon sellers should be prioritized (selected more frequently)
         // Count Amazon vs third-party sellers in curated results
@@ -108,7 +108,7 @@ describe('Property 18: Amazon.co.jp Seller Prioritization', () => {
         
         curated.forEach((product) => {
           // Check if this is an Amazon seller (using same heuristic as service)
-          const originalProduct = allProducts.find(p => p.asin === product.asin) as PAAPIProduct;
+          const originalProduct = allProducts.find(p => p.asin === product.asin) as ScrapedProduct;
           const isAmazon = originalProduct.isPrime && 
                           originalProduct.rating >= 4.0 && 
                           originalProduct.reviewCount >= 100;
@@ -193,7 +193,7 @@ describe('Property 18: Amazon.co.jp Seller Prioritization', () => {
         ),
         fc.string({ minLength: 1, maxLength: 100 }),
       async (products, query) => {
-        const curated = await productSearchService.curateProducts(products as PAAPIProduct[], query);
+        const curated = await productSearchService.curateProducts(products as ScrapedProduct[], query);
         
         // Property: Among Amazon sellers, ratings should be non-increasing
         // (allowing for price diversity selection which may reorder slightly)

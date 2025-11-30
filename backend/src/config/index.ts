@@ -125,6 +125,15 @@ const configSchema = z.object({
       integrationKey: z.string(),
     }).optional(),
   }).optional(),
+  
+  // Template system configuration
+  templates: z.object({
+    imageDownloadTimeout: z.number(),
+    maxImageSize: z.number(),
+    imageCacheTTL: z.number(),
+    pdfGenerationTimeout: z.number(),
+    allowedImageDomains: z.array(z.string()),
+  }).optional(),
 
 });
 
@@ -228,6 +237,17 @@ function buildConfig(): Config {
         enabled: true,
         integrationKey: process.env.ALERTS_PAGERDUTY_INTEGRATION_KEY || '',
       } : undefined,
+    },
+    templates: {
+      imageDownloadTimeout: parseInt(process.env.TEMPLATE_IMAGE_DOWNLOAD_TIMEOUT || '5000', 10),
+      maxImageSize: parseInt(process.env.TEMPLATE_MAX_IMAGE_SIZE || String(2 * 1024 * 1024), 10),
+      imageCacheTTL: parseInt(process.env.TEMPLATE_IMAGE_CACHE_TTL || String(24 * 60 * 60), 10),
+      pdfGenerationTimeout: parseInt(process.env.TEMPLATE_PDF_GENERATION_TIMEOUT || '10000', 10),
+      allowedImageDomains: (process.env.TEMPLATE_ALLOWED_IMAGE_DOMAINS || 
+        'images-na.ssl-images-amazon.com,m.media-amazon.com,images-fe.ssl-images-amazon.com')
+        .split(',')
+        .map(d => d.trim())
+        .filter(Boolean),
     },
   };
 }

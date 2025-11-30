@@ -1,5 +1,5 @@
 import { MCPServer, MCPTool } from '../types/agent';
-import { productSearchService, PAAPIProduct } from '../services/productSearchService';
+import { productSearchService, ScrapedProduct } from '../services/productSearchService';
 import { orderRepository, CreateOrderData } from '../repositories/orderRepository';
 import { userRepository } from '../repositories/userRepository';
 import { auditLogService } from '../services/auditLogService';
@@ -27,6 +27,7 @@ export class ShoppingMCPServer implements MCPServer {
   private initializeTools(): void {
     this.tools = [
       this.createSearchProductsTool(),
+      this.createSearchMultipleProductsTool(),
       this.createGetProductDetailsTool(),
       this.createCreateOrderTool(),
       this.createGetOrderStatusTool(),
@@ -85,6 +86,59 @@ export class ShoppingMCPServer implements MCPServer {
       description: 'Search Amazon.co.jp products with quality filters',
       inputSchema,
       handler: this.handleSearchProducts.bind(this)
+    };
+  }
+
+  /**
+   * Search multiple products tool - Parallel search for multiple product queries
+   * Used when user requests multiple products in a single fax (e.g., "shampoo and crackers")
+   */
+  private createSearchMultipleProductsTool(): MCPTool {
+    const inputSchema = {
+      type: 'object',
+      properties: {
+        userId: {
+          type: 'string',
+          description: 'User ID performing the search'
+        },
+        queries: {
+          type: 'array',
+          items: { type: 'string' },
+          maxItems: 5,
+          description: 'Array of product search queries (max 5)'
+        },
+        filters: {
+          type: 'object',
+          properties: {
+            priceMin: {
+              type: 'number',
+              description: 'Minimum price in Japanese Yen'
+            },
+            priceMax: {
+              type: 'number',
+              description: 'Maximum price in Japanese Yen'
+            },
+            primeOnly: {
+              type: 'boolean',
+              description: 'Filter for Prime-eligible products only',
+              default: true
+            },
+            minRating: {
+              type: 'number',
+              description: 'Minimum product rating (0-5)',
+              default: 3.5
+            }
+          }
+        }
+      },
+      required: ['userId', 'queries']
+    };
+
+    return {
+      name: 'search_multiple_products',
+      description: 'Search Amazon.co.jp for multiple products in parallel. Returns grouped results with unique selection markers.',
+      inputSchema,
+      handler: this.handleSearchMultipleProducts.bind(this)
     };
   }
 
@@ -300,6 +354,144 @@ export class ShoppingMCPServer implements MCPServer {
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Failed to search products'
+      };
+    }
+  }
+
+  /**
+   * Handle search multiple products request - parallel search for multi-product requests
+   * Returns grouped results with unique selection markers (A-E per category)
+   */
+  private async handleSearchMultipleProducts(params: any): Promise<any> {
+    const { userId, queries, filters = {} } = params;
+
+    try {
+      // Verify user exists
+      const user = await userRepository.findById(userId);
+      if (!user) {
+        return {
+          success: false,
+          error: 'User not found'
+        };
+      }
+
+      // Limit to 5 queries max
+      const limitedQueries = (queries as string[]).slice(0, 5);
+
+      if (limitedQueries.length === 0) {
+        return {
+          success: false,
+          error: 'No search queries provided'
+        };
+      }
+
+      // Set default filters
+      const searchFilters = {
+        priceMin: filters.priceMin,
+        priceMax: filters.priceMax,
+        primeOnly: filters.primeOnly !== undefined ? filters.primeOnly : true,
+        minRating: filters.minRating !== undefined ? filters.minRating : 3.5,
+        maxResults: 3 // Limit products per query to fit on fax
+      };
+
+      // Use parallel search for multiple queries
+      const resultsMap = await productSearchService.searchMultipleProducts(limitedQueries, searchFilters, userId);
+
+      // Build grouped results with unique selection markers
+      // First query gets A, B, C; second gets D, E, F; etc.
+      const allMarkers: string[] = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+      let markerIndex = 0;
+
+      const groupedResults: Array<{
+        query: string;
+        products: any[];
+        selectionMarkers: string[];
+      }> = [];
+
+      for (const query of limitedQueries) {
+        const products = resultsMap.get(query) || [];
+
+        // Assign selection markers for this group
+        const groupMarkers: string[] = [];
+        const productsWithMarkers = products.slice(0, 3).map((p: any) => {
+          const marker = allMarkers[markerIndex];
+          groupMarkers.push(marker);
+          markerIndex++;
+
+          return {
+            asin: p.asin,
+            productName: p.productName,
+            brand: p.brand,
+            quantity: p.quantity,
+            description: p.description,
+            title: this.truncateTitle(p.title, 60),
+            price: p.price,
+            currency: p.currency,
+            primeEligible: p.primeEligible,
+            rating: p.rating,
+            reviewCount: p.reviewCount,
+            availability: this.getAvailabilityStatus(p),
+            deliveryEstimate: this.getDeliveryEstimate(p),
+            imageUrl: p.imageUrl,
+            detailPageUrl: p.productUrl,
+            seller: p.seller,
+            selectionMarker: marker
+          };
+        });
+
+        groupedResults.push({
+          query,
+          products: productsWithMarkers,
+          selectionMarkers: groupMarkers
+        });
+      }
+
+      // Generate reference ID for this shopping session
+      const referenceId = `FX-${new Date().getFullYear()}-${String(Date.now()).slice(-6)}`;
+
+      // Save shopping context with grouped results for product selection
+      const expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + 7);
+
+      await conversationContextRepository.create({
+        userId,
+        referenceId,
+        contextType: 'shopping',
+        contextData: {
+          searchQueries: limitedQueries,
+          searchFilters,
+          groupedSearchResults: groupedResults,
+          isMultiProductSearch: true,
+          timestamp: new Date().toISOString()
+        },
+        expiresAt
+      });
+
+      // Log the multi-search
+      const totalProducts = groupedResults.reduce((sum, g) => sum + g.products.length, 0);
+      await auditLogService.logMCPToolCall({
+        userId,
+        faxJobId: null,
+        toolName: 'search_multiple_products',
+        toolServer: 'shopping',
+        input: { queries: limitedQueries, filters: searchFilters },
+        output: { queryCount: limitedQueries.length, totalProducts, referenceId },
+        success: true
+      });
+
+      return {
+        success: true,
+        groupedResults,
+        queries: limitedQueries,
+        filters: searchFilters,
+        totalProducts,
+        referenceId
+      };
+
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to search multiple products'
       };
     }
   }
@@ -591,7 +783,7 @@ export class ShoppingMCPServer implements MCPServer {
   /**
    * Get delivery estimate based on product data
    */
-  private getDeliveryEstimate(product: PAAPIProduct): string {
+  private getDeliveryEstimate(product: ScrapedProduct): string {
     // Use scraped delivery estimate if available
     if (product.deliveryEstimate) {
       return product.deliveryEstimate;
@@ -608,7 +800,7 @@ export class ShoppingMCPServer implements MCPServer {
   /**
    * Get availability status from product data
    */
-  private getAvailabilityStatus(product: PAAPIProduct): 'in_stock' | 'limited' | 'out_of_stock' {
+  private getAvailabilityStatus(product: ScrapedProduct): 'in_stock' | 'limited' | 'out_of_stock' {
     const delivery = product.deliveryEstimate || '';
     
     if (delivery.includes('在庫切れ') || delivery.includes('配送日未定')) {

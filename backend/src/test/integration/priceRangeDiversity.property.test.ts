@@ -10,7 +10,7 @@
 
 import { describe, it, expect } from 'vitest';
 import * as fc from 'fast-check';
-import { productSearchService, PAAPIProduct } from '../../services/productSearchService';
+import { productSearchService, ScrapedProduct } from '../../services/productSearchService';
 
 describe('Property 19: Price Range Diversity', () => {
   /**
@@ -56,7 +56,7 @@ describe('Property 19: Price Range Diversity', () => {
         ),
         fc.string({ minLength: 1, maxLength: 100 }),
       async (products, query) => {
-        const curated = await productSearchService.curateProducts(products as PAAPIProduct[], query);
+        const curated = await productSearchService.curateProducts(products as ScrapedProduct[], query);
         
         // Skip if we got fewer than 3 products (edge case)
         if (curated.length < 3) {
@@ -207,7 +207,7 @@ describe('Property 19: Price Range Diversity', () => {
         // Combine all products
         const allProducts = [...lowProducts, ...midProducts, ...premiumProducts];
         
-        const curated = await productSearchService.curateProducts(allProducts as PAAPIProduct[], query);
+        const curated = await productSearchService.curateProducts(allProducts as ScrapedProduct[], query);
         
         // Property: Should include products from multiple price tiers
         const prices = curated.map(p => p.price);
@@ -278,7 +278,7 @@ describe('Property 19: Price Range Diversity', () => {
           }
         }));
         
-        const curated = await productSearchService.curateProducts(adjustedProducts as PAAPIProduct[], query);
+        const curated = await productSearchService.curateProducts(adjustedProducts as ScrapedProduct[], query);
         
         // Property: Should still return 3-5 products even with similar prices
         expect(curated.length).toBeGreaterThanOrEqual(3);

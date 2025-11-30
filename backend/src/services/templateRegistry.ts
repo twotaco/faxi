@@ -3,8 +3,46 @@
  * 
  * Centralized registry that maps MCP servers and intents to template types.
  * Implements singleton pattern for global access.
+ * 
+ * @example
+ * ```typescript
+ * import { templateRegistry } from './templateRegistry';
+ * 
+ * // Get template type for a specific MCP server and intent
+ * const templateType = templateRegistry.getTemplate('shopping', 'search_products');
+ * // Returns: 'product_selection'
+ * 
+ * // Register a new template mapping
+ * templateRegistry.register('custom_mcp', 'custom_intent', 'general_inquiry', 10);
+ * 
+ * // Get fallback template when no mapping exists
+ * const fallback = templateRegistry.getFallbackTemplate();
+ * // Returns: 'general_inquiry'
+ * ```
+ * 
+ * @remarks
+ * The registry uses a priority system to handle conflicts when multiple mappings
+ * could apply to the same MCP server/intent combination. Higher priority values
+ * take precedence.
+ * 
+ * Default mappings:
+ * - Shopping MCP → product_selection template
+ * - Email MCP → email_reply template
+ * - AI Chat MCP → general_inquiry template
+ * - Appointment MCP → appointment_selection template
+ * - Payment MCP → payment_barcodes template
+ * 
+ * @see {@link TemplateType} for available template types
+ * @see {@link TemplateMapping} for mapping structure
  */
 
+/**
+ * Available template types for fax generation
+ * 
+ * @remarks
+ * Each template type corresponds to a specific use case and has its own
+ * generator class and data structure.
+ */
 type TemplateType = 
   | 'email_reply' 
   | 'product_selection' 

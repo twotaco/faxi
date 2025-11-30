@@ -9,7 +9,7 @@
 
 import { describe, it, expect } from 'vitest';
 import * as fc from 'fast-check';
-import { productSearchService, PAAPIProduct } from '../../services/productSearchService';
+import { productSearchService, ScrapedProduct } from '../../services/productSearchService';
 
 describe('Property 1: Product Search Result Count Bounds', () => {
   /**
@@ -55,7 +55,7 @@ describe('Property 1: Product Search Result Count Bounds', () => {
         ),
         fc.string({ minLength: 1, maxLength: 100 }), // Search query
       async (products, query) => {
-        const curated = await productSearchService.curateProducts(products as PAAPIProduct[], query);
+        const curated = await productSearchService.curateProducts(products as ScrapedProduct[], query);
         
         // Property: Result count must be between 3 and 5 (inclusive)
         expect(curated.length).toBeGreaterThanOrEqual(3);
@@ -107,7 +107,7 @@ describe('Property 1: Product Search Result Count Bounds', () => {
         ),
         fc.string({ minLength: 1, maxLength: 100 }),
       async (products, query) => {
-        const curated = await productSearchService.curateProducts(products as PAAPIProduct[], query);
+        const curated = await productSearchService.curateProducts(products as ScrapedProduct[], query);
         
         // With exactly 3 valid products, should return all 3
         expect(curated.length).toBe(3);
@@ -158,7 +158,7 @@ describe('Property 1: Product Search Result Count Bounds', () => {
         ),
         fc.string({ minLength: 1, maxLength: 100 }),
       async (products, query) => {
-        const curated = await productSearchService.curateProducts(products as PAAPIProduct[], query);
+        const curated = await productSearchService.curateProducts(products as ScrapedProduct[], query);
         
         // With more than 5 valid products, should return exactly 5
         expect(curated.length).toBe(5);

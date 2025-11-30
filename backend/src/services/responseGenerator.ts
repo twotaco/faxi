@@ -4,9 +4,13 @@ import { PaymentBarcodeFaxGenerator } from './paymentBarcodeFaxGenerator.js';
 import { ConfirmationFaxGenerator } from './confirmationFaxGenerator.js';
 import { ClarificationFaxGenerator } from './clarificationFaxGenerator.js';
 import { WelcomeFaxGenerator } from './welcomeFaxGenerator.js';
+import { AppointmentSelectionFaxGenerator } from './appointmentSelectionFaxGenerator.js';
+import { GeneralInquiryFaxGenerator } from './generalInquiryFaxGenerator.js';
 import { FaxGenerator } from './faxGenerator.js';
 import { PdfFaxGenerator } from './pdfFaxGenerator.js';
 import { FaxTemplateEngine } from './faxTemplateEngine.js';
+import { TemplateRegistry } from './templateRegistry.js';
+import { loggingService } from './loggingService.js';
 import {
   FaxTemplate,
   EmailReplyData,
@@ -14,14 +18,18 @@ import {
   PaymentBarcodeData,
   ConfirmationData,
   ClarificationData,
-  ProductOption
+  ProductOption,
+  AppointmentSelectionTemplateData,
+  GeneralInquiryTemplateData
 } from '../types/fax.js';
 
 export interface ResponseGeneratorRequest {
-  type: 'email_reply' | 'product_selection' | 'payment_barcodes' | 'confirmation' | 'clarification' | 'welcome' | 'multi_action';
+  type: 'email_reply' | 'product_selection' | 'payment_barcodes' | 'confirmation' | 'clarification' | 'welcome' | 'multi_action' | 'appointment_selection' | 'general_inquiry';
   data: any;
   referenceId?: string;
   options?: any;
+  mcpServer?: string;  // NEW: For template selection via TemplateRegistry
+  intent?: string;     // NEW: For template selection via TemplateRegistry
 }
 
 export interface ResponseGeneratorResult {
@@ -31,6 +39,29 @@ export interface ResponseGeneratorResult {
 }
 
 export class ResponseGenerator {
+  private static templateRegistry = TemplateRegistry.getInstance();
+  private static logger = loggingService;
+
+  /**
+   * Get template type from MCP server and intent using TemplateRegistry
+   * @param mcpServer MCP server name
+   * @param intent Optional intent
+   * @returns Template type to use
+   */
+  static getTemplateTypeFromMcp(mcpServer: string, intent?: string): string {
+    const templateType = this.templateRegistry.getTemplate(mcpServer, intent);
+    
+    // Log template selection for monitoring
+    this.logger.info('Template selected via TemplateRegistry', {
+      mcpServer,
+      intent,
+      templateType,
+      isFallback: templateType === 'general_inquiry' && mcpServer !== 'ai_chat' && mcpServer !== 'chat'
+    });
+    
+    return templateType;
+  }
+
   /**
    * Generate fax response based on request type
    */
@@ -39,7 +70,14 @@ export class ResponseGenerator {
     let template: FaxTemplate;
     const referenceId = request.referenceId || this.generateReferenceId();
 
-    switch (request.type) {
+    // If mcpServer is provided, use TemplateRegistry to determine template type
+    let requestType = request.type;
+    if (request.mcpServer) {
+      const templateType = this.getTemplateTypeFromMcp(request.mcpServer, request.intent);
+      requestType = templateType as typeof request.type;
+    }
+
+    switch (requestType) {
       case 'email_reply':
         // Use new PDF generator for text-based PDFs
         template = FaxTemplateEngine.createEmailReplyTemplate(request.data as EmailReplyData, referenceId);
@@ -47,13 +85,10 @@ export class ResponseGenerator {
         break;
 
       case 'product_selection':
-        const productData = request.data as ProductSelectionData;
+        // Note: ProductSelectionFaxGenerator now expects ProductSelectionFaxData with CuratedProduct[]
+        // The request.data should already be in the correct format when called from the pipeline
         pdfBuffer = await ProductSelectionFaxGenerator.generateProductSelectionFax(
-          productData.products,
-          productData.complementaryItems,
-          productData.hasPaymentMethod,
-          productData.deliveryAddress,
-          request.options,
+          request.data,
           referenceId
         );
         template = {
@@ -161,8 +196,61 @@ export class ResponseGenerator {
         };
         break;
 
+      case 'appointment_selection':
+        const appointmentData = request.data as AppointmentSelectionTemplateData;
+        pdfBuffer = await AppointmentSelectionFaxGenerator.generateAppointmentSelectionFax(
+          appointmentData,
+          referenceId
+        );
+        template = {
+          type: 'appointment_selection',
+          referenceId,
+          pages: [],
+          contextData: request.data
+        };
+        break;
+
+      case 'general_inquiry':
+        const inquiryData = request.data as GeneralInquiryTemplateData;
+        pdfBuffer = await GeneralInquiryFaxGenerator.generateInquiryFax(
+          inquiryData,
+          referenceId
+        );
+        template = {
+          type: 'general_inquiry',
+          referenceId,
+          pages: [],
+          contextData: request.data
+        };
+        break;
+
       default:
-        throw new Error(`Unsupported response type: ${request.type}`);
+        // Fallback to general inquiry template for unknown types
+        this.logger.warn('Unknown response type, falling back to general_inquiry', {
+          requestedType: request.type,
+          mcpServer: request.mcpServer,
+          intent: request.intent
+        });
+        
+        const fallbackData: GeneralInquiryTemplateData = {
+          question: 'Request Processing',
+          answer: typeof request.data === 'string' 
+            ? request.data 
+            : JSON.stringify(request.data, null, 2),
+          relatedTopics: []
+        };
+        
+        pdfBuffer = await GeneralInquiryFaxGenerator.generateInquiryFax(
+          fallbackData,
+          referenceId
+        );
+        template = {
+          type: 'general_inquiry',
+          referenceId,
+          pages: [],
+          contextData: request.data
+        };
+        break;
     }
 
     return {
@@ -198,22 +286,15 @@ export class ResponseGenerator {
 
   /**
    * Generate shopping selection fax
+   * @deprecated Use generateResponse with ProductSelectionFaxData directly
    */
   static async generateShoppingFax(
-    products: ProductOption[],
-    complementaryItems: ProductOption[] = [],
-    hasPaymentMethod: boolean = false,
-    deliveryAddress?: string,
+    data: any,
     referenceId?: string
   ): Promise<ResponseGeneratorResult> {
     return await this.generateResponse({
       type: 'product_selection',
-      data: {
-        products,
-        complementaryItems,
-        hasPaymentMethod,
-        deliveryAddress
-      } as ProductSelectionData,
+      data,
       referenceId
     });
   }
@@ -288,6 +369,54 @@ export class ResponseGenerator {
   }
 
   /**
+   * Generate appointment selection fax
+   */
+  static async generateAppointmentFax(
+    appointmentData: AppointmentSelectionTemplateData,
+    referenceId?: string
+  ): Promise<ResponseGeneratorResult> {
+    return await this.generateResponse({
+      type: 'appointment_selection',
+      data: appointmentData,
+      referenceId
+    });
+  }
+
+  /**
+   * Generate general inquiry (AI Q&A) fax
+   */
+  static async generateInquiryFax(
+    inquiryData: GeneralInquiryTemplateData,
+    referenceId?: string
+  ): Promise<ResponseGeneratorResult> {
+    return await this.generateResponse({
+      type: 'general_inquiry',
+      data: inquiryData,
+      referenceId
+    });
+  }
+
+  /**
+   * Generate fax using MCP server and intent for template selection
+   */
+  static async generateFromMcp(
+    mcpServer: string,
+    intent: string | undefined,
+    data: any,
+    referenceId?: string
+  ): Promise<ResponseGeneratorResult> {
+    const templateType = this.getTemplateTypeFromMcp(mcpServer, intent);
+    
+    return await this.generateResponse({
+      type: templateType as any,
+      data,
+      referenceId,
+      mcpServer,
+      intent
+    });
+  }
+
+  /**
    * Generate error fax for system failures
    */
   static async generateErrorFax(
@@ -352,6 +481,18 @@ export class ResponseGenerator {
         const barcodeData = request.data as PaymentBarcodeData;
         const barcodeCount = barcodeData.barcodes?.length || 0;
         return Math.ceil(barcodeCount / 3); // ~3 barcodes per page
+      
+      case 'appointment_selection':
+        const appointmentData = request.data as AppointmentSelectionTemplateData;
+        const slotCount = appointmentData.slots?.length || 0;
+        return slotCount > 10 ? 2 : 1;
+      
+      case 'general_inquiry':
+        const inquiryData = request.data as GeneralInquiryTemplateData;
+        const answerLength = inquiryData.answer?.length || 0;
+        const imageCount = inquiryData.images?.length || 0;
+        // Estimate: ~1500 chars per page, plus 1 page per 3 images
+        return Math.max(1, Math.ceil(answerLength / 1500) + Math.ceil(imageCount / 3));
       
       case 'confirmation':
       case 'clarification':

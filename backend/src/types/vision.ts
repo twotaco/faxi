@@ -44,7 +44,8 @@ export interface IntentParameters {
   
   // Shopping intent
   shoppingSubIntent?: 'product_search' | 'product_selection' | 'order_status';
-  productQuery?: string;
+  productQuery?: string; // Single product query (legacy, for backwards compatibility)
+  productQueries?: string[]; // Multiple product queries (max 5) - used for multi-product requests
   selectedProductIds?: string[]; // From circled/checked items
   quantity?: number;
   deliveryPreferences?: string;

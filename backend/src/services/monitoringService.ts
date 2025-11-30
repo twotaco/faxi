@@ -270,6 +270,53 @@ class MonitoringService {
       // Cache service not available, skip metrics
     }
 
+    // Add template generation metrics
+    const templateMetrics = this.getTemplateMetrics();
+    lines.push(`# HELP faxi_template_generations_total Total template generations`);
+    lines.push(`# TYPE faxi_template_generations_total counter`);
+    lines.push(`faxi_template_generations_total ${templateMetrics.totalGenerations}`);
+    
+    lines.push(`# HELP faxi_template_success_rate Template generation success rate (0-1)`);
+    lines.push(`# TYPE faxi_template_success_rate gauge`);
+    lines.push(`faxi_template_success_rate ${templateMetrics.successRate}`);
+    
+    lines.push(`# HELP faxi_template_avg_generation_time_ms Average template generation time in milliseconds`);
+    lines.push(`# TYPE faxi_template_avg_generation_time_ms gauge`);
+    lines.push(`faxi_template_avg_generation_time_ms ${templateMetrics.avgGenerationTime}`);
+    
+    // Add per-template-type metrics
+    for (const [templateType, data] of Object.entries(templateMetrics.byTemplateType)) {
+      lines.push(`# HELP faxi_template_count_by_type Template generation count by type`);
+      lines.push(`# TYPE faxi_template_count_by_type counter`);
+      lines.push(`faxi_template_count_by_type{template_type="${templateType}"} ${data.count}`);
+      
+      lines.push(`# HELP faxi_template_avg_time_by_type Average generation time by type`);
+      lines.push(`# TYPE faxi_template_avg_time_by_type gauge`);
+      lines.push(`faxi_template_avg_time_by_type{template_type="${templateType}"} ${data.avgTime}`);
+      
+      lines.push(`# HELP faxi_template_success_rate_by_type Success rate by type (0-1)`);
+      lines.push(`# TYPE faxi_template_success_rate_by_type gauge`);
+      lines.push(`faxi_template_success_rate_by_type{template_type="${templateType}"} ${data.successRate}`);
+    }
+    
+    // Add image processing metrics
+    const imageMetrics = this.getImageProcessingMetrics();
+    lines.push(`# HELP faxi_image_operations_total Total image processing operations`);
+    lines.push(`# TYPE faxi_image_operations_total counter`);
+    lines.push(`faxi_image_operations_total ${imageMetrics.totalOperations}`);
+    
+    lines.push(`# HELP faxi_image_cache_hit_rate Image cache hit rate (0-1)`);
+    lines.push(`# TYPE faxi_image_cache_hit_rate gauge`);
+    lines.push(`faxi_image_cache_hit_rate ${imageMetrics.cacheHitRate}`);
+    
+    lines.push(`# HELP faxi_image_avg_download_time_ms Average image download time in milliseconds`);
+    lines.push(`# TYPE faxi_image_avg_download_time_ms gauge`);
+    lines.push(`faxi_image_avg_download_time_ms ${imageMetrics.avgDownloadTime}`);
+    
+    lines.push(`# HELP faxi_image_avg_process_time_ms Average image processing time in milliseconds`);
+    lines.push(`# TYPE faxi_image_avg_process_time_ms gauge`);
+    lines.push(`faxi_image_avg_process_time_ms ${imageMetrics.avgProcessTime}`);
+
     // Add memory metrics
     const memory = process.memoryUsage();
     lines.push(`# HELP faxi_memory_usage_bytes Memory usage in bytes`);
@@ -565,6 +612,213 @@ class MonitoringService {
         hitRate: 0
       };
     }
+  }
+
+  /**
+   * Record template generation metrics
+   * 
+   * @param templateType - Type of template generated
+   * @param generationTimeMs - Time taken to generate in milliseconds
+   * @param pageCount - Number of pages in the generated fax
+   * @param imageCount - Number of images included
+   * @param imageCacheHits - Number of images served from cache
+   * @param imageCacheMisses - Number of images downloaded fresh
+   * @param success - Whether generation succeeded
+   * @param error - Error type if generation failed
+   */
+  public recordTemplateGeneration(
+    templateType: string,
+    generationTimeMs: number,
+    pageCount: number,
+    imageCount: number,
+    imageCacheHits: number,
+    imageCacheMisses: number,
+    success: boolean,
+    error?: string
+  ): void {
+    // Record generation time
+    this.recordMetric('template_generation_duration_ms', generationTimeMs, {
+      template_type: templateType,
+      success: success.toString()
+    });
+
+    // Record page count
+    this.recordMetric('template_page_count', pageCount, {
+      template_type: templateType
+    });
+
+    // Record image metrics
+    if (imageCount > 0) {
+      this.recordMetric('template_image_count', imageCount, {
+        template_type: templateType
+      });
+
+      this.recordMetric('template_image_cache_hits', imageCacheHits, {
+        template_type: templateType
+      });
+
+      this.recordMetric('template_image_cache_misses', imageCacheMisses, {
+        template_type: templateType
+      });
+
+      const cacheHitRate = imageCount > 0 ? imageCacheHits / imageCount : 0;
+      this.recordMetric('template_image_cache_hit_rate', cacheHitRate, {
+        template_type: templateType
+      });
+    }
+
+    // Record success/failure
+    this.recordMetric('template_generation_total', 1, {
+      template_type: templateType,
+      success: success.toString()
+    });
+
+    // Record error type if failed
+    if (!success && error) {
+      this.recordMetric('template_generation_errors', 1, {
+        template_type: templateType,
+        error_type: error
+      });
+    }
+  }
+
+  /**
+   * Record image processing metrics
+   * 
+   * @param operation - Operation type (download, resize, cache)
+   * @param durationMs - Time taken in milliseconds
+   * @param success - Whether operation succeeded
+   * @param cacheHit - Whether image was served from cache
+   */
+  public recordImageProcessing(
+    operation: 'download' | 'resize' | 'cache' | 'process',
+    durationMs: number,
+    success: boolean,
+    cacheHit?: boolean
+  ): void {
+    this.recordMetric('image_processing_duration_ms', durationMs, {
+      operation,
+      success: success.toString(),
+      cache_hit: cacheHit?.toString() || 'n/a'
+    });
+
+    this.recordMetric('image_processing_total', 1, {
+      operation,
+      success: success.toString()
+    });
+
+    if (cacheHit !== undefined) {
+      this.recordMetric('image_cache_operations', 1, {
+        result: cacheHit ? 'hit' : 'miss'
+      });
+    }
+  }
+
+  /**
+   * Get template generation metrics summary
+   */
+  public getTemplateMetrics(): {
+    totalGenerations: number;
+    successRate: number;
+    avgGenerationTime: number;
+    byTemplateType: Record<string, {
+      count: number;
+      avgTime: number;
+      successRate: number;
+    }>;
+  } {
+    const generationMetrics = this.metrics.get('template_generation_total') || [];
+    const timeMetrics = this.metrics.get('template_generation_duration_ms') || [];
+
+    const totalGenerations = generationMetrics.length;
+    const successfulGenerations = generationMetrics.filter(
+      m => m.labels?.success === 'true'
+    ).length;
+    const successRate = totalGenerations > 0 ? successfulGenerations / totalGenerations : 0;
+
+    const totalTime = timeMetrics.reduce((sum, m) => sum + m.value, 0);
+    const avgGenerationTime = timeMetrics.length > 0 ? totalTime / timeMetrics.length : 0;
+
+    // Group by template type
+    const byTemplateType: Record<string, {
+      count: number;
+      avgTime: number;
+      successRate: number;
+    }> = {};
+
+    for (const metric of generationMetrics) {
+      const templateType = metric.labels?.template_type || 'unknown';
+      if (!byTemplateType[templateType]) {
+        byTemplateType[templateType] = {
+          count: 0,
+          avgTime: 0,
+          successRate: 0
+        };
+      }
+      byTemplateType[templateType].count++;
+      if (metric.labels?.success === 'true') {
+        byTemplateType[templateType].successRate++;
+      }
+    }
+
+    for (const metric of timeMetrics) {
+      const templateType = metric.labels?.template_type || 'unknown';
+      if (byTemplateType[templateType]) {
+        byTemplateType[templateType].avgTime += metric.value;
+      }
+    }
+
+    // Calculate averages
+    for (const templateType in byTemplateType) {
+      const data = byTemplateType[templateType];
+      data.avgTime = data.count > 0 ? data.avgTime / data.count : 0;
+      data.successRate = data.count > 0 ? data.successRate / data.count : 0;
+    }
+
+    return {
+      totalGenerations,
+      successRate,
+      avgGenerationTime,
+      byTemplateType
+    };
+  }
+
+  /**
+   * Get image processing metrics summary
+   */
+  public getImageProcessingMetrics(): {
+    totalOperations: number;
+    cacheHitRate: number;
+    avgDownloadTime: number;
+    avgProcessTime: number;
+  } {
+    const processingMetrics = this.metrics.get('image_processing_total') || [];
+    const cacheMetrics = this.metrics.get('image_cache_operations') || [];
+    const timeMetrics = this.metrics.get('image_processing_duration_ms') || [];
+
+    const totalOperations = processingMetrics.length;
+    const cacheHits = cacheMetrics.filter(m => m.labels?.result === 'hit').length;
+    const cacheMisses = cacheMetrics.filter(m => m.labels?.result === 'miss').length;
+    const cacheHitRate = (cacheHits + cacheMisses) > 0 
+      ? cacheHits / (cacheHits + cacheMisses) 
+      : 0;
+
+    const downloadTimes = timeMetrics.filter(m => m.labels?.operation === 'download');
+    const avgDownloadTime = downloadTimes.length > 0
+      ? downloadTimes.reduce((sum, m) => sum + m.value, 0) / downloadTimes.length
+      : 0;
+
+    const processTimes = timeMetrics.filter(m => m.labels?.operation === 'process');
+    const avgProcessTime = processTimes.length > 0
+      ? processTimes.reduce((sum, m) => sum + m.value, 0) / processTimes.length
+      : 0;
+
+    return {
+      totalOperations,
+      cacheHitRate,
+      avgDownloadTime,
+      avgProcessTime
+    };
   }
 }
 

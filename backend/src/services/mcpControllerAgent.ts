@@ -574,7 +574,34 @@ export class MCPControllerAgent {
 
     switch (subIntent) {
       case 'product_search':
-        // Search for products and save context
+        // Check if we have multiple product queries (multi-product request)
+        const productQueries = interpretation.parameters.productQueries;
+
+        if (productQueries && productQueries.length > 1) {
+          // Multi-product search - use parallel search tool
+          console.log('[MCP Agent] Multi-product search detected:', productQueries);
+          return [{
+            id: 'search_multiple_products',
+            type: 'tool_call',
+            description: `Search for ${productQueries.length} products on Amazon`,
+            toolCall: {
+              server: 'shopping',
+              tool: 'search_multiple_products',
+              input: {
+                queries: productQueries,
+                filters: {
+                  primeOnly: true,
+                  minRating: 3.5,
+                  priceMin: interpretation.parameters.priceRange?.min,
+                  priceMax: interpretation.parameters.priceRange?.max
+                },
+                userId: context.userId
+              }
+            }
+          }];
+        }
+
+        // Single product search - use standard tool
         return [{
           id: 'search_products',
           type: 'tool_call',
@@ -583,7 +610,7 @@ export class MCPControllerAgent {
             server: 'shopping',
             tool: 'search_products',
             input: {
-              query: interpretation.parameters.productQuery,
+              query: interpretation.parameters.productQuery || (productQueries && productQueries[0]),
               filters: {
                 primeOnly: true,
                 minRating: 3.5,
@@ -639,58 +666,77 @@ export class MCPControllerAgent {
 
   /**
    * Create workflow for product selection
-   * Retrieves shopping context and creates order
+   * Retrieves shopping context and creates orders for ALL selected products
    */
   private async createProductSelectionWorkflow(context: DecisionContext): Promise<WorkflowStep[]> {
     const { conversationContextRepository } = await import('../repositories/conversationContextRepository');
-    
+
     // Find recent shopping context
     const recentContexts = await conversationContextRepository.findRecentByUser(context.userId, 7);
     const shoppingContext = recentContexts.find(ctx => ctx.contextType === 'shopping');
-    
+
     if (!shoppingContext) {
       console.log('[MCP Agent] No shopping context found for product selection');
       return [];
     }
-    
+
     const contextData = shoppingContext.contextData;
     const selectedMarkers = context.interpretation.parameters.selectedProductIds || [];
-    
+
     console.log('[MCP Agent] Found shopping context:', {
       referenceId: shoppingContext.referenceId,
       selectedMarkers,
-      availableProducts: contextData.searchResults?.length
+      isMultiProductSearch: contextData.isMultiProductSearch,
+      availableProducts: contextData.searchResults?.length || contextData.groupedSearchResults?.length
     });
-    
-    // Map selection markers to ASINs
-    const selectedProducts = selectedMarkers
-      .map(marker => {
-        const product = contextData.searchResults?.find((p: any) => p.selectionMarker === marker);
-        return product ? product.asin : null;
-      })
-      .filter((asin): asin is string => asin !== null);
-    
+
+    // Map selection markers to ASINs - handle both single and multi-product search results
+    let selectedProducts: string[] = [];
+
+    if (contextData.isMultiProductSearch && contextData.groupedSearchResults) {
+      // Multi-product search - look through all grouped results
+      for (const group of contextData.groupedSearchResults) {
+        for (const product of group.products) {
+          if (selectedMarkers.includes(product.selectionMarker)) {
+            selectedProducts.push(product.asin);
+          }
+        }
+      }
+    } else if (contextData.searchResults) {
+      // Single product search - standard lookup
+      selectedProducts = selectedMarkers
+        .map((marker: string) => {
+          const product = contextData.searchResults?.find((p: any) => p.selectionMarker === marker);
+          return product ? product.asin : null;
+        })
+        .filter((asin: string | null): asin is string => asin !== null);
+    }
+
     if (selectedProducts.length === 0) {
       console.log('[MCP Agent] No valid products found for selection markers');
       return [];
     }
-    
-    // Create order for selected product(s)
-    return [{
-      id: 'create_order',
-      type: 'tool_call',
-      description: 'Create order for selected product',
+
+    console.log('[MCP Agent] Creating orders for products:', selectedProducts);
+
+    // Create order workflow steps for ALL selected products
+    const orderSteps: WorkflowStep[] = selectedProducts.map((asin, index) => ({
+      id: `create_order_${index}`,
+      type: 'tool_call' as const,
+      description: `Create order for selected product ${index + 1}`,
       toolCall: {
         server: 'shopping',
         tool: 'create_order',
         input: {
           userId: context.userId,
-          productAsin: selectedProducts[0], // For now, handle single product
+          productAsin: asin,
           quantity: context.interpretation.parameters.quantity || 1,
           referenceId: shoppingContext.referenceId
         }
       }
-    }];
+    }));
+
+    return orderSteps;
   }
 
   /**

@@ -1,13 +1,13 @@
 /**
  * Product Cache Service Unit Tests
- * 
- * Tests the caching service independently of PA-API
+ *
+ * Tests the caching service independently of scraping service
  */
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { productCacheService } from '../../services/productCacheService';
 import { redis } from '../../queue/connection';
-import type { PAAPIProduct, ProductDetails } from '../../services/productSearchService';
+import type { ScrapedProduct, ProductDetails } from '../../services/productSearchService';
 
 describe('Product Cache Service', () => {
   beforeEach(async () => {
@@ -31,7 +31,7 @@ describe('Product Cache Service', () => {
     }
   });
 
-  const mockProduct: PAAPIProduct = {
+  const mockProduct: ScrapedProduct = {
     asin: 'TEST123',
     title: 'Test Product',
     price: { amount: 1000, currency: 'JPY', displayAmount: '¥1,000' },

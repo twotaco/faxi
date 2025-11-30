@@ -68,6 +68,7 @@ export interface EmailReplyData {
   threadId?: string;
   hasQuickReplies?: boolean;
   quickReplies?: string[];
+  attachmentCount?: number;
 }
 
 export interface ProductSelectionData {

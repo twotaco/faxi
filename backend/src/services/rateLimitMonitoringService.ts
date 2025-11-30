@@ -1,12 +1,12 @@
 /**
  * Rate Limit Monitoring Service
- * 
+ *
  * Monitors rate limit metrics and sends alerts when thresholds are exceeded.
- * Tracks PA-API rate limiting and admin dashboard rate limiting.
+ * Tracks scraping rate limiting and admin dashboard rate limiting.
  */
 
 import { loggingService } from './loggingService';
-import { paApiRateLimiter } from '../middleware/rateLimiter';
+import { scrapingRateLimitService } from './scrapingRateLimitService';
 import { redis } from '../queue/connection';
 
 interface RateLimitAlert {
@@ -19,7 +19,7 @@ interface RateLimitAlert {
 }
 
 interface RateLimitThresholds {
-  paApiQueuedPercentage: number; // Alert if > X% of requests are queued
+  scrapingUsagePercentage: number; // Alert if > X% of hourly limit is used
   adminDashboardRejectedPerMinute: number; // Alert if > X requests rejected per minute
 }
 
@@ -30,7 +30,7 @@ class RateLimitMonitoringService {
   private lastAlerts: Map<string, number> = new Map();
 
   private thresholds: RateLimitThresholds = {
-    paApiQueuedPercentage: 50, // Alert if more than 50% of requests are queued
+    scrapingUsagePercentage: 80, // Alert if more than 80% of hourly limit is used
     adminDashboardRejectedPerMinute: 10 // Alert if more than 10 requests rejected per minute
   };
 
@@ -71,8 +71,8 @@ class RateLimitMonitoringService {
    */
   private async checkRateLimits(): Promise<void> {
     try {
-      // Check PA-API rate limits
-      await this.checkPAAPIRateLimits();
+      // Check scraping rate limits
+      await this.checkScrapingRateLimits();
 
       // Check admin dashboard rate limits
       await this.checkAdminDashboardRateLimits();
@@ -82,53 +82,40 @@ class RateLimitMonitoringService {
   }
 
   /**
-   * Check PA-API rate limits
+   * Check scraping rate limits
    */
-  private async checkPAAPIRateLimits(): Promise<void> {
+  private async checkScrapingRateLimits(): Promise<void> {
     try {
-      const metrics = await paApiRateLimiter.getMetrics();
-      const totalRequests = metrics.allowed + metrics.queued + metrics.rejected;
+      const status = await scrapingRateLimitService.getStatus();
 
-      if (totalRequests === 0) {
-        return; // No requests to analyze
+      if (status.maxSearchesPerHour === 0) {
+        return; // No limit configured
       }
 
-      // Calculate queued percentage
-      const queuedPercentage = (metrics.queued / totalRequests) * 100;
+      // Calculate usage percentage
+      const usagePercentage = (status.searchesInLastHour / status.maxSearchesPerHour) * 100;
 
-      // Check if queued percentage exceeds threshold
-      if (queuedPercentage > this.thresholds.paApiQueuedPercentage) {
+      // Check if usage percentage exceeds threshold
+      if (usagePercentage > this.thresholds.scrapingUsagePercentage) {
         await this.sendAlert({
-          service: 'PA-API',
-          metric: 'queued_percentage',
-          threshold: this.thresholds.paApiQueuedPercentage,
-          currentValue: queuedPercentage,
+          service: 'Scraping',
+          metric: 'usage_percentage',
+          threshold: this.thresholds.scrapingUsagePercentage,
+          currentValue: usagePercentage,
           timestamp: new Date(),
-          severity: queuedPercentage > 75 ? 'critical' : 'warning'
-        });
-      }
-
-      // Check if rejected requests are present (should be 0 for PA-API)
-      if (metrics.rejected > 0) {
-        await this.sendAlert({
-          service: 'PA-API',
-          metric: 'rejected_requests',
-          threshold: 0,
-          currentValue: metrics.rejected,
-          timestamp: new Date(),
-          severity: 'warning'
+          severity: usagePercentage > 95 ? 'critical' : 'warning'
         });
       }
 
       // Log metrics for monitoring
-      loggingService.info('PA-API rate limit metrics', {
-        allowed: metrics.allowed,
-        queued: metrics.queued,
-        rejected: metrics.rejected,
-        queuedPercentage: queuedPercentage.toFixed(2)
+      loggingService.info('Scraping rate limit metrics', {
+        searchesInLastHour: status.searchesInLastHour,
+        maxSearchesPerHour: status.maxSearchesPerHour,
+        usagePercentage: usagePercentage.toFixed(2),
+        allowed: status.allowed
       });
     } catch (error) {
-      loggingService.error('Failed to check PA-API rate limits', error as Error);
+      loggingService.error('Failed to check scraping rate limits', error as Error);
     }
   }
 
@@ -278,9 +265,10 @@ class RateLimitMonitoringService {
    * Get comprehensive rate limit status
    */
   async getStatus(): Promise<{
-    paApi: {
-      metrics: { allowed: number; queued: number; rejected: number };
-      queuedPercentage: number;
+    scraping: {
+      searchesInLastHour: number;
+      maxSearchesPerHour: number;
+      usagePercentage: number;
       status: 'healthy' | 'warning' | 'critical';
     };
     adminDashboard: {
@@ -289,13 +277,14 @@ class RateLimitMonitoringService {
     };
     recentAlerts: RateLimitAlert[];
   }> {
-    const paApiMetrics = await paApiRateLimiter.getMetrics();
-    const totalRequests = paApiMetrics.allowed + paApiMetrics.queued + paApiMetrics.rejected;
-    const queuedPercentage = totalRequests > 0 ? (paApiMetrics.queued / totalRequests) * 100 : 0;
+    const scrapingStatus = await scrapingRateLimitService.getStatus();
+    const usagePercentage = scrapingStatus.maxSearchesPerHour > 0
+      ? (scrapingStatus.searchesInLastHour / scrapingStatus.maxSearchesPerHour) * 100
+      : 0;
 
-    const paApiStatus = 
-      queuedPercentage > 75 ? 'critical' :
-      queuedPercentage > this.thresholds.paApiQueuedPercentage ? 'warning' :
+    const scrapingHealthStatus =
+      usagePercentage > 95 ? 'critical' :
+      usagePercentage > this.thresholds.scrapingUsagePercentage ? 'warning' :
       'healthy';
 
     // Get admin dashboard active users
@@ -305,10 +294,11 @@ class RateLimitMonitoringService {
     const recentAlerts = await this.getRecentAlerts(10);
 
     return {
-      paApi: {
-        metrics: paApiMetrics,
-        queuedPercentage,
-        status: paApiStatus
+      scraping: {
+        searchesInLastHour: scrapingStatus.searchesInLastHour,
+        maxSearchesPerHour: scrapingStatus.maxSearchesPerHour,
+        usagePercentage,
+        status: scrapingHealthStatus
       },
       adminDashboard: {
         activeUsers: adminKeys.length,

@@ -25,8 +25,8 @@ export interface SearchFilters {
   maxResults?: number;  // Maximum products to scrape (default: 10, max: 20)
 }
 
-// Re-export ScrapedProduct as PAAPIProduct for backward compatibility
-export type PAAPIProduct = ScrapedProduct;
+// Re-export ScrapedProduct for use by other modules
+export type { ScrapedProduct };
 
 export interface ProductDetails extends ScrapedProduct {
   features?: string[];
@@ -96,7 +96,7 @@ class ProductSearchService {
     query: string,
     filters: SearchFilters = {},
     userId?: string
-  ): Promise<PAAPIProduct[]> {
+  ): Promise<ScrapedProduct[]> {
     const startTime = Date.now();
     let cacheHit = false;
     let category: string | undefined;
@@ -273,14 +273,118 @@ class ProductSearchService {
   }
 
   /**
+   * Search for multiple products in parallel
+   * Used for multi-product fax requests like "shampoo and crackers"
+   *
+   * @param queries Array of product search queries (max 5)
+   * @param filters Common filters to apply to all searches
+   * @param userId User ID for audit logging
+   * @returns Map of query → products
+   */
+  async searchMultipleProducts(
+    queries: string[],
+    filters: SearchFilters = {},
+    userId?: string
+  ): Promise<Map<string, ScrapedProduct[]>> {
+    const startTime = Date.now();
+    const results = new Map<string, ScrapedProduct[]>();
+
+    // Limit to 5 queries
+    const limitedQueries = queries.slice(0, 5);
+
+    if (limitedQueries.length === 0) {
+      return results;
+    }
+
+    loggingService.info('Starting multi-product search', {
+      queryCount: limitedQueries.length,
+      queries: limitedQueries
+    });
+
+    try {
+      // For single query, use the standard search
+      if (limitedQueries.length === 1) {
+        const products = await this.searchProducts(limitedQueries[0], filters, userId);
+        results.set(limitedQueries[0], products);
+        return results;
+      }
+
+      // Use parallel scraping for multiple queries
+      const scrapedResults = await playwrightScrapingService.scrapeMultipleSearches(
+        limitedQueries,
+        {
+          ...filters,
+          maxResults: filters.maxResults || 5 // Fewer products per query for multi-search
+        }
+      );
+
+      // Apply rating filter and cache results for each query
+      for (const query of limitedQueries) {
+        let products = scrapedResults.get(query) || [];
+
+        // Apply rating filter if specified
+        if (filters.minRating !== undefined && products.length > 0) {
+          const ratingFiltered = products.filter(
+            p => p.rating !== undefined && p.rating >= filters.minRating!
+          );
+          if (ratingFiltered.length > 0) {
+            products = ratingFiltered;
+          }
+        }
+
+        // Cache each query's results with category extraction
+        const extraction = await categoryExtractorService.extractCategory(query);
+        if (extraction.category) {
+          await productCacheService.cacheSearchResults(
+            query,
+            filters,
+            products,
+            extraction.category
+          );
+        }
+
+        // Store filtered results (limit to 3 per query for multi-search)
+        results.set(query, products.slice(0, 3));
+      }
+
+      const duration = Date.now() - startTime;
+      const totalProducts = Array.from(results.values()).reduce((sum, p) => sum + p.length, 0);
+
+      loggingService.info('Multi-product search completed', {
+        queryCount: limitedQueries.length,
+        totalProducts,
+        durationMs: duration
+      });
+
+      // Audit log
+      if (userId) {
+        await auditLogService.logProductSearch({
+          userId,
+          query: limitedQueries.join(', '),
+          filters,
+          resultCount: totalProducts
+        });
+      }
+
+      return results;
+
+    } catch (error: any) {
+      loggingService.error('Multi-product search failed', error as Error, undefined, {
+        queries: limitedQueries
+      });
+      throw new Error(`Multi-product search failed: ${error.message}`);
+    }
+  }
+
+  /**
    * Filter products by user requirements (quantity, brand, special needs)
    *
    * Uses string matching to find products that match the specified requirements
    */
   private filterByRequirements(
-    products: PAAPIProduct[],
+    products: ScrapedProduct[],
     requirements: CategoryRequirements
-  ): PAAPIProduct[] {
+  ): ScrapedProduct[] {
     if (!requirements || Object.keys(requirements).length === 0) {
       return products;
     }
@@ -392,7 +496,7 @@ class ProductSearchService {
    * - Selection markers (A-E)
    */
   async curateProducts(
-    products: PAAPIProduct[],
+    products: ScrapedProduct[],
     userQuery: string,
     userPreferences?: UserPreferences
   ): Promise<CuratedProduct[]> {
@@ -450,7 +554,7 @@ class ProductSearchService {
   /**
    * Apply quality filters: Prime-eligible and 3.5+ stars
    */
-  private applyQualityFilters(products: PAAPIProduct[]): PAAPIProduct[] {
+  private applyQualityFilters(products: ScrapedProduct[]): ScrapedProduct[] {
     return products.filter(product => {
       // Must be Prime-eligible
       if (!product.primeEligible) {
@@ -476,7 +580,7 @@ class ProductSearchService {
    * 
    * Products sold by Amazon.co.jp appear first in the list
    */
-  private prioritizeAmazonSellers(products: PAAPIProduct[]): PAAPIProduct[] {
+  private prioritizeAmazonSellers(products: ScrapedProduct[]): ScrapedProduct[] {
     // Sort products: Amazon.co.jp sellers first, then by rating
     return products.sort((a, b) => {
       const aIsAmazon = this.isAmazonSeller(a);
@@ -499,7 +603,7 @@ class ProductSearchService {
   /**
    * Check if product is sold by Amazon.co.jp
    */
-  private isAmazonSeller(product: PAAPIProduct): boolean {
+  private isAmazonSeller(product: ScrapedProduct): boolean {
     // Check seller field from scraped data
     return product.seller === 'Amazon.co.jp' || 
            product.seller.includes('Amazon') ||
@@ -514,9 +618,9 @@ class ProductSearchService {
    * Returns 3-5 products
    */
   private selectDiversePriceRange(
-    products: PAAPIProduct[],
+    products: ScrapedProduct[],
     userPreferences?: UserPreferences
-  ): PAAPIProduct[] {
+  ): ScrapedProduct[] {
     if (products.length === 0) {
       return [];
     }
@@ -544,7 +648,7 @@ class ProductSearchService {
     };
 
     // Select products ensuring diversity
-    const selected: PAAPIProduct[] = [];
+    const selected: ScrapedProduct[] = [];
     const targetCount = Math.min(5, products.length);
 
     // Strategy: Pick best from each category, then fill remaining slots
@@ -604,7 +708,7 @@ class ProductSearchService {
   /**
    * Get delivery estimate based on product data
    */
-  private getDeliveryEstimate(product: PAAPIProduct): string {
+  private getDeliveryEstimate(product: ScrapedProduct): string {
     // Use scraped delivery estimate if available
     if (product.deliveryEstimate) {
       return product.deliveryEstimate;
@@ -622,7 +726,7 @@ class ProductSearchService {
    * Generate reasoning for why this product was selected
    */
   private generateReasoning(
-    product: PAAPIProduct,
+    product: ScrapedProduct,
     index: number,
     totalCount: number
   ): string {

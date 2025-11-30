@@ -191,7 +191,149 @@ export class PlaywrightScrapingService {
       }
     }
   }
-  
+
+  /**
+   * Scrape multiple search queries in parallel using page pooling
+   * This is more efficient than sequential searches for multi-product requests
+   * @param queries Array of product search queries (max 5)
+   * @param filters Common filters to apply to all searches
+   * @returns Map of query → scraped products
+   */
+  async scrapeMultipleSearches(
+    queries: string[],
+    filters: SearchFilters = {}
+  ): Promise<Map<string, ScrapedProduct[]>> {
+    const startTime = Date.now();
+    const results = new Map<string, ScrapedProduct[]>();
+
+    // Limit to 5 queries max for safety
+    const limitedQueries = queries.slice(0, 5);
+
+    if (limitedQueries.length === 0) {
+      return results;
+    }
+
+    // For single query, just use the regular method
+    if (limitedQueries.length === 1) {
+      const products = await this.scrapeSearchResults(limitedQueries[0], filters);
+      results.set(limitedQueries[0], products);
+      return results;
+    }
+
+    this.logger.info('Starting parallel product searches', {
+      queryCount: limitedQueries.length,
+      queries: limitedQueries
+    });
+
+    // Wait for rate limit (single check for entire batch)
+    await scrapingRateLimitService.waitForRateLimit();
+
+    // Record this as a batch search
+    await scrapingRateLimitService.recordSearch();
+
+    // Create page pool - one page per query
+    const pages: Page[] = [];
+    try {
+      // Create all pages in parallel
+      const pagePromises = limitedQueries.map(() => this.createPage());
+      const createdPages = await Promise.all(pagePromises);
+      pages.push(...createdPages);
+
+      // Execute all searches in parallel
+      const searchPromises = limitedQueries.map(async (query, index) => {
+        const page = pages[index];
+        try {
+          const products = await this.scrapeWithPage(page, query, filters);
+          return { query, products, success: true };
+        } catch (error) {
+          this.logger.warn('Parallel search failed for query', { query, error: String(error) });
+          return { query, products: [], success: false };
+        }
+      });
+
+      const searchResults = await Promise.all(searchPromises);
+
+      // Build results map
+      for (const result of searchResults) {
+        results.set(result.query, result.products);
+      }
+
+      const duration = Date.now() - startTime;
+      const totalProducts = Array.from(results.values()).reduce((sum, p) => sum + p.length, 0);
+
+      // Record batch metric
+      await this.recordMetric('batch_search', true, duration, {
+        queryCount: limitedQueries.length,
+        totalProducts,
+        queries: limitedQueries
+      });
+
+      this.logger.info('Parallel searches completed', {
+        queryCount: limitedQueries.length,
+        totalProducts,
+        durationMs: duration
+      });
+
+      return results;
+
+    } catch (error) {
+      const duration = Date.now() - startTime;
+      await this.recordMetric('batch_search', false, duration, {
+        queryCount: limitedQueries.length,
+        error: String(error)
+      });
+
+      this.logger.error('Parallel searches failed', error as Error);
+      throw error;
+
+    } finally {
+      // Close all pages in the pool
+      await Promise.all(pages.map(page => page.close().catch(() => {})));
+    }
+  }
+
+  /**
+   * Execute a search on a pre-created page (used for parallel searches)
+   */
+  private async scrapeWithPage(
+    page: Page,
+    query: string,
+    filters: SearchFilters
+  ): Promise<ScrapedProduct[]> {
+    const searchUrl = this.buildSearchUrl(query, filters);
+
+    // Navigate to search results
+    await page.goto(searchUrl, { waitUntil: 'domcontentloaded', timeout: 30000 });
+
+    // Random delay to appear human
+    await this.randomDelay();
+
+    // Wait for product cards to load
+    await page.waitForSelector(AMAZON_SELECTORS.productCard, { timeout: 10000 });
+
+    // Get all product cards
+    const productCards = await page.$$(AMAZON_SELECTORS.productCard);
+
+    this.logger.info('Found product cards for query', { query, count: productCards.length });
+
+    // Parse products (limited to 5 per query for multi-search to save space on fax)
+    const products: ScrapedProduct[] = [];
+    const maxProducts = Math.min(productCards.length, filters.maxResults || 5);
+
+    for (let i = 0; i < maxProducts; i++) {
+      try {
+        const product = await this.parseProductCard(productCards[i], page);
+        if (product) {
+          products.push(product);
+        }
+      } catch (error) {
+        this.logger.warn('Failed to parse product card in parallel search', { query, index: i, error });
+      }
+    }
+
+    return products;
+  }
+
   /**
    * Parse a single product card element using Gemini LLM for robust extraction
    */

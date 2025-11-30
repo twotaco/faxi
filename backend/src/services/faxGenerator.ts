@@ -1,4 +1,4 @@
-import { createCanvas, Canvas, CanvasRenderingContext2D, registerFont } from 'canvas';
+import { createCanvas, Canvas, CanvasRenderingContext2D, registerFont, loadImage } from 'canvas';
 import JsBarcode from 'jsbarcode';
 import sharp from 'sharp';
 import PDFDocument from 'pdfkit';
@@ -10,6 +10,8 @@ import {
   BarcodeData,
   CircleOption
 } from '../types/fax.js';
+import { ImageProcessingService } from './imageProcessingService.js';
+import { redis } from '../queue/connection.js';
 
 /**
  * Fax Document Generator
@@ -75,28 +77,44 @@ export class FaxGenerator {
 
     // Convert PNG pages to PDF using pdfkit
     return new Promise<Buffer>((resolve, reject) => {
-      const doc = new PDFDocument({
-        size: [opts.width * 72 / opts.dpi, opts.height * 72 / opts.dpi], // Convert pixels to points
-        margins: { top: 0, bottom: 0, left: 0, right: 0 }
-      });
-
-      const chunks: Buffer[] = [];
-      doc.on('data', (chunk) => chunks.push(chunk));
-      doc.on('end', () => resolve(Buffer.concat(chunks)));
-      doc.on('error', reject);
-
-      // Add each page as an image
-      pageBuffers.forEach((buffer, index) => {
-        if (index > 0) {
-          doc.addPage();
-        }
-        doc.image(buffer, 0, 0, {
-          width: opts.width * 72 / opts.dpi,
-          height: opts.height * 72 / opts.dpi
+      try {
+        const doc = new PDFDocument({
+          size: [opts.width * 72 / opts.dpi, opts.height * 72 / opts.dpi], // Convert pixels to points
+          margins: { top: 0, bottom: 0, left: 0, right: 0 }
         });
-      });
 
-      doc.end();
+        const chunks: Buffer[] = [];
+        doc.on('data', (chunk) => chunks.push(chunk));
+        doc.on('end', () => resolve(Buffer.concat(chunks)));
+        doc.on('error', (error) => {
+          const { TemplateErrorHandler } = require('./templateErrorHandler.js');
+          TemplateErrorHandler.handlePDFGenerationError(error, {
+            pageCount: pageBuffers.length,
+            templateType: template.type
+          });
+          reject(error);
+        });
+
+        // Add each page as an image
+        pageBuffers.forEach((buffer, index) => {
+          if (index > 0) {
+            doc.addPage();
+          }
+          doc.image(buffer, 0, 0, {
+            width: opts.width * 72 / opts.dpi,
+            height: opts.height * 72 / opts.dpi
+          });
+        });
+
+        doc.end();
+      } catch (error: any) {
+        const { TemplateErrorHandler } = require('./templateErrorHandler.js');
+        TemplateErrorHandler.handlePDFGenerationError(error, {
+          pageCount: pageBuffers.length,
+          templateType: template.type
+        });
+        reject(error);
+      }
     });
   }
 
@@ -135,6 +153,15 @@ export class FaxGenerator {
 
       case 'barcode':
         y = await this.renderBarcode(ctx, content, y, contentWidth, margins, options);
+        break;
+
+      case 'image':
+        try {
+          y = await this.renderImage(ctx, content, y, contentWidth, margins, options);
+        } catch (error: any) {
+          console.error('Error rendering image content:', error);
+          // Continue with next content block
+        }
         break;
 
       case 'blank_space':
@@ -325,18 +352,169 @@ export class FaxGenerator {
       ctx.drawImage(barcodeCanvas, x, y);
 
       return y + barcodeHeight;
-    } catch (error) {
-      console.error('Error generating barcode:', error);
+    } catch (error: any) {
+      // Handle barcode generation errors with structured logging
+      const { TemplateErrorHandler } = require('./templateErrorHandler.js');
+      TemplateErrorHandler.handleBarcodeGenerationError(
+        error,
+        barcodeData.data,
+        {
+          contentType: 'barcode',
+          barcodeFormat: barcodeData.format,
+          barcodeWidth: barcodeWidth,
+          barcodeHeight: barcodeHeight
+        }
+      );
+      
       // Fallback: render barcode data as text
+      const fallbackText = TemplateErrorHandler.getBarcodeFallbackText(barcodeData.data);
       ctx.font = `normal ${options.defaultFontSize}px monospace`;
       ctx.textAlign = 'center';
       ctx.fillText(
-        barcodeData.data,
+        fallbackText,
         margins.left + contentWidth / 2,
         y + barcodeHeight / 2
       );
       return y + barcodeHeight;
     }
+  }
+
+  /**
+   * Render image content with enhanced error handling
+   */
+  private static async renderImage(
+    ctx: CanvasRenderingContext2D,
+    content: FaxContent,
+    y: number,
+    contentWidth: number,
+    margins: FaxGenerationOptions['margins'],
+    options: FaxGenerationOptions
+  ): Promise<number> {
+    if (!content.imageData) return y;
+
+    const { imageData } = content;
+    const { TemplateErrorHandler } = await import('./templateErrorHandler.js');
+
+    try {
+      let imageBuffer: Buffer;
+
+      if (imageData.buffer) {
+        // Use pre-loaded buffer
+        imageBuffer = imageData.buffer;
+      } else if (imageData.url) {
+        // Download and process image using ImageProcessingService
+        const redisClient = redis.getClient();
+        const imageService = new ImageProcessingService(redisClient);
+        
+        try {
+          imageBuffer = await imageService.processAndCacheImage(imageData.url, {
+            maxWidth: imageData.width,
+            maxHeight: imageData.height,
+            targetDPI: options.dpi,
+            format: 'png',
+            grayscale: true,
+          });
+        } catch (imageError: any) {
+          // Handle image processing errors with structured logging
+          TemplateErrorHandler.handleImageDownloadError(
+            imageError,
+            imageData.url,
+            {
+              contentType: 'image',
+              imageWidth: imageData.width,
+              imageHeight: imageData.height
+            }
+          );
+          
+          // Apply fallback
+          return this.renderImageFallback(ctx, imageData, y, margins, options);
+        }
+      } else {
+        throw new Error('No image source provided (neither buffer nor URL)');
+      }
+
+      // Load image into canvas
+      const image = await loadImage(imageBuffer);
+
+      // Calculate position based on alignment
+      let x = margins.left;
+      if (imageData.alignment === 'center') {
+        x = margins.left + (contentWidth - imageData.width) / 2;
+      } else if (imageData.alignment === 'right') {
+        x = margins.left + contentWidth - imageData.width;
+      }
+
+      // Draw image
+      ctx.drawImage(image, x, y, imageData.width, imageData.height);
+
+      let currentY = y + imageData.height;
+
+      // Add caption if provided
+      if (imageData.caption) {
+        currentY += 10; // Small gap
+        ctx.font = `normal ${options.defaultFontSize * 0.8}px Arial`;
+        
+        // Set text alignment for caption
+        if (imageData.alignment === 'center') {
+          ctx.textAlign = 'center';
+          ctx.fillText(imageData.caption, margins.left + contentWidth / 2, currentY);
+        } else if (imageData.alignment === 'right') {
+          ctx.textAlign = 'right';
+          ctx.fillText(imageData.caption, margins.left + contentWidth, currentY);
+        } else {
+          ctx.textAlign = 'left';
+          ctx.fillText(imageData.caption, x, currentY);
+        }
+        
+        currentY += options.defaultFontSize * 0.8;
+      }
+
+      return currentY;
+    } catch (error: any) {
+      // Handle general rendering errors with structured logging
+      const { TemplateErrorHandler } = await import('./templateErrorHandler.js');
+      TemplateErrorHandler.handleImageProcessingError(
+        error,
+        imageData.url,
+        {
+          contentType: 'image',
+          imageWidth: imageData.width,
+          imageHeight: imageData.height,
+          hasBuffer: !!imageData.buffer,
+          hasUrl: !!imageData.url
+        }
+      );
+
+      // Apply fallback
+      return this.renderImageFallback(ctx, imageData, y, margins, options);
+    }
+  }
+
+  /**
+   * Render fallback for failed images
+   */
+  private static renderImageFallback(
+    ctx: CanvasRenderingContext2D,
+    imageData: any,
+    y: number,
+    margins: FaxGenerationOptions['margins'],
+    options: FaxGenerationOptions
+  ): number {
+    const { TemplateErrorHandler } = require('./templateErrorHandler.js');
+    
+    // Use provided fallback text or generate one
+    const fallbackText = imageData.fallbackText || 
+                        TemplateErrorHandler.getImageFallbackText(imageData.url);
+    
+    if (fallbackText) {
+      ctx.font = `normal ${options.defaultFontSize}px Arial`;
+      ctx.textAlign = 'left';
+      ctx.fillText(fallbackText, margins.left, y);
+      return y + options.defaultFontSize * 1.2;
+    }
+
+    // Skip image entirely if no fallback
+    return y;
   }
 
   /**

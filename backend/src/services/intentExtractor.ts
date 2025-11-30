@@ -181,6 +181,32 @@ export class IntentExtractor {
   }
 
   /**
+   * Extract multiple products from text by splitting on conjunctions
+   * E.g., "shampoo and vegetable crackers" → ["shampoo", "vegetable crackers"]
+   * E.g., "buy coffee, tea, sugar" → ["coffee", "tea", "sugar"]
+   * @returns Array of product queries (max 5)
+   */
+  private extractMultipleProducts(text: string): string[] {
+    // Remove common shopping prefixes to isolate product list
+    let productText = text
+      .replace(/^(?:buy|purchase|order|need|want|get me|find|looking for|search for|i need|i want)\s+(?:to\s+buy\s+)?(?:some\s+)?(?:a\s+)?/i, '')
+      .replace(/\s+(?:for me|please|asap|urgently|under|below|less than).*$/i, '')
+      .trim();
+
+    // Split on conjunctions: "and", ",", "、", "と", "&"
+    // Be careful with "and" - don't split "bread and butter" (common phrases)
+    const splitPattern = /\s+and\s+|\s*,\s*|\s*、\s*|\s*と\s*|\s*&\s*/i;
+
+    const products = productText
+      .split(splitPattern)
+      .map(p => p.trim())
+      .filter(p => p.length > 1) // Filter out empty or single-char entries
+      .slice(0, 5); // Limit to 5 products max
+
+    return products;
+  }
+
+  /**
    * Detect shopping intent
    * Supports: product_search, product_selection, order_status
    */
@@ -253,19 +279,31 @@ export class IntentExtractor {
     const keywordMatches = shoppingKeywords.filter(keyword => text.includes(keyword));
     confidence += keywordMatches.length * 0.1;
 
-    // Extract product information
-    const productPatterns = [
-      /(?:buy|purchase|order|need|want)\s+(?:to\s+buy\s+)?(?:a\s+)?([a-zA-Z0-9\s,.-]+?)(?:\s+under|\s+below|\s+less|\s+between|$)/i,
-      /(?:get me|find|looking for|search for)\s+(?:a\s+)?([a-zA-Z0-9\s,.-]+?)(?:\s+under|\s+below|\s+less|\s+between|$)/i,
-      /(?:i need|i want)\s+(?:a\s+)?([a-zA-Z0-9\s,.-]+?)(?:\s+under|\s+below|\s+less|\s+between|$)/i
+    // Extract product information - supports multiple products
+    const shoppingPhrasePatterns = [
+      /(?:buy|purchase|order|need|want|get me|find|looking for|search for|i need|i want)\s+(?:to\s+buy\s+)?(?:some\s+)?(?:a\s+)?(.+?)(?:\s+under|\s+below|\s+less|\s+between|$)/i
     ];
 
-    for (const pattern of productPatterns) {
+    let rawProductText = '';
+    for (const pattern of shoppingPhrasePatterns) {
       const match = text.match(pattern);
       if (match) {
-        parameters.productQuery = match[1].trim();
-        confidence += 0.4;
+        rawProductText = match[1].trim();
         break;
+      }
+    }
+
+    // Extract multiple products from the raw text
+    if (rawProductText) {
+      const productQueries = this.extractMultipleProducts(rawProductText);
+
+      if (productQueries.length > 0) {
+        parameters.productQueries = productQueries;
+        // Set productQuery for backwards compatibility (first product)
+        parameters.productQuery = productQueries[0];
+
+        // Confidence boost: more for multi-product requests
+        confidence += productQueries.length > 1 ? 0.5 : 0.4;
       }
     }
 
@@ -626,9 +664,16 @@ export class IntentExtractor {
       case 'shopping':
         let shoppingScore = 0;
         const subIntent = parameters.shoppingSubIntent;
-        
+
         if (subIntent === 'product_search') {
-          if (parameters.productQuery) shoppingScore += 0.6;
+          // Check for multi-product queries first, fall back to single
+          if (parameters.productQueries && parameters.productQueries.length > 0) {
+            shoppingScore += 0.6;
+            // Bonus for multiple products properly extracted
+            if (parameters.productQueries.length > 1) shoppingScore += 0.1;
+          } else if (parameters.productQuery) {
+            shoppingScore += 0.6;
+          }
           if (parameters.quantity) shoppingScore += 0.2;
           if (parameters.deliveryPreferences || parameters.priceRange) shoppingScore += 0.2;
         } else if (subIntent === 'product_selection') {

@@ -47,14 +47,26 @@ export class FaxTemplateEngine {
         fontSize: 57, // 20pt header
         bold: true,
         marginBottom: 12
-      },
-      {
-        type: 'text',
-        text: data.body,
-        fontSize: 45, // 16pt body text
-        marginBottom: 16
       }
     ];
+
+    // Add attachment indicator if attachments exist
+    if (data.attachmentCount && data.attachmentCount > 0) {
+      content.push({
+        type: 'text',
+        text: `Attachments: ${data.attachmentCount}`,
+        fontSize: 45, // 16pt body text
+        bold: true,
+        marginBottom: 12
+      });
+    }
+
+    content.push({
+      type: 'text',
+      text: data.body,
+      fontSize: 45, // 16pt body text
+      marginBottom: 16
+    });
 
     // Add quick reply options if email has clear questions
     if (data.hasQuickReplies && data.quickReplies && data.quickReplies.length > 0) {
@@ -507,9 +519,19 @@ export class FaxTemplateEngine {
   }
 
   /**
-   * Create standard header content
+   * Create standard header content with prominent reference ID
    */
-  private static createHeader(): FaxContent {
+  private static createHeader(referenceId?: string): FaxContent {
+    if (referenceId) {
+      // Header with reference ID (for multi-page faxes)
+      return {
+        type: 'header',
+        text: `${this.FAXI_BRANDING}\nRef: ${referenceId}`,
+        fontSize: 34, // 12pt for branding, ref ID will be rendered separately
+        alignment: 'center',
+        marginBottom: 12
+      };
+    }
     return {
       type: 'header',
       text: this.FAXI_BRANDING,
@@ -520,13 +542,14 @@ export class FaxTemplateEngine {
   }
 
   /**
-   * Create standard footer content
+   * Create standard footer content with prominent reference ID
    */
   private static createFooter(referenceId: string): FaxContent {
     return {
       type: 'footer',
       text: `Reply via fax. Ref: ${referenceId} | ${this.SUPPORT_CONTACT}`,
-      fontSize: 34, // 12pt header/footer
+      fontSize: 96, // 34pt minimum for reference ID prominence (96 pixels at 204 DPI ≈ 34pt)
+      bold: true,
       alignment: 'center',
       marginTop: 16
     };

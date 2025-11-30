@@ -9,7 +9,7 @@
 
 import { describe, it, expect } from 'vitest';
 import * as fc from 'fast-check';
-import { productSearchService, PAAPIProduct } from '../../services/productSearchService';
+import { productSearchService, ScrapedProduct } from '../../services/productSearchService';
 
 describe('Property 3: Product Title Truncation', () => {
   /**
@@ -55,7 +55,7 @@ describe('Property 3: Product Title Truncation', () => {
         ),
         fc.string({ minLength: 1, maxLength: 100 }),
       async (products, query) => {
-        const curated = await productSearchService.curateProducts(products as PAAPIProduct[], query);
+        const curated = await productSearchService.curateProducts(products as ScrapedProduct[], query);
         
         // Property: Every curated product title must be 60 characters or fewer
         curated.forEach(product => {
@@ -108,12 +108,12 @@ describe('Property 3: Product Title Truncation', () => {
         ),
         fc.string({ minLength: 1, maxLength: 100 }),
       async (products, query) => {
-        const curated = await productSearchService.curateProducts(products as PAAPIProduct[], query);
+        const curated = await productSearchService.curateProducts(products as ScrapedProduct[], query);
         
         // Property: Short titles should not have "..." appended
         curated.forEach((product) => {
           // Find the original product by ASIN
-          const originalProduct = (products as PAAPIProduct[]).find(p => p.asin === product.asin);
+          const originalProduct = (products as ScrapedProduct[]).find(p => p.asin === product.asin);
           if (originalProduct && originalProduct.title.length <= 60) {
             expect(product.title).toBe(originalProduct.title);
           }
@@ -165,7 +165,7 @@ describe('Property 3: Product Title Truncation', () => {
         ),
         fc.string({ minLength: 1, maxLength: 100 }),
       async (products, query) => {
-        const curated = await productSearchService.curateProducts(products as PAAPIProduct[], query);
+        const curated = await productSearchService.curateProducts(products as ScrapedProduct[], query);
         
         // Property: Long titles should end with "..."
         curated.forEach(product => {
