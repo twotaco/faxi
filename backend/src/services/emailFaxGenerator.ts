@@ -494,7 +494,7 @@ You can try resending by faxing us your message again, or contact us for help.`,
       content.push({
         type: 'footer',
         text: `Reply via fax. Ref: ${refId} | Page ${pageNumber} of ${totalPages} | Support: help@faxi.jp | +81-3-1234-5678`,
-        fontSize: 96, // 34pt minimum for reference ID prominence (96 pixels at 204 DPI ≈ 34pt)
+        fontSize: 45, // Match body text size (45 pixels at 204 DPI ≈ 16pt)
         bold: true,
         alignment: 'center',
         marginTop: 16

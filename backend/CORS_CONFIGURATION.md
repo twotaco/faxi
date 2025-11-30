@@ -10,7 +10,7 @@ The backend API is configured to accept requests from the admin dashboard and ma
 
 In development (`NODE_ENV=development`), the following origins are allowed:
 - `http://localhost:4001` - Admin Dashboard
-- `http://localhost:4002` - Marketing Website
+- `http://localhost:4003` - Marketing Website
 - Any `localhost` origin (for flexibility during development)
 
 ### Production Environment
@@ -52,7 +52,7 @@ Add the marketing site URL to your backend environment:
 **For local development:**
 ```bash
 # backend/.env
-MARKETING_SITE_URL=http://localhost:4002
+MARKETING_SITE_URL=http://localhost:4003
 ```
 
 **For production:**

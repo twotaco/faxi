@@ -257,7 +257,7 @@ NEXT_PUBLIC_API_URL=http://localhost:4000
 
 ```bash
 npm run dev
-# Site runs at http://localhost:4002
+# Site runs at http://localhost:4003
 # API calls go to http://localhost:4000
 ```
 

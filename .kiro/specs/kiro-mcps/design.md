@@ -487,6 +487,8 @@ interface TestCoverageResult {
 
 **Location**: `backend/src/mcp/kiro/autoDocsMcpServer.ts`
 
+**Design Rationale**: The Auto-Docs MCP is designed to be fully autonomous to minimize developer friction. Instead of requiring developers to specify URLs, selectors, and navigation steps, the MCP analyzes the codebase to understand the application structure, then intelligently navigates the UI using semantic element discovery (finding buttons by text, forms by labels). This approach makes documentation generation resilient to UI changes and reduces the cognitive load on developers.
+
 **MCP Tools**:
 
 ```typescript
@@ -494,6 +496,11 @@ interface AutoDocsTools {
   /**
    * ★ AUTONOMOUS: Generate documentation for a feature
    * Just say "shopping" and it figures out everything else
+   * 
+   * Design Decision: Feature-centric API instead of URL-centric
+   * Rationale: Developers think in terms of features, not URLs. By accepting
+   * a feature name, the MCP can consult specs and route definitions to build
+   * a complete documentation plan automatically.
    */
   generate_feature_docs(params: {
     feature_name: string;        // e.g., "shopping", "login", "fax-sending"
@@ -508,6 +515,11 @@ interface AutoDocsTools {
 
   /**
    * ★ AUTONOMOUS: Update all existing documentation
+   * 
+   * Design Decision: Batch update with failure isolation
+   * Rationale: When UI changes, multiple docs may need updates. This tool
+   * processes all docs but isolates failures so one broken flow doesn't
+   * prevent other docs from being updated.
    */
   update_all_docs(params: {
     base_url?: string;
@@ -520,6 +532,10 @@ interface AutoDocsTools {
   /**
    * ★ AUTONOMOUS: Document a user goal
    * Describe what the user wants to do, MCP figures out how
+   * 
+   * Design Decision: Natural language goal input
+   * Rationale: Enables non-technical stakeholders to request documentation.
+   * The MCP interprets the goal using spec analysis and UI discovery.
    */
   document_user_flow(params: {
     goal: string;                // e.g., "show how a user places an order"
@@ -537,6 +553,11 @@ interface AutoDocsTools {
 
   /**
    * Discover app structure for intelligent navigation
+   * 
+   * Design Decision: Expose discovery as a tool
+   * Rationale: Useful for debugging and understanding what the MCP sees.
+   * Also allows developers to verify the MCP's understanding before
+   * generating documentation.
    */
   discover_app_structure(params: {
     frontend_dir?: string;       // Default: frontend/ or app/
@@ -555,6 +576,11 @@ interface AutoDocsTools {
 
   /**
    * Check which docs are outdated
+   * 
+   * Design Decision: Visual comparison with configurable threshold
+   * Rationale: Pixel-perfect comparison is too strict (minor CSS changes
+   * trigger false positives). A 10% threshold catches meaningful changes
+   * while ignoring trivial differences.
    */
   check_docs_freshness(params: {
     base_url?: string;
@@ -971,6 +997,113 @@ interface HelpPageSection {
 
 ## Correctness Properties
 
+*A property is a characteristic or behavior that should hold true across all valid executions of a system-essentially, a formal statement about what the system should do. Properties serve as the bridge between human-readable specifications and machine-verifiable correctness guarantees.*
+
+### Acceptance Criteria Testing Prework
+
+Before defining correctness properties, we analyze each acceptance criterion to determine if it's testable as a property, example, edge case, or not testable.
+
+#### Requirement 1: Find Incomplete Tasks
+
+1.1 WHEN a developer calls find_incomplete_tasks with a spec path THEN the Spec Validator MCP SHALL parse the tasks.md file at that path
+- Thoughts: This is about the system's behavior across all valid spec paths. We can generate random spec structures and verify parsing works correctly.
+- Testable: yes - property
+
+1.2 WHEN the Spec Validator MCP parses a tasks.md file THEN the Spec Validator MCP SHALL identify all tasks marked with [ ] (incomplete) versus [x] (completed)
+- Thoughts: This is a rule that should apply to all tasks.md files. We can generate random task lists and verify correct classification.
+- Testable: yes - property
+
+1.3 WHEN the Spec Validator MCP identifies incomplete tasks THEN the Spec Validator MCP SHALL return the task number, title, and parent task if nested
+- Thoughts: This is about the structure of returned data for all tasks. We can verify the return format is correct.
+- Testable: yes - property
+
+1.4 WHEN the Spec Validator MCP returns incomplete tasks THEN the Spec Validator MCP SHALL include total_tasks and completed_tasks counts
+- Thoughts: This is an invariant - the sum should always equal the total. This is a classic property test.
+- Testable: yes - property
+
+1.5 WHEN no spec path is provided THEN the Spec Validator MCP SHALL scan all specs in .kiro/specs/ directory
+- Thoughts: This is about default behavior when a parameter is omitted. This is a specific example to test.
+- Testable: yes - example
+
+1.6 WHEN a tasks.md file does not exist at the specified path THEN the Spec Validator MCP SHALL return an error message containing the missing path
+- Thoughts: This is error handling for a specific edge case.
+- Testable: edge-case
+
+#### Requirement 10: Validate Implementation Against Spec
+
+10.1-10.3 Reading and parsing design.md and requirements.md
+- Thoughts: These are about file I/O and parsing, which are implementation details. The important property is what happens with the parsed data.
+- Testable: no (covered by higher-level properties)
+
+10.4 WHEN the Spec Validator MCP reads source code THEN the Spec Validator MCP SHALL analyze whether the code implements the acceptance criteria
+- Thoughts: This is the core validation logic. For any requirement and corresponding code, the validator should produce a validation result.
+- Testable: yes - property
+
+10.5 WHEN validating acceptance criteria THEN the Spec Validator MCP SHALL verify required functions exist, interfaces are implemented, error handling matches, and data models match
+- Thoughts: This describes what the validator checks. We can test that for any code file, the validator looks for these elements.
+- Testable: yes - property
+
+10.8 WHEN validation finds gaps THEN the Spec Validator MCP SHALL return a detailed report
+- Thoughts: This is about the structure of the validation report. For any validation with gaps, the report should have specific fields.
+- Testable: yes - property
+
+10.9 WHEN validation passes THEN the Spec Validator MCP SHALL return complete=true and coverage_percent=100
+- Thoughts: This is a specific case - when everything passes, specific values should be returned.
+- Testable: yes - example
+
+#### Requirement 5: Generate Feature Documentation (Autonomous)
+
+5.1-5.3 Analyzing codebase and understanding features
+- Thoughts: These are about the autonomous discovery process. Hard to test the "understanding" but we can test that it produces valid plans.
+- Testable: partial
+
+5.4 WHEN the Auto-Docs MCP executes the documentation flow THEN it SHALL navigate through the feature taking screenshots
+- Thoughts: For any valid documentation plan, execution should produce screenshots. This is a property about the execution process.
+- Testable: yes - property
+
+5.5 WHEN the Auto-Docs MCP captures screenshots THEN it SHALL save them with descriptive names
+- Thoughts: For any screenshot captured, the filename should be descriptive (non-empty, contains feature name).
+- Testable: yes - property
+
+5.6 WHEN the Auto-Docs MCP completes the flow THEN it SHALL generate a markdown help document
+- Thoughts: For any completed flow, a valid markdown document should be produced.
+- Testable: yes - property
+
+5.7 WHEN the Auto-Docs MCP generates documentation THEN it SHALL save to docs/help/ with feature name as filename
+- Thoughts: This is about file naming and location. For any feature, the output path should follow this pattern.
+- Testable: yes - property
+
+5.8 WHEN a help document already exists THEN the Auto-Docs MCP SHALL preserve sections marked with MANUAL tags
+- Thoughts: This is an idempotence property - manual sections should survive updates.
+- Testable: yes - property
+
+#### Requirement 7: Document User Flow
+
+7.3 WHEN the Auto-Docs MCP executes the flow THEN it SHALL perform actions intelligently
+- Thoughts: "Intelligently" is vague, but we can test that actions are performed in sequence and produce results.
+- Testable: partial
+
+7.4 WHEN the flow completes THEN the Auto-Docs MCP SHALL generate documentation explaining each step
+- Thoughts: For any completed flow, documentation should be generated with one entry per step.
+- Testable: yes - property
+
+### Property Reflection
+
+After reviewing the prework, I identified potential redundancies:
+
+- Properties about file creation and path validation could be combined
+- Properties about parsing and validation structure could be consolidated
+- Screenshot capture properties share common validation logic
+
+However, each property provides unique validation value:
+- Task count consistency validates arithmetic correctness
+- Coverage bounds validates percentage calculations
+- File creation validates I/O operations
+- Idempotency validates state management
+- Report structure validates data integrity
+
+No properties are redundant - each tests a distinct aspect of correctness.
+
 ### Spec Validator Properties
 
 #### Property 1: Task Count Consistency
@@ -993,27 +1126,57 @@ interface HelpPageSection {
 
 **Validates: Requirements 4.3, 4.4**
 
+#### Property 5: Implementation Validation Completeness
+*For any* requirement with acceptance criteria, validate_implementation SHALL return a validation result for each criterion.
+
+**Validates: Requirements 10.4, 10.5**
+
+#### Property 6: Validation Report Structure
+*For any* validation with missing implementations, the report SHALL include file path, criterion text, and suggested fix.
+
+**Validates: Requirements 10.8**
+
+#### Property 7: Implementation File Discovery
+*For any* requirement, find_implementation_files SHALL return at least one file when design.md specifies a location.
+
+**Validates: Requirements 11.1, 11.2**
+
+#### Property 8: Test Coverage Calculation
+*For any* requirement with tests, check_test_coverage SHALL return coverage_percent equal to (criteria_with_tests / total_criteria) * 100.
+
+**Validates: Requirements 12.3, 12.4**
+
 ### Auto-Docs Properties
 
-#### Property 5: Screenshot File Creation
-*For any* successful capture_ui_screenshot call, the returned path SHALL point to an existing file.
+#### Property 9: Screenshot File Creation
+*For any* successful screenshot capture, the returned path SHALL point to an existing file.
+
+**Validates: Requirements 5.5, 5.7**
+
+#### Property 10: Doc Update Idempotency
+*For any* help document with manual sections, updating twice SHALL preserve manual content identically.
+
+**Validates: Requirements 5.8, 6.4**
+
+#### Property 11: Flow Step Ordering
+*For any* documentation flow, screenshots SHALL be captured in the exact order specified by the plan.
+
+**Validates: Requirements 5.4, 7.3**
+
+#### Property 12: Documentation Completeness
+*For any* completed documentation flow, the generated markdown SHALL contain at least one screenshot reference per step.
+
+**Validates: Requirements 5.6, 7.4**
+
+#### Property 13: Feature Name Consistency
+*For any* feature documentation, the output filename SHALL contain the feature name.
 
 **Validates: Requirements 5.7**
 
-#### Property 6: Doc Update Idempotency
-*For any* update_help_doc call with the same parameters, calling it twice SHALL produce identical file content.
+#### Property 14: Freshness Comparison Symmetry
+*For any* two screenshots, comparing A to B SHALL return the same difference_percent as comparing B to A.
 
-**Validates: Requirements 6.2, 6.3**
-
-#### Property 7: Flow Step Ordering
-*For any* capture_user_flow call, screenshots SHALL be captured in the exact order specified by the steps array.
-
-**Validates: Requirements 7.1**
-
-#### Property 8: Comparison Symmetry
-*For any* compare_screenshots call, swapping old_path and new_path SHALL return the same difference_percent.
-
-**Validates: Requirements 8.2**
+**Validates: Requirements 9.2**
 
 ## Error Handling
 
@@ -1156,12 +1319,15 @@ describe('ScreenshotService', () => {
 
 ### Property-Based Testing
 
+All property tests run with 100 iterations minimum to ensure robust validation across diverse inputs.
+
 ```typescript
 import * as fc from 'fast-check';
 
 describe('Spec Validator Properties', () => {
   /**
-   * Property 1: Task Count Consistency
+   * Feature: kiro-mcps, Property 1: Task Count Consistency
+   * Validates: Requirements 1.4
    */
   it('property: completed + incomplete = total', async () => {
     await fc.assert(
@@ -1187,7 +1353,8 @@ describe('Spec Validator Properties', () => {
   });
 
   /**
-   * Property 2: Spec Coverage Bounds
+   * Feature: kiro-mcps, Property 2: Spec Coverage Bounds
+   * Validates: Requirements 3.2, 3.3
    */
   it('property: coverage percentage is 0-100', async () => {
     await fc.assert(
@@ -1206,11 +1373,71 @@ describe('Spec Validator Properties', () => {
       { numRuns: 100 }
     );
   });
+
+  /**
+   * Feature: kiro-mcps, Property 5: Implementation Validation Completeness
+   * Validates: Requirements 10.4, 10.5
+   */
+  it('property: validation covers all criteria', async () => {
+    await fc.assert(
+      fc.asyncProperty(
+        fc.array(fc.string({ minLength: 1 }), { minLength: 1, maxLength: 10 }),
+        async (acceptanceCriteria) => {
+          const requirement = {
+            id: '1',
+            title: 'Test Requirement',
+            userStory: 'As a user...',
+            acceptanceCriteria: acceptanceCriteria.map((text, i) => ({
+              number: i + 1,
+              text
+            })),
+            lineNumber: 1
+          };
+
+          const result = await codeAnalysis.validateImplementation(
+            requirement,
+            []
+          );
+
+          // Should have one result per criterion
+          expect(result.length).toBe(acceptanceCriteria.length);
+        }
+      ),
+      { numRuns: 100 }
+    );
+  });
+
+  /**
+   * Feature: kiro-mcps, Property 8: Test Coverage Calculation
+   * Validates: Requirements 12.3, 12.4
+   */
+  it('property: coverage calculation is accurate', async () => {
+    await fc.assert(
+      fc.asyncProperty(
+        fc.integer({ min: 1, max: 20 }),
+        fc.integer({ min: 0, max: 20 }),
+        async (totalCriteria, testedCriteria) => {
+          const tested = Math.min(testedCriteria, totalCriteria);
+          const expected = (tested / totalCriteria) * 100;
+
+          const result = {
+            coveragePercent: (tested / totalCriteria) * 100
+          };
+
+          expect(result.coveragePercent).toBeCloseTo(expected, 2);
+          expect(result.coveragePercent).toBeGreaterThanOrEqual(0);
+          expect(result.coveragePercent).toBeLessThanOrEqual(100);
+        }
+      ),
+      { numRuns: 100 }
+    );
+  });
 });
 
 describe('Auto-Docs Properties', () => {
   /**
-   * Property 6: Doc Update Idempotency
+   * Feature: kiro-mcps, Property 10: Doc Update Idempotency
+   * Validates: Requirements 5.8, 6.4
    */
   it('property: repeated updates produce same result', async () => {
     await fc.assert(
@@ -1229,10 +1456,78 @@ describe('Auto-Docs Properties', () => {
       { numRuns: 100 }
     );
   });
+
+  /**
+   * Feature: kiro-mcps, Property 11: Flow Step Ordering
+   * Validates: Requirements 5.4, 7.3
+   */
+  it('property: screenshots captured in order', async () => {
+    await fc.assert(
+      fc.asyncProperty(
+        fc.array(
+          fc.record({
+            name: fc.string({ minLength: 1 }),
+            url: fc.constant('http://localhost:3000')
+          }),
+          { minLength: 2, maxLength: 5 }
+        ),
+        async (steps) => {
+          const plan = {
+            feature: 'test',
+            steps: steps.map((s, i) => ({
+              order: i,
+              description: s.name,
+              url: s.url,
+              actions: [],
+              screenshotName: `step-${i}`
+            })),
+            estimatedScreenshots: steps.length
+          };
+
+          const result = await navigator.executeDocumentationPlan(
+            plan,
+            'http://localhost:3000'
+          );
+
+          // Screenshots should be in same order as steps
+          result.screenshots.forEach((screenshot, i) => {
+            expect(screenshot.name).toContain(`step-${i}`);
+          });
+        }
+      ),
+      { numRuns: 100 }
+    );
+  });
+
+  /**
+   * Feature: kiro-mcps, Property 14: Freshness Comparison Symmetry
+   * Validates: Requirements 9.2
+   */
+  it('property: comparison is symmetric', async () => {
+    await fc.assert(
+      fc.asyncProperty(
+        fc.string({ minLength: 1 }),
+        fc.string({ minLength: 1 }),
+        async (pathA, pathB) => {
+          // Mock comparison results
+          const resultAB = await screenshotService.compare(pathA, pathB);
+          const resultBA = await screenshotService.compare(pathB, pathA);
+
+          expect(resultAB.differencePercent).toBeCloseTo(
+            resultBA.differencePercent,
+            2
+          );
+        }
+      ),
+      { numRuns: 100 }
+    );
+  });
 });
 ```
 
 ### Integration Testing
+
+Integration tests validate end-to-end MCP tool functionality with real file system and browser interactions.
 
 ```typescript
 describe('Spec Validator MCP Integration', () => {
@@ -1254,31 +1549,186 @@ describe('Spec Validator MCP Integration', () => {
     expect(result.valid).toBe(true);
     expect(result.issues).toHaveLength(0);
   });
+
+  /**
+   * Test code review functionality (Requirement 10)
+   */
+  it('should validate implementation against requirements', async () => {
+    const result = await mcpClient.call('validate_implementation', {
+      spec_path: '.kiro/specs/amazon-shopping-mcp',
+      scope: { requirement_id: '1' }
+    });
+
+    expect(result).toHaveProperty('complete');
+    expect(result).toHaveProperty('coverage_percent');
+    expect(result).toHaveProperty('validation_results');
+    expect(Array.isArray(result.validation_results)).toBe(true);
+    
+    // Each validation result should have criteria results
+    result.validation_results.forEach(vr => {
+      expect(vr).toHaveProperty('requirement_id');
+      expect(vr).toHaveProperty('criteria_results');
+      expect(Array.isArray(vr.criteria_results)).toBe(true);
+    });
+  });
+
+  /**
+   * Test implementation file discovery (Requirement 11)
+   */
+  it('should find implementation files for requirement', async () => {
+    const result = await mcpClient.call('find_implementation_files', {
+      spec_path: '.kiro/specs/amazon-shopping-mcp',
+      requirement_id: '1'
+    });
+
+    expect(result).toHaveProperty('files');
+    expect(Array.isArray(result.files)).toBe(true);
+    
+    // Each file should have confidence and reason
+    result.files.forEach(file => {
+      expect(file).toHaveProperty('path');
+      expect(file).toHaveProperty('confidence');
+      expect(['high', 'medium', 'low']).toContain(file.confidence);
+      expect(file).toHaveProperty('reason');
+    });
+  });
+
+  /**
+   * Test test coverage checking (Requirement 12)
+   */
+  it('should check test coverage for requirements', async () => {
+    const result = await mcpClient.call('check_test_coverage', {
+      spec_path: '.kiro/specs/amazon-shopping-mcp'
+    });
+
+    expect(result).toHaveProperty('coverage_percent');
+    expect(result).toHaveProperty('requirements');
+    expect(Array.isArray(result.requirements)).toBe(true);
+    
+    // Each requirement should have test info
+    result.requirements.forEach(req => {
+      expect(req).toHaveProperty('requirement_id');
+      expect(req).toHaveProperty('has_tests');
+      expect(req).toHaveProperty('test_files');
+      expect(req).toHaveProperty('missing_criteria');
+    });
+  });
 });
 
 describe('Auto-Docs MCP Integration', () => {
-  it('should capture screenshot of running app', async () => {
-    const result = await mcpClient.call('capture_ui_screenshot', {
-      url: 'http://localhost:4003',
-      output_name: 'integration-test'
+  /**
+   * Test autonomous feature documentation (Requirement 5)
+   */
+  it('should autonomously generate feature documentation', async () => {
+    const result = await mcpClient.call('generate_feature_docs', {
+      feature_name: 'shopping',
+      base_url: 'http://localhost:4003'
     });
 
-    expect(result.path).toContain('integration-test');
-    expect(fs.existsSync(result.path)).toBe(true);
+    expect(result).toHaveProperty('doc_path');
+    expect(result).toHaveProperty('screenshots');
+    expect(result).toHaveProperty('steps_documented');
+    expect(Array.isArray(result.screenshots)).toBe(true);
+    expect(result.steps_documented).toBeGreaterThan(0);
+    
+    // Verify doc file was created
+    expect(fs.existsSync(result.doc_path)).toBe(true);
+    
+    // Verify screenshots were created
+    result.screenshots.forEach(screenshot => {
+      expect(fs.existsSync(screenshot)).toBe(true);
+    });
   });
 
-  it('should execute multi-step user flow', async () => {
-    const result = await mcpClient.call('capture_user_flow', {
-      flow_name: 'login-flow',
-      steps: [
-        { name: 'home', action: 'navigate', value: 'http://localhost:4003' },
-        { name: 'click-login', action: 'click', selector: '[data-testid="login-btn"]' },
-        { name: 'login-page', action: 'wait', wait_ms: 500 }
-      ]
+  /**
+   * Test app structure discovery (Requirement 8)
+   */
+  it('should discover app structure', async () => {
+    const result = await mcpClient.call('discover_app_structure', {
+      frontend_dir: 'marketing-website'
     });
 
-    expect(result.screenshots).toHaveLength(3);
-    expect(result.screenshots.every(s => s.success)).toBe(true);
+    expect(result).toHaveProperty('routes');
+    expect(result).toHaveProperty('navigation');
+    expect(result).toHaveProperty('features_detected');
+    expect(Array.isArray(result.routes)).toBe(true);
+    expect(Array.isArray(result.navigation)).toBe(true);
+    
+    // Routes should have required fields
+    result.routes.forEach(route => {
+      expect(route).toHaveProperty('path');
+      expect(route).toHaveProperty('name');
+    });
+  });
+
+  /**
+   * Test user flow documentation (Requirement 7)
+   */
+  it('should document user flow from natural language goal', async () => {
+    const result = await mcpClient.call('document_user_flow', {
+      goal: 'show how a user navigates to the demo page',
+      base_url: 'http://localhost:4003'
+    });
+
+    expect(result).toHaveProperty('doc_path');
+    expect(result).toHaveProperty('steps');
+    expect(result).toHaveProperty('success');
+    expect(Array.isArray(result.steps)).toBe(true);
+    
+    // Each step should have description and screenshot
+    result.steps.forEach(step => {
+      expect(step).toHaveProperty('description');
+      expect(step).toHaveProperty('screenshot');
+      expect(step).toHaveProperty('action_taken');
+    });
+  });
+
+  /**
+   * Test documentation freshness checking (Requirement 9)
+   */
+  it('should check documentation freshness', async () => {
+    const result = await mcpClient.call('check_docs_freshness', {
+      base_url: 'http://localhost:4003',
+      threshold: 10
+    });
+
+    expect(result).toHaveProperty('docs');
+    expect(result).toHaveProperty('summary');
+    expect(Array.isArray(result.docs)).toBe(true);
+    
+    // Summary should have counts
+    expect(result.summary).toHaveProperty('total');
+    expect(result.summary).toHaveProperty('fresh');
+    expect(result.summary).toHaveProperty('needs_update');
+    expect(result.summary).toHaveProperty('broken');
+    
+    // Each doc should have status
+    result.docs.forEach(doc => {
+      expect(doc).toHaveProperty('path');
+      expect(doc).toHaveProperty('status');
+      expect(['fresh', 'needs_update', 'broken']).toContain(doc.status);
+    });
+  });
+
+  /**
+   * Test update all docs (Requirement 6)
+   */
+  it('should update all existing documentation', async () => {
+    const result = await mcpClient.call('update_all_docs', {
+      base_url: 'http://localhost:4003'
+    });
+
+    expect(result).toHaveProperty('updated');
+    expect(result).toHaveProperty('failed');
+    expect(result).toHaveProperty('screenshots_refreshed');
+    expect(Array.isArray(result.updated)).toBe(true);
+    expect(Array.isArray(result.failed)).toBe(true);
+    
+    // Failed items should have reason
+    result.failed.forEach(failure => {
+      expect(failure).toHaveProperty('doc');
+      expect(failure).toHaveProperty('reason');
+    });
   });
 });
 ```

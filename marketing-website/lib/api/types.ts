@@ -43,6 +43,7 @@ export interface VisualizationData {
 export interface GeneratedResponse {
   faxContent: string;
   actionTaken: string;
+  responsePdfUrl?: string;
 }
 
 export interface ProcessingResult {

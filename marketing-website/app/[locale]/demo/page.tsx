@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { useDemo } from '@/lib/hooks/useDemo';
 import { FixtureSelection } from '@/components/demo/FixtureSelection';
 import { FileUpload } from '@/components/demo/FileUpload';
@@ -8,6 +9,7 @@ import { CustomFaxCreator } from '@/components/demo/CustomFaxCreator';
 import { ProcessingStatus } from '@/components/demo/ProcessingStatus';
 import { ResultsDisplay } from '@/components/demo/ResultsDisplay';
 import { Button } from '@/components/ui/button';
+import { HelpCircle } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -81,7 +83,15 @@ export default function DemoPage() {
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold mb-4">Interactive Demo</h1>
+          <div className="flex justify-center items-center gap-4 mb-4">
+            <h1 className="text-4xl font-bold">Interactive Demo</h1>
+            <Link href="/demo/help">
+              <Button variant="outline" size="sm" className="gap-2">
+                <HelpCircle className="h-4 w-4" />
+                Help Guide
+              </Button>
+            </Link>
+          </div>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
             Experience how Faxi transforms handwritten faxes into digital actions using AI.
             Try our sample faxes or upload your own.

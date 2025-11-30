@@ -54,12 +54,12 @@ Unlike application MCPs that serve end-users (e.g., Shopping MCP for fax orders)
 
 ##### Acceptance Criteria
 
-1. WHEN a developer calls `validate_spec` with a spec path THEN the MCP SHALL check for required files (requirements.md, design.md, tasks.md)
-2. WHEN the MCP validates requirements.md THEN the MCP SHALL verify it contains numbered requirements with acceptance criteria
-3. WHEN the MCP validates design.md THEN the MCP SHALL verify it contains architecture sections and TypeScript interfaces
-4. WHEN the MCP validates tasks.md THEN the MCP SHALL verify it contains task items with checkbox syntax `- [ ]` or `- [x]`
-5. WHEN validation finds issues THEN the MCP SHALL return a list of issues with file path, line number, and description
-6. WHEN validation passes THEN the MCP SHALL return { valid: true, issues: [] }
+1. WHEN a developer calls validate_spec with a spec path THEN the Spec Validator MCP SHALL check for required files requirements.md, design.md, and tasks.md
+2. WHEN the Spec Validator MCP validates requirements.md THEN the Spec Validator MCP SHALL verify the file contains numbered requirements with acceptance criteria
+3. WHEN the Spec Validator MCP validates design.md THEN the Spec Validator MCP SHALL verify the file contains architecture sections and TypeScript interfaces
+4. WHEN the Spec Validator MCP validates tasks.md THEN the Spec Validator MCP SHALL verify the file contains task items with checkbox syntax
+5. WHEN validation finds issues THEN the Spec Validator MCP SHALL return a list of issues with file path, line number, and description
+6. WHEN validation passes THEN the Spec Validator MCP SHALL return a result with valid set to true and an empty issues array
 
 #### Requirement 3: Get Spec Coverage
 
@@ -67,11 +67,11 @@ Unlike application MCPs that serve end-users (e.g., Shopping MCP for fax orders)
 
 ##### Acceptance Criteria
 
-1. WHEN a developer calls `get_spec_coverage` THEN the MCP SHALL scan all specs in `.kiro/specs/` directory
-2. WHEN the MCP scans specs THEN the MCP SHALL calculate completion percentage for each spec (completed tasks / total tasks)
-3. WHEN the MCP returns coverage THEN the MCP SHALL include spec name, total tasks, completed tasks, and percentage
-4. WHEN the MCP returns coverage THEN the MCP SHALL include an overall project completion percentage
-5. WHEN a spec has no tasks.md file THEN the MCP SHALL mark that spec as "no tasks defined"
+1. WHEN a developer calls get_spec_coverage THEN the Spec Validator MCP SHALL scan all specs in .kiro/specs/ directory
+2. WHEN the Spec Validator MCP scans specs THEN the Spec Validator MCP SHALL calculate completion percentage for each spec using completed tasks divided by total tasks
+3. WHEN the Spec Validator MCP returns coverage THEN the Spec Validator MCP SHALL include spec name, total tasks, completed tasks, and percentage for each spec
+4. WHEN the Spec Validator MCP returns coverage THEN the Spec Validator MCP SHALL include an overall project completion percentage
+5. WHEN a spec has no tasks.md file THEN the Spec Validator MCP SHALL mark that spec as having no tasks defined
 
 #### Requirement 4: Generate Test from Spec
 
@@ -79,12 +79,12 @@ Unlike application MCPs that serve end-users (e.g., Shopping MCP for fax orders)
 
 ##### Acceptance Criteria
 
-1. WHEN a developer calls `generate_test_from_spec` with spec path and requirement ID THEN the MCP SHALL parse the requirement from requirements.md
-2. WHEN the MCP parses a requirement THEN the MCP SHALL extract the user story and acceptance criteria
-3. WHEN the MCP generates a test THEN the MCP SHALL create a property-based test skeleton using fast-check syntax
-4. WHEN the MCP generates a test THEN the MCP SHALL include comments referencing the requirement ID and acceptance criteria
-5. WHEN the MCP generates a test THEN the MCP SHALL use the property format from design.md if available
-6. WHEN the requirement ID is not found THEN the MCP SHALL return an error with available requirement IDs
+1. WHEN a developer calls generate_test_from_spec with spec path and requirement ID THEN the Spec Validator MCP SHALL parse the requirement from requirements.md
+2. WHEN the Spec Validator MCP parses a requirement THEN the Spec Validator MCP SHALL extract the user story and acceptance criteria
+3. WHEN the Spec Validator MCP generates a test THEN the Spec Validator MCP SHALL create a property-based test skeleton using fast-check syntax
+4. WHEN the Spec Validator MCP generates a test THEN the Spec Validator MCP SHALL include comments referencing the requirement ID and acceptance criteria
+5. WHEN the Spec Validator MCP generates a test THEN the Spec Validator MCP SHALL use the property format from design.md if the design file is available
+6. WHEN the requirement ID is not found THEN the Spec Validator MCP SHALL return an error message containing available requirement IDs
 
 #### Requirement 10: Validate Implementation Against Spec (Code Review)
 
@@ -92,24 +92,16 @@ Unlike application MCPs that serve end-users (e.g., Shopping MCP for fax orders)
 
 ##### Acceptance Criteria
 
-1. WHEN a developer calls `validate_implementation` with a spec path and optional scope THEN the MCP SHALL read the requirements.md and design.md files
-2. WHEN the MCP reads design.md THEN the MCP SHALL extract expected file paths, TypeScript interfaces, and component locations
-3. WHEN the MCP has expected file paths THEN the MCP SHALL read the actual source code files at those locations
-4. WHEN the MCP reads source code THEN the MCP SHALL analyze whether the code implements the acceptance criteria from requirements.md
-5. WHEN validating acceptance criteria THEN the MCP SHALL check for:
-   - Required functions/methods exist with correct signatures
-   - Required interfaces are implemented
-   - Error handling matches specified behavior
-   - Data models match the design.md schemas
-6. WHEN the scope parameter specifies a requirement ID THEN the MCP SHALL validate only that specific requirement
-7. WHEN the scope parameter specifies a file path THEN the MCP SHALL validate only requirements related to that file
-8. WHEN validation finds gaps THEN the MCP SHALL return a detailed report with:
-   - Requirement ID and acceptance criterion that is not implemented
-   - Expected code location from design.md
-   - What was found (or not found) in the actual code
-   - Suggested implementation guidance
-9. WHEN validation passes THEN the MCP SHALL return { complete: true, coverage_percent: 100 }
-10. WHEN the MCP cannot determine implementation status THEN the MCP SHALL mark that criterion as "needs_manual_review" with reason
+1. WHEN a developer calls validate_implementation with a spec path and optional scope THEN the Spec Validator MCP SHALL read the requirements.md and design.md files
+2. WHEN the Spec Validator MCP reads design.md THEN the Spec Validator MCP SHALL extract expected file paths, TypeScript interfaces, and component locations
+3. WHEN the Spec Validator MCP has expected file paths THEN the Spec Validator MCP SHALL read the actual source code files at those locations
+4. WHEN the Spec Validator MCP reads source code THEN the Spec Validator MCP SHALL analyze whether the code implements the acceptance criteria from requirements.md
+5. WHEN validating acceptance criteria THEN the Spec Validator MCP SHALL verify that required functions and methods exist with correct signatures, required interfaces are implemented, error handling matches specified behavior, and data models match the design.md schemas
+6. WHEN the scope parameter specifies a requirement ID THEN the Spec Validator MCP SHALL validate only that specific requirement
+7. WHEN the scope parameter specifies a file path THEN the Spec Validator MCP SHALL validate only requirements related to that file
+8. WHEN validation finds gaps THEN the Spec Validator MCP SHALL return a detailed report containing the requirement ID, the unimplemented acceptance criterion, the expected code location from design.md, what was found or not found in the actual code, and suggested implementation guidance
+9. WHEN validation passes THEN the Spec Validator MCP SHALL return a result with complete set to true and coverage_percent set to 100
+10. WHEN the Spec Validator MCP cannot determine implementation status THEN the Spec Validator MCP SHALL mark that criterion as needs_manual_review with a reason
 
 #### Requirement 11: Find Implementation Files
 
@@ -117,14 +109,11 @@ Unlike application MCPs that serve end-users (e.g., Shopping MCP for fax orders)
 
 ##### Acceptance Criteria
 
-1. WHEN a developer calls `find_implementation_files` with a spec path and requirement ID THEN the MCP SHALL parse design.md for file locations
-2. WHEN design.md specifies a component location THEN the MCP SHALL verify the file exists
-3. WHEN the MCP finds related files THEN the MCP SHALL return file paths with line numbers of relevant code sections
-4. WHEN design.md does not specify locations THEN the MCP SHALL search the codebase using:
-   - Function/class names from the requirement
-   - Import patterns matching the module name
-   - Test files that reference the requirement ID
-5. WHEN the MCP returns results THEN the MCP SHALL include confidence level (high/medium/low) for each file match
+1. WHEN a developer calls find_implementation_files with a spec path and requirement ID THEN the Spec Validator MCP SHALL parse design.md for file locations
+2. WHEN design.md specifies a component location THEN the Spec Validator MCP SHALL verify the file exists at that location
+3. WHEN the Spec Validator MCP finds related files THEN the Spec Validator MCP SHALL return file paths with line numbers of relevant code sections
+4. WHEN design.md does not specify locations THEN the Spec Validator MCP SHALL search the codebase using function names, class names, import patterns, and test file references to the requirement ID
+5. WHEN the Spec Validator MCP returns results THEN the Spec Validator MCP SHALL include a confidence level of high, medium, or low for each file match
 
 #### Requirement 12: Check Test Coverage for Requirement
 
@@ -132,17 +121,11 @@ Unlike application MCPs that serve end-users (e.g., Shopping MCP for fax orders)
 
 ##### Acceptance Criteria
 
-1. WHEN a developer calls `check_test_coverage` with spec path and optional requirement ID THEN the MCP SHALL search for test files
-2. WHEN searching for tests THEN the MCP SHALL look for:
-   - Property tests referencing the requirement ID in comments (e.g., `Property 1:`, `Validates: Requirements 1.4`)
-   - Unit tests in `__tests__` or `*.test.ts` files that test the related functions
-   - Integration tests that exercise the requirement's acceptance criteria
-3. WHEN the MCP finds tests THEN the MCP SHALL analyze if they cover the acceptance criteria
-4. WHEN tests are missing THEN the MCP SHALL return which acceptance criteria lack test coverage
-5. WHEN the MCP returns results THEN the MCP SHALL include:
-   - List of found test files with test names
-   - Coverage percentage (criteria with tests / total criteria)
-   - Missing test recommendations
+1. WHEN a developer calls check_test_coverage with spec path and optional requirement ID THEN the Spec Validator MCP SHALL search for test files
+2. WHEN searching for tests THEN the Spec Validator MCP SHALL look for property tests referencing the requirement ID in comments, unit tests in test directories that test the related functions, and integration tests that exercise the requirement acceptance criteria
+3. WHEN the Spec Validator MCP finds tests THEN the Spec Validator MCP SHALL analyze if the tests cover the acceptance criteria
+4. WHEN tests are missing THEN the Spec Validator MCP SHALL return which acceptance criteria lack test coverage
+5. WHEN the Spec Validator MCP returns results THEN the Spec Validator MCP SHALL include a list of found test files with test names, coverage percentage calculated as criteria with tests divided by total criteria, and missing test recommendations
 
 ### Auto-Docs MCP
 
@@ -154,28 +137,14 @@ The Auto-Docs MCP is **autonomous** - you tell it what feature to document, and 
 
 ##### Acceptance Criteria
 
-1. WHEN a developer calls `generate_feature_docs` with a feature name (e.g., "shopping", "login", "fax-sending") THEN the MCP SHALL analyze the codebase to understand the feature
-2. WHEN the MCP analyzes the feature THEN the MCP SHALL:
-   - Read the relevant spec from `.kiro/specs/` to understand the feature's purpose and flows
-   - Parse frontend routes to find relevant pages (e.g., from Next.js app router, React Router)
-   - Identify UI components related to the feature
-3. WHEN the MCP understands the feature THEN the MCP SHALL plan a documentation flow:
-   - Determine the logical order of screens to visit
-   - Identify key UI elements to highlight
-   - Plan what actions to perform (clicks, form fills) to demonstrate the feature
-4. WHEN the MCP executes the documentation flow THEN the MCP SHALL:
-   - Launch Playwright and navigate to the app's base URL
-   - Navigate through the feature, taking screenshots at each key step
-   - Use meaningful test data when filling forms (e.g., "test@example.com", sample product names)
-   - Capture both the action and the result (e.g., click "Submit" → show success message)
-5. WHEN the MCP captures screenshots THEN the MCP SHALL save them with descriptive names (e.g., `shopping-step1-product-search.png`)
-6. WHEN the MCP completes the flow THEN the MCP SHALL generate a markdown help document with:
-   - Feature overview (derived from spec)
-   - Step-by-step instructions with screenshots
-   - Tips and notes for users
-   - Troubleshooting section for common issues
-7. WHEN the MCP generates documentation THEN the MCP SHALL save to `docs/help/{feature-name}.md`
-8. WHEN a help document already exists THEN the MCP SHALL update it, preserving sections marked `<!-- MANUAL -->...<!-- /MANUAL -->`
+1. WHEN a developer calls generate_feature_docs with a feature name THEN the Auto-Docs MCP SHALL analyze the codebase to understand the feature
+2. WHEN the Auto-Docs MCP analyzes the feature THEN the Auto-Docs MCP SHALL read the relevant spec from .kiro/specs/ to understand the feature purpose and flows, parse frontend routes to find relevant pages, and identify UI components related to the feature
+3. WHEN the Auto-Docs MCP understands the feature THEN the Auto-Docs MCP SHALL plan a documentation flow by determining the logical order of screens to visit, identifying key UI elements to highlight, and planning what actions to perform to demonstrate the feature
+4. WHEN the Auto-Docs MCP executes the documentation flow THEN the Auto-Docs MCP SHALL launch Playwright, navigate to the app base URL, navigate through the feature taking screenshots at each key step, use meaningful test data when filling forms, and capture both the action and the result
+5. WHEN the Auto-Docs MCP captures screenshots THEN the Auto-Docs MCP SHALL save the screenshots with descriptive names
+6. WHEN the Auto-Docs MCP completes the flow THEN the Auto-Docs MCP SHALL generate a markdown help document with feature overview derived from spec, step-by-step instructions with screenshots, tips and notes for users, and a troubleshooting section for common issues
+7. WHEN the Auto-Docs MCP generates documentation THEN the Auto-Docs MCP SHALL save the document to docs/help/ with the feature name as the filename
+8. WHEN a help document already exists THEN the Auto-Docs MCP SHALL update the document while preserving sections marked with MANUAL comment tags
 
 #### Requirement 6: Update All Documentation
 
@@ -183,12 +152,12 @@ The Auto-Docs MCP is **autonomous** - you tell it what feature to document, and 
 
 ##### Acceptance Criteria
 
-1. WHEN a developer calls `update_all_docs` THEN the MCP SHALL scan `docs/help/` for existing documentation
-2. WHEN the MCP finds existing docs THEN the MCP SHALL re-execute each feature's documentation flow
-3. WHEN re-executing flows THEN the MCP SHALL capture fresh screenshots
-4. WHEN updating docs THEN the MCP SHALL preserve manual sections and update auto-generated content
-5. WHEN a flow fails (e.g., UI changed, element not found) THEN the MCP SHALL log the failure and continue with other docs
-6. WHEN the update completes THEN the MCP SHALL return a summary of updated docs and any failures
+1. WHEN a developer calls update_all_docs THEN the Auto-Docs MCP SHALL scan docs/help/ for existing documentation
+2. WHEN the Auto-Docs MCP finds existing docs THEN the Auto-Docs MCP SHALL re-execute each feature documentation flow
+3. WHEN re-executing flows THEN the Auto-Docs MCP SHALL capture fresh screenshots
+4. WHEN updating docs THEN the Auto-Docs MCP SHALL preserve manual sections and update auto-generated content
+5. WHEN a flow fails THEN the Auto-Docs MCP SHALL log the failure and continue with other docs
+6. WHEN the update completes THEN the Auto-Docs MCP SHALL return a summary of updated docs and any failures
 
 #### Requirement 7: Document User Flow
 
@@ -196,18 +165,11 @@ The Auto-Docs MCP is **autonomous** - you tell it what feature to document, and 
 
 ##### Acceptance Criteria
 
-1. WHEN a developer calls `document_user_flow` with a goal description (e.g., "show how a user places an order") THEN the MCP SHALL interpret the goal
-2. WHEN interpreting the goal THEN the MCP SHALL:
-   - Search specs for related requirements and acceptance criteria
-   - Identify the starting point (which page/screen)
-   - Plan the sequence of actions to achieve the goal
-3. WHEN the MCP executes the flow THEN the MCP SHALL:
-   - Navigate to the starting point
-   - Perform actions intelligently (find buttons by text, fill forms with sample data)
-   - Take screenshots before and after key actions
-   - Handle common patterns (modals, confirmations, loading states)
-4. WHEN the flow completes THEN the MCP SHALL generate documentation explaining each step
-5. WHEN the MCP cannot complete a flow THEN the MCP SHALL return partial results with explanation of what failed
+1. WHEN a developer calls document_user_flow with a goal description THEN the Auto-Docs MCP SHALL interpret the goal
+2. WHEN interpreting the goal THEN the Auto-Docs MCP SHALL search specs for related requirements and acceptance criteria, identify the starting point, and plan the sequence of actions to achieve the goal
+3. WHEN the Auto-Docs MCP executes the flow THEN the Auto-Docs MCP SHALL navigate to the starting point, perform actions intelligently by finding buttons by text and filling forms with sample data, take screenshots before and after key actions, and handle common patterns such as modals, confirmations, and loading states
+4. WHEN the flow completes THEN the Auto-Docs MCP SHALL generate documentation explaining each step
+5. WHEN the Auto-Docs MCP cannot complete a flow THEN the Auto-Docs MCP SHALL return partial results with explanation of what failed
 
 #### Requirement 8: Discover App Structure
 
@@ -215,15 +177,11 @@ The Auto-Docs MCP is **autonomous** - you tell it what feature to document, and 
 
 ##### Acceptance Criteria
 
-1. WHEN a developer calls `discover_app_structure` THEN the MCP SHALL analyze the frontend codebase
-2. WHEN analyzing the codebase THEN the MCP SHALL:
-   - Find route definitions (Next.js pages/app, React Router, etc.)
-   - Extract page titles and descriptions from metadata
-   - Identify navigation components and menu structures
-   - Map URL paths to feature names
-3. WHEN the MCP discovers structure THEN the MCP SHALL cache it for future documentation runs
-4. WHEN the structure changes THEN the MCP SHALL detect changes and update its understanding
-5. WHEN discovery completes THEN the MCP SHALL return the app map with routes, features, and navigation paths
+1. WHEN a developer calls discover_app_structure THEN the Auto-Docs MCP SHALL analyze the frontend codebase
+2. WHEN analyzing the codebase THEN the Auto-Docs MCP SHALL find route definitions, extract page titles and descriptions from metadata, identify navigation components and menu structures, and map URL paths to feature names
+3. WHEN the Auto-Docs MCP discovers structure THEN the Auto-Docs MCP SHALL cache the structure for future documentation runs
+4. WHEN the structure changes THEN the Auto-Docs MCP SHALL detect changes and update its understanding
+5. WHEN discovery completes THEN the Auto-Docs MCP SHALL return the app map with routes, features, and navigation paths
 
 #### Requirement 9: Compare Documentation Freshness
 
@@ -231,47 +189,41 @@ The Auto-Docs MCP is **autonomous** - you tell it what feature to document, and 
 
 ##### Acceptance Criteria
 
-1. WHEN a developer calls `check_docs_freshness` THEN the MCP SHALL compare existing docs against current UI
-2. WHEN comparing THEN the MCP SHALL:
-   - Capture current screenshots of each documented feature
-   - Compare against screenshots referenced in existing docs
-   - Calculate visual difference percentage
-3. WHEN differences exceed threshold (default 10%) THEN the MCP SHALL flag the doc as "needs update"
-4. WHEN checking freshness THEN the MCP SHALL also verify:
-   - All referenced screenshots still exist
-   - Navigation paths in docs still work
-   - UI elements mentioned in text still exist
-5. WHEN the check completes THEN the MCP SHALL return a freshness report with recommended updates
+1. WHEN a developer calls check_docs_freshness THEN the Auto-Docs MCP SHALL compare existing docs against current UI
+2. WHEN comparing THEN the Auto-Docs MCP SHALL capture current screenshots of each documented feature, compare against screenshots referenced in existing docs, and calculate visual difference percentage
+3. WHEN differences exceed threshold of 10 percent THEN the Auto-Docs MCP SHALL flag the doc as needs update
+4. WHEN checking freshness THEN the Auto-Docs MCP SHALL verify that all referenced screenshots still exist, navigation paths in docs still work, and UI elements mentioned in text still exist
+5. WHEN the check completes THEN the Auto-Docs MCP SHALL return a freshness report with recommended updates
 
 ## Non-Functional Requirements
 
 ### NFR1: Performance
 
-1. THE Spec Validator MCP SHALL complete `get_spec_coverage` within 2 seconds for up to 50 specs
-2. THE Auto-Docs MCP SHALL capture a single screenshot within 5 seconds (excluding page load time)
-3. THE Auto-Docs MCP SHALL support concurrent screenshot captures (up to 3 parallel)
-4. THE MCPs SHALL cache parsed spec data for 30 seconds to avoid redundant file reads
+1. THE Spec Validator MCP SHALL complete get_spec_coverage within 2 seconds for up to 50 specs
+2. THE Auto-Docs MCP SHALL capture a single screenshot within 5 seconds excluding page load time
+3. THE Auto-Docs MCP SHALL support concurrent screenshot captures up to 3 parallel captures
+4. THE Spec Validator MCP and Auto-Docs MCP SHALL cache parsed spec data for 30 seconds to avoid redundant file reads
 
 ### NFR2: Reliability
 
-1. THE Auto-Docs MCP SHALL retry failed screenshot captures once with a 2-second delay
+1. THE Auto-Docs MCP SHALL retry failed screenshot captures once with a 2 second delay
 2. THE Auto-Docs MCP SHALL timeout page loads after 30 seconds
-3. THE Spec Validator MCP SHALL handle malformed markdown gracefully with partial results
-4. THE MCPs SHALL log all operations for debugging purposes
+3. THE Spec Validator MCP SHALL handle malformed markdown gracefully by returning partial results
+4. THE Spec Validator MCP and Auto-Docs MCP SHALL log all operations for debugging purposes
 
 ### NFR3: Security
 
-1. THE Auto-Docs MCP SHALL only navigate to localhost URLs or explicitly allowed domains
-2. THE Auto-Docs MCP SHALL not execute arbitrary JavaScript beyond click/type actions
-3. THE MCPs SHALL not expose file system paths outside the project directory
-4. THE MCPs SHALL validate all input parameters before execution
+1. THE Auto-Docs MCP SHALL navigate only to localhost URLs or explicitly allowed domains
+2. THE Auto-Docs MCP SHALL execute only click and type actions and not execute arbitrary JavaScript
+3. THE Spec Validator MCP and Auto-Docs MCP SHALL expose only file system paths within the project directory
+4. THE Spec Validator MCP and Auto-Docs MCP SHALL validate all input parameters before execution
 
 ### NFR4: Usability
 
-1. THE MCPs SHALL provide helpful error messages with suggested fixes
-2. THE MCPs SHALL include examples in tool descriptions for Kiro's AI assistant
-3. THE MCPs SHALL support both absolute and relative paths for spec references
-4. THE Auto-Docs MCP SHALL auto-create directories if they don't exist
+1. THE Spec Validator MCP and Auto-Docs MCP SHALL provide helpful error messages with suggested fixes
+2. THE Spec Validator MCP and Auto-Docs MCP SHALL include examples in tool descriptions for Kiro AI assistant
+3. THE Spec Validator MCP and Auto-Docs MCP SHALL support both absolute and relative paths for spec references
+4. THE Auto-Docs MCP SHALL create directories automatically if the directories do not exist
 
 ## Technical Approach
 

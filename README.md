@@ -68,7 +68,7 @@ cd marketing-website && npm run dev
 Once running, you can access:
 - **Backend API**: http://localhost:4000
 - **Admin Dashboard**: http://localhost:4001
-- **Marketing Website**: http://localhost:4002
+- **Marketing Website**: http://localhost:4003
 - **MinIO Console**: http://localhost:9001 (minioadmin/minioadmin)
 - **Postgres**: localhost:5432
 - **Redis**: localhost:6379

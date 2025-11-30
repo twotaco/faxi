@@ -160,9 +160,41 @@ export function ResultsDisplay({ result }: ResultsDisplayProps) {
                   {generatedResponse.faxContent}
                 </pre>
               </div>
-              <div className="flex items-center gap-2 text-sm text-green-700 bg-green-100 rounded-lg p-3">
-                <span className="font-semibold">Action taken:</span>
-                <span>{generatedResponse.actionTaken}</span>
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2 text-sm text-green-700 bg-green-100 rounded-lg p-3 flex-1">
+                  <span className="font-semibold">Action taken:</span>
+                  <span>{generatedResponse.actionTaken}</span>
+                </div>
+                {generatedResponse.responsePdfUrl && (
+                  <button
+                    onClick={() => {
+                      // Convert data URL to blob and trigger download
+                      const dataUrl = generatedResponse.responsePdfUrl;
+                      if (dataUrl.startsWith('data:')) {
+                        const [header, base64] = dataUrl.split(',');
+                        const mimeMatch = header.match(/data:([^;]+)/);
+                        const mimeType = mimeMatch ? mimeMatch[1] : 'application/pdf';
+                        const byteCharacters = atob(base64);
+                        const byteNumbers = new Array(byteCharacters.length);
+                        for (let i = 0; i < byteCharacters.length; i++) {
+                          byteNumbers[i] = byteCharacters.charCodeAt(i);
+                        }
+                        const byteArray = new Uint8Array(byteNumbers);
+                        const blob = new Blob([byteArray], { type: mimeType });
+                        const url = URL.createObjectURL(blob);
+                        window.open(url, '_blank');
+                        // Clean up after a delay
+                        setTimeout(() => URL.revokeObjectURL(url), 1000);
+                      }
+                    }}
+                    className="inline-flex items-center gap-2 px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium text-sm cursor-pointer"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                    </svg>
+                    View PDF
+                  </button>
+                )}
               </div>
             </div>
           </CardContent>

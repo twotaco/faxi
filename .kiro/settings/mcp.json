@@ -1,0 +1,27 @@
+{
+  "mcpServers": {
+    "faxi-spec-validator": {
+      "command": "npx",
+      "args": ["tsx", "backend/src/mcp/kiro/specValidatorMcpServer.ts"],
+      "env": {
+        "SPECS_DIR": ".kiro/specs",
+        "NODE_ENV": "development"
+      },
+      "disabled": false,
+      "autoApprove": []
+    },
+    "faxi-auto-docs": {
+      "command": "npx",
+      "args": ["tsx", "backend/src/mcp/kiro/autoDocsMcpServer.ts"],
+      "env": {
+        "SCREENSHOT_DIR": "docs/screenshots",
+        "HELP_DIR": "docs/help",
+        "ALLOWED_DOMAINS": "localhost,127.0.0.1",
+        "BASE_URL": "http://localhost:3000",
+        "NODE_ENV": "development"
+      },
+      "disabled": false,
+      "autoApprove": []
+    }
+  }
+}

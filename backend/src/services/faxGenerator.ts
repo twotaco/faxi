@@ -223,7 +223,7 @@ export class FaxGenerator {
   }
 
   /**
-   * Render circle options (radio buttons)
+   * Render circle options (radio buttons) with text wrapping
    */
   private static renderCircleOptions(
     ctx: CanvasRenderingContext2D,
@@ -236,38 +236,44 @@ export class FaxGenerator {
     if (!content.options) return y;
 
     const fontSize = content.fontSize || options.defaultFontSize;
-    const lineHeight = fontSize * 1.8;
+    const lineHeight = fontSize * 1.4; // Slightly tighter for wrapped text
     const circleRadius = 14; // Increased from 8 for better visibility with larger fonts
     const circleMargin = 20;
+    const textX = margins.left + circleRadius * 2 + circleMargin;
+    const maxTextWidth = contentWidth - (circleRadius * 2 + circleMargin);
 
     ctx.font = `normal ${fontSize}px Arial, sans-serif`;
     ctx.textAlign = 'left';
     ctx.lineWidth = 3; // Thicker lines for better visibility
 
-    content.options.forEach((option, index) => {
-      const lineY = y + (index * lineHeight);
+    let currentY = y;
+
+    content.options.forEach((option) => {
       const circleX = margins.left + circleRadius;
-      const circleY = lineY + fontSize / 2;
-      const textX = margins.left + circleRadius * 2 + circleMargin;
+      const circleY = currentY + fontSize / 2;
 
       // Draw circle
       ctx.beginPath();
       ctx.arc(circleX, circleY, circleRadius, 0, 2 * Math.PI);
       ctx.stroke();
 
-      // Draw option text
-      const optionText = `${option.label}. ${option.text}`;
-      ctx.fillText(optionText, textX, lineY);
-
-      // Add price if available
+      // Build full option text with price if available
+      let optionText = `${option.label}. ${option.text}`;
       if (option.price !== undefined) {
-        const priceText = ` - ¥${option.price}`;
-        const textWidth = ctx.measureText(optionText).width;
-        ctx.fillText(priceText, textX + textWidth, lineY);
+        optionText += ` - ¥${option.price}`;
       }
+
+      // Wrap text and render each line
+      const wrappedLines = this.wrapText(ctx, optionText, maxTextWidth);
+      wrappedLines.forEach((line, lineIndex) => {
+        ctx.fillText(line, textX, currentY + (lineIndex * lineHeight));
+      });
+
+      // Move Y position based on number of lines (minimum 1 line height + spacing)
+      currentY += Math.max(wrappedLines.length, 1) * lineHeight + (fontSize * 0.4);
     });
 
-    return y + (content.options.length * lineHeight);
+    return currentY;
   }
 
   /**

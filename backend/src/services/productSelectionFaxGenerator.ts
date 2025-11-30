@@ -174,7 +174,7 @@ export class ProductSelectionFaxGenerator {
     content.push({
       type: 'footer',
       text: `Multi-Product Options | Ref: ${refId} | Support: 0120-XXX-XXX`,
-      fontSize: 96, // 34pt minimum for reference ID prominence (96 pixels at 204 DPI ≈ 34pt)
+      fontSize: 45, // Match body text size (45 pixels at 204 DPI ≈ 16pt)
       bold: true,
       alignment: 'center',
       marginTop: 20
@@ -334,7 +334,7 @@ export class ProductSelectionFaxGenerator {
     content.push({
       type: 'footer',
       text: `Product Options | Ref: ${refId} | Support: 0120-XXX-XXX`,
-      fontSize: 96, // 34pt minimum for reference ID prominence (96 pixels at 204 DPI ≈ 34pt)
+      fontSize: 45, // Match body text size (45 pixels at 204 DPI ≈ 16pt)
       bold: true,
       alignment: 'center',
       marginTop: 30
@@ -492,7 +492,7 @@ export class ProductSelectionFaxGenerator {
     content.push({
       type: 'footer',
       text: `Product Unavailable | Ref: ${refId} | Support: 0120-XXX-XXX`,
-      fontSize: 96, // 34pt minimum for reference ID prominence (96 pixels at 204 DPI ≈ 34pt)
+      fontSize: 45, // Match body text size (45 pixels at 204 DPI ≈ 16pt)
       bold: true,
       alignment: 'center',
       marginTop: 30
@@ -624,7 +624,7 @@ export class ProductSelectionFaxGenerator {
     content.push({
       type: 'footer',
       text: `Price Change | Ref: ${refId} | Support: 0120-XXX-XXX`,
-      fontSize: 96, // 34pt minimum for reference ID prominence (96 pixels at 204 DPI ≈ 34pt)
+      fontSize: 45, // Match body text size (45 pixels at 204 DPI ≈ 16pt)
       bold: true,
       alignment: 'center',
       marginTop: 30

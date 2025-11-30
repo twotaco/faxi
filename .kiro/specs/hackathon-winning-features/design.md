@@ -1163,7 +1163,7 @@ const upload = multer({
 
 ```typescript
 const corsOptions = {
-  origin: process.env.MARKETING_SITE_URL || 'http://localhost:4002',
+  origin: process.env.MARKETING_SITE_URL || 'http://localhost:4003',
   methods: ['GET', 'POST'],
   allowedHeaders: ['Content-Type'],
   credentials: false,

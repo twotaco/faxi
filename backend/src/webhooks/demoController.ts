@@ -2,9 +2,11 @@ import { Request, Response, Router } from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import { db } from '../database/connection';
 import { aiVisionInterpreter } from '../services/aiVisionInterpreter';
-import { geminiAgentService } from '../services/geminiAgentService';
+import { geminiAgentService, ToolCallResult } from '../services/geminiAgentService';
+import { ResponseGenerator } from '../services/responseGenerator';
 import { loggingService } from '../services/loggingService';
 import { productCacheService } from '../services/productCacheService';
+import { GeneralInquiryFaxGenerator } from '../services/generalInquiryFaxGenerator';
 import { GoogleGenAI } from '@google/genai';
 import { config } from '../config';
 import * as path from 'path';
@@ -31,6 +33,7 @@ async function generateDemoResponse(
 ): Promise<{
   responseText: string;
   actionTaken: string;
+  toolCalls?: ToolCallResult[];
 }> {
   try {
     console.log('\n\n=== DEMO PROCESSING START ===');
@@ -84,7 +87,8 @@ async function generateDemoResponse(
 
       return {
         responseText: agentResult.aggregatedResponse,
-        actionTaken: `Executed tools: ${toolNames}`
+        actionTaken: `Executed tools: ${toolNames}`,
+        toolCalls: agentResult.toolCalls
       };
     }
 
@@ -167,6 +171,68 @@ Include both Japanese and English where appropriate.`;
       responseText: generateDefaultClarification(),
       actionTaken: 'Error - sent clarification request'
     };
+  }
+}
+
+/**
+ * Transforms MCP tool results to template-expected data formats
+ */
+function transformToolResultForTemplate(
+  serverName: string,
+  toolName: string,
+  toolResult: any,
+  originalQuestion: string,
+  responseText: string
+): any {
+  switch (serverName) {
+    case 'shopping':
+      // ProductSelectionData format
+      return {
+        products: toolResult.products || [],
+        complementaryItems: toolResult.complementaryItems || [],
+        hasPaymentMethod: false,
+        deliveryAddress: undefined
+      };
+
+    case 'email':
+      // EmailReplyData format
+      return {
+        from: toolResult.from || toolResult.recipient || 'Unknown',
+        subject: toolResult.subject || 'Email Response',
+        body: toolResult.body || responseText,
+        hasQuickReplies: false
+      };
+
+    case 'appointment':
+      // AppointmentSelectionTemplateData format
+      return {
+        serviceName: toolResult.serviceName || 'Appointment',
+        provider: toolResult.provider || 'Service Provider',
+        location: toolResult.location,
+        slots: (toolResult.slots || []).map((slot: any, index: number) => ({
+          ...slot,
+          selectionMarker: String.fromCharCode(65 + index) // A, B, C...
+        }))
+      };
+
+    case 'payment':
+      // PaymentBarcodeData format
+      return {
+        products: toolResult.products || [],
+        barcodes: toolResult.barcodes || [],
+        expirationDate: toolResult.expirationDate || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+        instructions: toolResult.instructions || 'Please pay at any convenience store.'
+      };
+
+    case 'ai_chat':
+    case 'chat':
+    default:
+      // GeneralInquiryTemplateData format (fallback)
+      return {
+        question: originalQuestion,
+        answer: responseText,
+        relatedTopics: []
+      };
   }
 }
 
@@ -359,6 +425,52 @@ router.post('/process', async (req: Request, res: Response) => {
       interpretation.visualAnnotations || []
     );
 
+    // Generate PDF from the response using appropriate template
+    let responsePdfUrl: string | undefined;
+    try {
+      let pdfBuffer: Buffer;
+
+      // Find first successful tool call for template routing
+      const successfulToolCall = demoResponse.toolCalls?.find(t => t.success);
+
+      if (successfulToolCall) {
+        // Route through ResponseGenerator for proper template selection
+        const result = await ResponseGenerator.generateFromMcp(
+          successfulToolCall.serverName,
+          successfulToolCall.toolName,
+          transformToolResultForTemplate(
+            successfulToolCall.serverName,
+            successfulToolCall.toolName,
+            successfulToolCall.result,
+            interpretation.extractedText || 'Demo Request',
+            demoResponse.responseText
+          ),
+          sessionId
+        );
+        pdfBuffer = result.pdfBuffer;
+      } else {
+        // Fallback to GeneralInquiryFaxGenerator for clarifications/errors
+        pdfBuffer = await GeneralInquiryFaxGenerator.generateInquiryFax({
+          question: interpretation.extractedText || 'Demo Request',
+          answer: demoResponse.responseText,
+          relatedTopics: []
+        }, sessionId);
+      }
+
+      // Convert to base64 data URL
+      responsePdfUrl = `data:application/pdf;base64,${pdfBuffer.toString('base64')}`;
+      loggingService.info('Generated demo response PDF', {
+        sessionId,
+        pdfSize: pdfBuffer.length,
+        template: successfulToolCall?.serverName || 'general_inquiry'
+      });
+    } catch (pdfError) {
+      loggingService.warn('Failed to generate demo response PDF', undefined, {
+        error: (pdfError as Error).message,
+        sessionId
+      });
+    }
+
     // Update demo session with result
     await db.query(`
       UPDATE demo_sessions
@@ -392,7 +504,8 @@ router.post('/process', async (req: Request, res: Response) => {
         // The actual response that would be faxed back
         generatedResponse: {
           faxContent: demoResponse.responseText,
-          actionTaken: demoResponse.actionTaken
+          actionTaken: demoResponse.actionTaken,
+          responsePdfUrl
         }
       }
     });
