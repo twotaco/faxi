@@ -130,7 +130,7 @@ export class AIChatMCPServer implements MCPServer {
    */
   private async handleChat(params: any): Promise<any> {
     const { userId, message, conversationId, referenceId } = params;
-    
+
     try {
       // Verify user exists
       const user = await userRepository.findById(userId);
@@ -153,7 +153,7 @@ export class AIChatMCPServer implements MCPServer {
             error: 'Access denied to conversation'
           };
         }
-        
+
         if (conversation) {
           conversationHistory = conversation.contextData?.messages || [];
         }
@@ -199,12 +199,11 @@ export class AIChatMCPServer implements MCPServer {
         }));
 
       // Create chat session with Google Search grounding enabled
+      // Note: Cannot use responseMimeType: 'application/json' with tools like googleSearch
       const chat = this.ai.chats.create({
         model: config.gemini.model,
         config: {
           systemInstruction: systemPrompt,
-          responseMimeType: 'application/json',
-          responseSchema: this.getQAResponseSchema(),
           tools: [{ googleSearch: {} }] // Enable Google Search for real-time info
         },
         history: chatHistory
@@ -214,25 +213,12 @@ export class AIChatMCPServer implements MCPServer {
       const response = await chat.sendMessage({ message });
       const aiResponseText = response.text ?? '';
 
-      // Parse JSON response
-      let parsedResponse: any;
-      try {
-        parsedResponse = JSON.parse(aiResponseText);
-      } catch (parseError) {
-        console.error('Failed to parse JSON response from Gemini:', parseError);
-        // Fallback to plain text
-        parsedResponse = {
-          response: aiResponseText,
-          requiresContinuation: false,
-          metadata: { confidence: 'low' }
-        };
-      }
+      // Format the response for fax
+      const formattedResponse = this.formatResponseForFax(aiResponseText);
 
-      // Extract the main response text
-      const formattedResponse = this.formatResponseForFax(parsedResponse.response);
-
-      // Extract insights for processing
-      const insights = parsedResponse.insights;
+      // Note: Insights extraction is disabled when using Google Search tools
+      // because Gemini doesn't support JSON response mode with tools
+      const insights = null;
 
       // Add AI response to history
       const aiMessage = {

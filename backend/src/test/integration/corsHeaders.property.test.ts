@@ -20,7 +20,7 @@ describe('**Feature: hackathon-winning-features, Property 5: CORS header presenc
     
     // Apply CORS middleware (matching production config)
     app.use(cors({
-      origin: ['http://localhost:4002', 'http://localhost:4001'],
+      origin: ['http://localhost:4003', 'http://localhost:4001'],
       credentials: true,
       methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
       allowedHeaders: ['Content-Type', 'Authorization', 'Cookie'],
@@ -49,14 +49,14 @@ describe('**Feature: hackathon-winning-features, Property 5: CORS header presenc
         async (endpoint) => {
           const response = await request(app)
             .get(endpoint)
-            .set('Origin', 'http://localhost:4002');
+            .set('Origin', 'http://localhost:4003');
 
           // Verify CORS headers are present
           expect(response.headers).toHaveProperty('access-control-allow-origin');
           
           // Verify origin is allowed
           const allowedOrigin = response.headers['access-control-allow-origin'];
-          expect(['http://localhost:4002', 'http://localhost:4001', '*']).toContain(allowedOrigin);
+          expect(['http://localhost:4003', 'http://localhost:4001', '*']).toContain(allowedOrigin);
         }
       ),
       { numRuns: 100 }
@@ -75,7 +75,7 @@ describe('**Feature: hackathon-winning-features, Property 5: CORS header presenc
         async (endpoint) => {
           const response = await request(app)
             .options(endpoint)
-            .set('Origin', 'http://localhost:4002')
+            .set('Origin', 'http://localhost:4003')
             .set('Access-Control-Request-Method', 'GET');
 
           // Verify CORS preflight headers
@@ -103,7 +103,7 @@ describe('**Feature: hackathon-winning-features, Property 5: CORS header presenc
         async (endpoint) => {
           const response = await request(app)
             .get(endpoint)
-            .set('Origin', 'http://localhost:4002');
+            .set('Origin', 'http://localhost:4003');
 
           // Verify credentials are allowed
           const allowCredentials = response.headers['access-control-allow-credentials'];
@@ -123,14 +123,14 @@ describe('**Feature: hackathon-winning-features, Property 5: CORS header presenc
         async ({ fixtureId }) => {
           const response = await request(app)
             .post('/api/demo/process')
-            .set('Origin', 'http://localhost:4002')
+            .set('Origin', 'http://localhost:4003')
             .send({ fixtureId });
 
           // Verify CORS headers are present even for POST
           expect(response.headers).toHaveProperty('access-control-allow-origin');
           
           const allowedOrigin = response.headers['access-control-allow-origin'];
-          expect(['http://localhost:4002', 'http://localhost:4001', '*']).toContain(allowedOrigin);
+          expect(['http://localhost:4003', 'http://localhost:4001', '*']).toContain(allowedOrigin);
         }
       ),
       { numRuns: 50 } // Fewer runs for POST requests
@@ -141,7 +141,7 @@ describe('**Feature: hackathon-winning-features, Property 5: CORS header presenc
     await fc.assert(
       fc.asyncProperty(
         fc.constantFrom(
-          'http://localhost:4002',
+          'http://localhost:4003',
           'http://localhost:4001'
         ),
         async (origin) => {

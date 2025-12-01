@@ -61,7 +61,7 @@
 
 - [x] 1.9 Configure CORS for marketing website
   - Add CORS middleware for `/api/demo` and `/api/metrics` endpoints
-  - Allow requests from marketing website origin (port 4002)
+  - Allow requests from marketing website origin (port 4003)
   - Configure appropriate headers and methods
   - _Requirements: 10.5_
 

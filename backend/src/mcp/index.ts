@@ -4,3 +4,4 @@ export * from './shoppingMcpServer';
 export * from './paymentMcpServer';
 export * from './aiChatMcpServer';
 export * from './userProfileMcpServer';
+export * from './deployment/deploymentMcpServer';

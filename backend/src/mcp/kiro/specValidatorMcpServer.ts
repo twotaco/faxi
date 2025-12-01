@@ -251,6 +251,95 @@ class SpecValidatorMCPServer {
           required: ['spec_path'],
         },
       },
+      {
+        name: 'run_acceptance_tests',
+        description: 'Run Playwright and Vitest tests for acceptance criteria. Executes tests, captures results, and maps them to requirements.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            spec_path: {
+              type: 'string',
+              description: 'Path to spec directory (e.g., ".kiro/specs/shopping")',
+            },
+            requirement_id: {
+              type: 'string',
+              description: 'Optional: Run tests for specific requirement only',
+            },
+            capture_traces: {
+              type: 'boolean',
+              description: 'Optional: Capture Playwright traces for failed tests (default: false)',
+            },
+          },
+          required: ['spec_path'],
+        },
+      },
+      {
+        name: 'analyze_validation_gaps',
+        description: 'Analyze gaps between requirements, implementation, and tests. Creates traceability matrix and identifies missing pieces.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            spec_path: {
+              type: 'string',
+              description: 'Path to spec directory (e.g., ".kiro/specs/shopping")',
+            },
+            include_test_results: {
+              type: 'boolean',
+              description: 'Optional: Run tests as part of analysis (default: true)',
+            },
+          },
+          required: ['spec_path'],
+        },
+      },
+      {
+        name: 'propose_fixes',
+        description: 'Generate actionable fix proposals for validation gaps. Provides code examples and implementation guidance.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            spec_path: {
+              type: 'string',
+              description: 'Path to spec directory (e.g., ".kiro/specs/shopping")',
+            },
+            gap_types: {
+              type: 'array',
+              items: { type: 'string' },
+              description: 'Optional: Filter by gap types (missing_implementation, failing_tests, missing_tests, untested_criteria)',
+            },
+            max_proposals: {
+              type: 'number',
+              description: 'Optional: Maximum number of proposals to generate (default: 10)',
+            },
+          },
+          required: ['spec_path'],
+        },
+      },
+      {
+        name: 'generate_validation_report',
+        description: 'Generate comprehensive validation report with test results, gap analysis, and fix proposals.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            spec_path: {
+              type: 'string',
+              description: 'Path to spec directory (e.g., ".kiro/specs/shopping")',
+            },
+            include_test_results: {
+              type: 'boolean',
+              description: 'Optional: Include test execution results (default: true)',
+            },
+            include_fix_proposals: {
+              type: 'boolean',
+              description: 'Optional: Include fix proposals (default: true)',
+            },
+            output_path: {
+              type: 'string',
+              description: 'Optional: Custom output path for the report',
+            },
+          },
+          required: ['spec_path'],
+        },
+      },
     ];
   }
 
@@ -279,6 +368,18 @@ class SpecValidatorMCPServer {
       
       case 'check_test_coverage':
         return this.handleCheckTestCoverage(args);
+      
+      case 'run_acceptance_tests':
+        return this.handleRunAcceptanceTests(args);
+      
+      case 'analyze_validation_gaps':
+        return this.handleAnalyzeValidationGaps(args);
+      
+      case 'propose_fixes':
+        return this.handleProposeFixes(args);
+      
+      case 'generate_validation_report':
+        return this.handleGenerateValidationReport(args);
       
       default:
         throw new Error(`Unknown tool: ${toolName}`);
@@ -1116,6 +1217,270 @@ ${criteriaComments}
     } catch (error) {
       throw new Error(
         `Failed to check test coverage: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
+    }
+  }
+
+  /**
+   * Handle run_acceptance_tests tool call
+   */
+  private async handleRunAcceptanceTests(args: any): Promise<any> {
+    const { spec_path, requirement_id, capture_traces } = args;
+
+    if (!spec_path) {
+      throw new Error('spec_path parameter is required');
+    }
+
+    const { testExecutionService } = await import('./services/testExecutionService.js');
+    const path = await import('path');
+    const fs = await import('fs');
+
+    try {
+      const normalizedSpecPath = path.resolve(spec_path);
+
+      if (!fs.existsSync(normalizedSpecPath)) {
+        throw new Error(`Spec directory does not exist: ${spec_path}`);
+      }
+
+      this.log('Running acceptance tests', {
+        spec_path: normalizedSpecPath,
+        requirement_id,
+        capture_traces,
+      });
+
+      const testResults = await testExecutionService.runAcceptanceTests(
+        normalizedSpecPath,
+        requirement_id,
+        {
+          capture_traces,
+          capture_screenshots: true,
+          timeout: 60000,
+        }
+      );
+
+      this.log('Test execution completed', {
+        tests_run: testResults.tests_run,
+        tests_passed: testResults.tests_passed,
+        tests_failed: testResults.tests_failed,
+      });
+
+      return testResults;
+    } catch (error) {
+      this.logError('Failed to run acceptance tests', error);
+      throw new Error(
+        `Failed to run acceptance tests: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
+    }
+  }
+
+  /**
+   * Handle analyze_validation_gaps tool call
+   */
+  private async handleAnalyzeValidationGaps(args: any): Promise<any> {
+    const { spec_path, include_test_results = true } = args;
+
+    if (!spec_path) {
+      throw new Error('spec_path parameter is required');
+    }
+
+    const { specParserService } = await import('./services/specParserService.js');
+    const { codeAnalysisService } = await import('./services/codeAnalysisService.js');
+    const { testExecutionService } = await import('./services/testExecutionService.js');
+    const { gapAnalysisService } = await import('./services/gapAnalysisService.js');
+    const path = await import('path');
+    const fs = await import('fs');
+
+    try {
+      const normalizedSpecPath = path.resolve(spec_path);
+
+      if (!fs.existsSync(normalizedSpecPath)) {
+        throw new Error(`Spec directory does not exist: ${spec_path}`);
+      }
+
+      this.log('Analyzing validation gaps', { spec_path: normalizedSpecPath });
+
+      const requirementsPath = path.join(normalizedSpecPath, 'requirements.md');
+      if (!fs.existsSync(requirementsPath)) {
+        throw new Error(`requirements.md not found in ${spec_path}`);
+      }
+
+      const requirementsContent = fs.readFileSync(requirementsPath, 'utf-8');
+      const requirements = specParserService.parseRequirements(requirementsContent);
+
+      const implementationResults = [];
+      for (const requirement of requirements) {
+        const result = await codeAnalysisService.validateImplementation(
+          requirement,
+          normalizedSpecPath
+        );
+        implementationResults.push(...result.criteria);
+      }
+
+      let testResults: any[] = [];
+      if (include_test_results) {
+        const testExecution = await testExecutionService.runAcceptanceTests(
+          normalizedSpecPath
+        );
+        testResults = testExecution.test_results;
+      }
+
+      const gapAnalysis = await gapAnalysisService.analyzeGaps(
+        requirements,
+        implementationResults,
+        testResults
+      );
+
+      this.log('Gap analysis completed', {
+        total_gaps: gapAnalysis.summary.total_gaps,
+        critical: gapAnalysis.summary.critical,
+        high: gapAnalysis.summary.high,
+      });
+
+      return gapAnalysis;
+    } catch (error) {
+      this.logError('Failed to analyze validation gaps', error);
+      throw new Error(
+        `Failed to analyze validation gaps: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
+    }
+  }
+
+  /**
+   * Handle propose_fixes tool call
+   */
+  private async handleProposeFixes(args: any): Promise<any> {
+    const { spec_path, gap_types, max_proposals = 10 } = args;
+
+    if (!spec_path) {
+      throw new Error('spec_path parameter is required');
+    }
+
+    const { fixProposalService } = await import('./services/fixProposalService.js');
+    const path = await import('path');
+
+    try {
+      const normalizedSpecPath = path.resolve(spec_path);
+
+      this.log('Generating fix proposals', {
+        spec_path: normalizedSpecPath,
+        gap_types,
+        max_proposals,
+      });
+
+      const gapAnalysis = await this.handleAnalyzeValidationGaps({
+        spec_path,
+        include_test_results: true,
+      });
+
+      let gaps = gapAnalysis.gaps;
+      if (gap_types && gap_types.length > 0) {
+        gaps = gaps.filter((gap: any) => gap_types.includes(gap.type));
+      }
+
+      const { specParserService } = await import('./services/specParserService.js');
+      const fs = await import('fs');
+      const requirementsPath = path.join(normalizedSpecPath, 'requirements.md');
+      const requirementsContent = fs.readFileSync(requirementsPath, 'utf-8');
+      const requirements = specParserService.parseRequirements(requirementsContent);
+
+      const proposals = await fixProposalService.generateProposals(
+        gaps,
+        requirements,
+        normalizedSpecPath,
+        max_proposals
+      );
+
+      this.log('Fix proposals generated', {
+        total_proposals: proposals.summary.total_proposals,
+        estimated_effort: proposals.summary.estimated_total_effort,
+      });
+
+      return proposals;
+    } catch (error) {
+      this.logError('Failed to generate fix proposals', error);
+      throw new Error(
+        `Failed to generate fix proposals: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
+    }
+  }
+
+  /**
+   * Handle generate_validation_report tool call
+   */
+  private async handleGenerateValidationReport(args: any): Promise<any> {
+    const {
+      spec_path,
+      include_test_results = true,
+      include_fix_proposals = true,
+      output_path,
+    } = args;
+
+    if (!spec_path) {
+      throw new Error('spec_path parameter is required');
+    }
+
+    const { validationReportService } = await import('./services/validationReportService.js');
+    const { specParserService } = await import('./services/specParserService.js');
+    const path = await import('path');
+    const fs = await import('fs');
+
+    try {
+      const normalizedSpecPath = path.resolve(spec_path);
+      const specName = path.basename(normalizedSpecPath);
+
+      this.log('Generating validation report', {
+        spec_path: normalizedSpecPath,
+        include_test_results,
+        include_fix_proposals,
+      });
+
+      const requirementsPath = path.join(normalizedSpecPath, 'requirements.md');
+      if (!fs.existsSync(requirementsPath)) {
+        throw new Error(`requirements.md not found in ${spec_path}`);
+      }
+      const requirementsContent = fs.readFileSync(requirementsPath, 'utf-8');
+      const requirements = specParserService.parseRequirements(requirementsContent);
+
+      let testResults;
+      if (include_test_results) {
+        testResults = await this.handleRunAcceptanceTests({ spec_path });
+      }
+
+      const gapAnalysis = await this.handleAnalyzeValidationGaps({
+        spec_path,
+        include_test_results,
+      });
+
+      let fixProposals;
+      if (include_fix_proposals) {
+        fixProposals = await this.handleProposeFixes({ spec_path });
+      }
+
+      const report = await validationReportService.generateReport(
+        normalizedSpecPath,
+        requirements,
+        testResults,
+        gapAnalysis,
+        fixProposals,
+        {
+          include_test_results,
+          include_fix_proposals,
+          output_path,
+          spec_name: specName,
+        }
+      );
+
+      this.log('Validation report generated', {
+        report_path: report.report_path,
+        coverage_percentage: report.summary.coverage_percentage,
+        total_gaps: report.summary.gaps,
+      });
+
+      return report;
+    } catch (error) {
+      this.logError('Failed to generate validation report', error);
+      throw new Error(
+        `Failed to generate validation report: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
     }
   }

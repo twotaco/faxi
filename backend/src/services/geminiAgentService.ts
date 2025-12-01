@@ -1,22 +1,32 @@
 /**
  * Gemini Agent Service
  *
- * Orchestrates MCP tool calls using Gemini's native function calling capability.
- * Instead of regex-based intent extraction, Gemini intelligently:
- * 1. Analyzes the full OCR text for context
- * 2. Decides which tool(s) to call
- * 3. Extracts proper parameters automatically
- * 4. Returns confidence scores for clarification flow
+ * Orchestrates MCP tool calls using Gemini as a PLANNER.
+ *
+ * Architecture (Google ADK Pattern):
+ * 1. User request → Gemini Planner creates ExecutionPlan
+ * 2. ExecutionPlan → MCP Controller Agent executes workflow
+ * 3. Results aggregated → Response generated
+ *
+ * This enables:
+ * - Multiple tool calls per request
+ * - Dependencies between steps
+ * - Conditional execution (if X then Y)
+ * - Parallel execution of independent steps
  */
 
-import { GoogleGenerativeAI, FunctionCallingMode } from '@google/generative-ai';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import { config } from '../config';
 import { loggingService } from './loggingService';
 import { mcpControllerAgent } from './mcpControllerAgent';
 import {
-  allGeminiTools,
   toolToServerMap,
-  toolNameMap
+  toolNameMap,
+  ExecutionPlan,
+  ExecutionStep,
+  StepCondition,
+  PLANNER_SYSTEM_INSTRUCTION,
+  plannerResponseSchema
 } from './geminiToolDefinitions';
 import type { VisualAnnotation } from '../types/vision';
 
@@ -27,6 +37,8 @@ export interface AgentProcessResult {
   toolCalls: ToolCallResult[];
   aggregatedResponse?: string;
   error?: string;
+  /** The execution plan that was created */
+  plan?: ExecutionPlan;
 }
 
 export interface ToolCallResult {
@@ -36,44 +48,37 @@ export interface ToolCallResult {
   result: any;
   success: boolean;
   error?: string;
+  /** Whether this step was skipped due to condition not being met */
+  skipped?: boolean;
+  /** The step ID from the execution plan */
+  stepId?: string;
 }
-
-const CONFIDENCE_THRESHOLD = 0.5;
-
-const SYSTEM_INSTRUCTION = `You are Faxi, an AI assistant that helps elderly people in Japan interact with the internet through fax.
-
-Your job is to interpret fax messages and call the appropriate tool to fulfill the user's request.
-
-IMPORTANT GUIDELINES:
-1. Extract the CORE request from the message - ignore fax headers, dates, and formatting
-2. Be generous in interpretation - if someone says "I need shampoo", call shopping_search_products with query "shampoo"
-3. For shopping requests, extract ONLY the product name as the query, not the entire message
-4. For emails, extract the recipient (name or email) and the message content
-5. For questions, extract the actual question being asked
-6. If you're unsure what the user wants, call request_clarification
-
-EXAMPLES:
-- "FAX MESSAGE... I need shampoo" → shopping_search_products(query: "shampoo")
-- "Send email to John about the meeting tomorrow" → email_send(recipientName: "John", body: "about the meeting tomorrow")
-- "What's the weather in Tokyo?" → ai_chat_question(question: "What's the weather in Tokyo?")
-- "Register my credit card" → payment_register(methodType: "credit_card")
-
-Always call a tool - never respond with just text.`;
 
 class GeminiAgentService {
   private genAI: GoogleGenerativeAI;
-  private model: any;
+  private plannerModel: any;
 
   constructor() {
     this.genAI = new GoogleGenerativeAI(config.gemini.apiKey);
-    this.model = this.genAI.getGenerativeModel({
+
+    // Planner model - creates execution plans
+    // Note: Using JSON mode without strict schema for better compatibility
+    this.plannerModel = this.genAI.getGenerativeModel({
       model: config.gemini.model,
-      systemInstruction: SYSTEM_INSTRUCTION,
+      systemInstruction: PLANNER_SYSTEM_INSTRUCTION,
+      generationConfig: {
+        responseMimeType: 'application/json'
+      }
     });
   }
 
   /**
-   * Process a fax request using Gemini's native function calling
+   * Process a fax request using the Planner pattern
+   *
+   * Flow:
+   * 1. Gemini analyzes request and creates ExecutionPlan
+   * 2. Plan is executed by MCP Controller Agent
+   * 3. Results are aggregated into final response
    */
   async processRequest(
     ocrText: string,
@@ -81,7 +86,7 @@ class GeminiAgentService {
     userId: string
   ): Promise<AgentProcessResult> {
     try {
-      loggingService.info('Gemini Agent processing request', {
+      loggingService.info('Gemini Agent processing request (Planner Mode)', {
         textLength: ocrText.length,
         annotationCount: visualAnnotations.length
       });
@@ -98,160 +103,43 @@ class GeminiAgentService {
         }
       }
 
-      // Call Gemini with function calling enabled
-      const result = await this.model.generateContent({
-        contents: [{ role: 'user', parts: [{ text: contextText }] }],
-        tools: [{ functionDeclarations: allGeminiTools }],
-        toolConfig: {
-          functionCallingConfig: {
-            mode: FunctionCallingMode.AUTO
-          }
-        }
+      // Step 1: Create execution plan using Gemini Planner
+      const plan = await this.createExecutionPlan(contextText);
+
+      if (!plan || !plan.steps || plan.steps.length === 0) {
+        loggingService.warn('Planner returned empty plan - requesting clarification');
+        return this.createClarificationResponse('ご依頼の内容を確認させてください。');
+      }
+
+      loggingService.info('Execution plan created', {
+        stepCount: plan.steps.length,
+        summary: plan.summary,
+        steps: plan.steps.map(s => ({ id: s.id, tool: s.tool, hasDeps: !!s.dependsOn?.length, hasCondition: !!s.condition }))
       });
 
-      const response = result.response;
-      const candidates = response.candidates;
+      // Step 2: Execute the plan
+      const toolCallResults = await this.executePlan(plan, userId);
 
-      // DEBUG: Log the raw Gemini response
-      console.log('\n=== GEMINI RESPONSE ===');
-      console.log('Has candidates:', !!candidates);
-      console.log('Candidate count:', candidates?.length || 0);
-      console.log('Finish reason:', candidates?.[0]?.finishReason);
-      console.log('Parts count:', candidates?.[0]?.content?.parts?.length || 0);
-      const partTypes = candidates?.[0]?.content?.parts?.map((p: any) =>
-        p.functionCall ? `functionCall:${p.functionCall.name}` : p.text ? 'text' : 'unknown'
-      );
-      console.log('Part types:', partTypes);
+      // Step 3: Check results and aggregate response
+      const successfulResults = toolCallResults.filter(r => r.success && !r.skipped);
+      const failedResults = toolCallResults.filter(r => !r.success && !r.skipped);
+      const skippedResults = toolCallResults.filter(r => r.skipped);
 
-      loggingService.info('Gemini raw response', {
-        hasCandidates: !!candidates,
-        candidateCount: candidates?.length || 0,
-        finishReason: candidates?.[0]?.finishReason,
-        partsCount: candidates?.[0]?.content?.parts?.length || 0,
-        partTypes
+      loggingService.info('Plan execution complete', {
+        total: toolCallResults.length,
+        successful: successfulResults.length,
+        failed: failedResults.length,
+        skipped: skippedResults.length
       });
 
-      if (!candidates || candidates.length === 0) {
-        loggingService.warn('Gemini returned no candidates');
-        return this.createClarificationResponse('リクエストを理解できませんでした。');
-      }
-
-      const content = candidates[0].content;
-      const parts = content.parts;
-
-      // DEBUG: Log any text parts
-      const textParts = parts.filter((p: any) => p.text);
-      if (textParts.length > 0) {
-        loggingService.info('Gemini returned text instead of function call', {
-          textContent: textParts[0].text?.substring(0, 200)
-        });
-      }
-
-      // Check for function calls
-      const functionCalls = parts.filter((p: any) => p.functionCall);
-
-      if (functionCalls.length === 0) {
-        // No function call - Gemini wasn't confident enough
-        loggingService.info('Gemini did not call any function - requesting clarification');
-        return this.createClarificationResponse(
-          'ご依頼の内容を確認させてください。',
-          ['商品を探す', 'メールを送る', '質問する']
-        );
-      }
-
-      // Process each function call
-      const toolCallResults: ToolCallResult[] = [];
-
-      for (const part of functionCalls) {
-        const functionCall = part.functionCall;
-        const toolName = functionCall.name;
-        const args = functionCall.args || {};
-
-        loggingService.info('Gemini called function', { toolName, args });
-
-        // Check for clarification request
-        if (toolName === 'request_clarification') {
-          return this.createClarificationResponse(
-            args.clarificationQuestion || 'ご依頼の内容を確認させてください。',
-            args.possibleIntents || []
-          );
-        }
-
-        // Map to MCP server and tool
-        const serverName = toolToServerMap[toolName];
-        const mcpToolName = toolNameMap[toolName];
-
-        if (!serverName || !mcpToolName) {
-          loggingService.error('Unknown tool mapping', new Error(`Unknown tool: ${toolName}`));
-          continue;
-        }
-
-        // Execute the MCP tool
-        try {
-          const mcpResult = await this.executeMcpTool(
-            serverName,
-            mcpToolName,
-            { ...args, userId }
-          );
-
-          loggingService.info('MCP tool result received', {
-            toolName,
-            serverName,
-            hasResult: !!mcpResult,
-            resultSuccess: mcpResult?.success,
-            resultProductCount: mcpResult?.products?.length,
-            resultKeys: mcpResult ? Object.keys(mcpResult) : []
-          });
-
-          const isSuccess = mcpResult && mcpResult.success !== false;
-
-          toolCallResults.push({
-            toolName,
-            serverName,
-            parameters: args,
-            result: mcpResult,
-            success: isSuccess
-          });
-
-          if (!isSuccess) {
-            loggingService.warn('MCP tool call marked as failed', {
-              toolName,
-              mcpResultSuccess: mcpResult?.success,
-              mcpResultError: mcpResult?.error
-            });
-          }
-        } catch (error: any) {
-          loggingService.error('MCP tool execution failed', error, undefined, {
-            toolName,
-            serverName
-          });
-
-          toolCallResults.push({
-            toolName,
-            serverName,
-            parameters: args,
-            result: null,
-            success: false,
-            error: error.message
-          });
-        }
-      }
-
-      // Check if all tools failed
-      const allFailed = toolCallResults.every(r => !r.success);
-
-      loggingService.info('Tool call results summary', {
-        totalCalls: toolCallResults.length,
-        successfulCalls: toolCallResults.filter(r => r.success).length,
-        failedCalls: toolCallResults.filter(r => !r.success).length,
-        allFailed
-      });
-
-      if (allFailed && toolCallResults.length > 0) {
+      // If all non-skipped steps failed, return error
+      const nonSkippedResults = toolCallResults.filter(r => !r.skipped);
+      if (nonSkippedResults.length > 0 && nonSkippedResults.every(r => !r.success)) {
         return {
           success: false,
           needsClarification: false,
           toolCalls: toolCallResults,
+          plan,
           error: 'All tool calls failed'
         };
       }
@@ -260,7 +148,8 @@ class GeminiAgentService {
         success: true,
         needsClarification: false,
         toolCalls: toolCallResults,
-        aggregatedResponse: this.aggregateResponses(toolCallResults)
+        plan,
+        aggregatedResponse: this.aggregateResponses(toolCallResults, plan)
       };
 
     } catch (error: any) {
@@ -279,19 +168,288 @@ class GeminiAgentService {
   }
 
   /**
-   * Execute an MCP tool with the given parameters
+   * Create an execution plan using Gemini
    */
-  private async executeMcpTool(
-    serverName: string,
-    toolName: string,
-    params: Record<string, any>
-  ): Promise<any> {
-    loggingService.info('Executing MCP tool', { serverName, toolName, params });
+  private async createExecutionPlan(userRequest: string): Promise<ExecutionPlan | null> {
+    try {
+      console.log('\n=== CREATING EXECUTION PLAN ===');
+      console.log('User request:', userRequest.substring(0, 200));
 
-    // Map parameters to MCP expected format
-    const mcpParams = this.mapParamsToMcp(serverName, toolName, params);
+      loggingService.info('Creating execution plan', { requestPreview: userRequest.substring(0, 200) });
 
-    return await mcpControllerAgent.executeTool(serverName, toolName, mcpParams);
+      const result = await this.plannerModel.generateContent({
+        contents: [{ role: 'user', parts: [{ text: userRequest }] }]
+      });
+
+      const response = result.response;
+      const text = response.text();
+
+      console.log('\n=== PLANNER RAW RESPONSE ===');
+      console.log(text);
+      console.log('=== END PLANNER RESPONSE ===\n');
+
+      // Parse JSON response
+      let parsed: { plan: ExecutionPlan };
+      try {
+        parsed = JSON.parse(text);
+        console.log('Parsed plan:', JSON.stringify(parsed, null, 2));
+      } catch (parseError) {
+        console.error('JSON parse error:', parseError);
+        loggingService.error('Failed to parse planner response', parseError as Error, undefined, {
+          responseText: text.substring(0, 500)
+        });
+        return null;
+      }
+
+      if (!parsed.plan || !parsed.plan.steps) {
+        console.error('Invalid plan structure - missing plan or steps:', parsed);
+        loggingService.warn('Invalid plan structure', { parsed });
+        return null;
+      }
+
+      // Validate steps have required fields
+      const validSteps = parsed.plan.steps.filter(step =>
+        step.id && step.tool && step.params
+      );
+
+      console.log(`Valid steps: ${validSteps.length} of ${parsed.plan.steps.length}`);
+
+      if (validSteps.length === 0) {
+        console.error('No valid steps in plan');
+        loggingService.warn('No valid steps in plan');
+        return null;
+      }
+
+      console.log('=== PLAN CREATED SUCCESSFULLY ===');
+      return {
+        steps: validSteps,
+        summary: parsed.plan.summary
+      };
+
+    } catch (error: any) {
+      console.error('=== PLANNER ERROR ===');
+      console.error('Error:', error.message);
+      console.error('Stack:', error.stack?.substring(0, 500));
+      loggingService.error('Failed to create execution plan', error);
+      return null;
+    }
+  }
+
+  /**
+   * Execute an execution plan with dependency and condition handling
+   */
+  private async executePlan(plan: ExecutionPlan, userId: string): Promise<ToolCallResult[]> {
+    const results: ToolCallResult[] = [];
+    const stepResults: Map<string, any> = new Map();
+
+    // Topologically sort steps based on dependencies
+    const sortedSteps = this.topologicalSort(plan.steps);
+
+    for (const step of sortedSteps) {
+      loggingService.info('Executing step', { stepId: step.id, tool: step.tool });
+
+      // Check dependencies are satisfied
+      if (step.dependsOn && step.dependsOn.length > 0) {
+        const unmetDeps = step.dependsOn.filter(depId => !stepResults.has(depId));
+        if (unmetDeps.length > 0) {
+          loggingService.warn('Skipping step due to unmet dependencies', {
+            stepId: step.id,
+            unmetDeps
+          });
+          results.push({
+            stepId: step.id,
+            toolName: step.tool,
+            serverName: toolToServerMap[step.tool] || 'unknown',
+            parameters: step.params,
+            result: null,
+            success: false,
+            skipped: true,
+            error: `Dependencies not met: ${unmetDeps.join(', ')}`
+          });
+          continue;
+        }
+      }
+
+      // Check condition if present
+      if (step.condition) {
+        const conditionMet = this.evaluateCondition(step.condition, stepResults);
+        if (!conditionMet) {
+          loggingService.info('Skipping step due to condition not met', {
+            stepId: step.id,
+            condition: step.condition
+          });
+          results.push({
+            stepId: step.id,
+            toolName: step.tool,
+            serverName: toolToServerMap[step.tool] || 'unknown',
+            parameters: step.params,
+            result: null,
+            success: true, // Condition skip is not a failure
+            skipped: true
+          });
+          continue;
+        }
+      }
+
+      // Execute the step
+      const result = await this.executeStep(step, userId, stepResults);
+      results.push(result);
+
+      // Store result for dependent steps
+      if (result.success) {
+        stepResults.set(step.id, result.result);
+      }
+    }
+
+    return results;
+  }
+
+  /**
+   * Execute a single step
+   */
+  private async executeStep(
+    step: ExecutionStep,
+    userId: string,
+    previousResults: Map<string, any>
+  ): Promise<ToolCallResult> {
+    const serverName = toolToServerMap[step.tool];
+    const mcpToolName = toolNameMap[step.tool];
+
+    if (!serverName || !mcpToolName) {
+      loggingService.error('Unknown tool mapping', new Error(`Unknown tool: ${step.tool}`));
+      return {
+        stepId: step.id,
+        toolName: step.tool,
+        serverName: 'unknown',
+        parameters: step.params,
+        result: null,
+        success: false,
+        error: `Unknown tool: ${step.tool}`
+      };
+    }
+
+    try {
+      // Map parameters to MCP format
+      const mcpParams = this.mapParamsToMcp(serverName, mcpToolName, { ...step.params, userId });
+
+      // Execute via MCP Controller Agent
+      const mcpResult = await mcpControllerAgent.executeTool(serverName, mcpToolName, mcpParams);
+
+      loggingService.info('Step execution result', {
+        stepId: step.id,
+        tool: step.tool,
+        hasResult: !!mcpResult,
+        success: mcpResult?.success !== false
+      });
+
+      const isSuccess = mcpResult && mcpResult.success !== false;
+
+      return {
+        stepId: step.id,
+        toolName: step.tool,
+        serverName,
+        parameters: step.params,
+        result: mcpResult,
+        success: isSuccess
+      };
+
+    } catch (error: any) {
+      loggingService.error('Step execution failed', error, undefined, {
+        stepId: step.id,
+        tool: step.tool
+      });
+
+      return {
+        stepId: step.id,
+        toolName: step.tool,
+        serverName,
+        parameters: step.params,
+        result: null,
+        success: false,
+        error: error.message
+      };
+    }
+  }
+
+  /**
+   * Evaluate a step condition
+   */
+  private evaluateCondition(condition: StepCondition, stepResults: Map<string, any>): boolean {
+    const dependentResult = stepResults.get(condition.step);
+
+    if (!dependentResult) {
+      loggingService.warn('Condition references non-existent step result', { condition });
+      return false;
+    }
+
+    // Get the value to check - defaults to response text
+    let valueToCheck: string;
+    if (condition.field) {
+      valueToCheck = String(dependentResult[condition.field] || '');
+    } else {
+      // For ai_chat, check the response field
+      valueToCheck = String(dependentResult.response || dependentResult.message || JSON.stringify(dependentResult));
+    }
+
+    const valueLower = valueToCheck.toLowerCase();
+    const checkValueLower = (condition.value || '').toLowerCase();
+
+    switch (condition.check) {
+      case 'contains':
+        return valueLower.includes(checkValueLower);
+
+      case 'not_contains':
+        return !valueLower.includes(checkValueLower);
+
+      case 'equals':
+        return valueLower === checkValueLower;
+
+      case 'not_equals':
+        return valueLower !== checkValueLower;
+
+      case 'truthy':
+        return !!dependentResult && dependentResult.success !== false;
+
+      case 'falsy':
+        return !dependentResult || dependentResult.success === false;
+
+      default:
+        loggingService.warn('Unknown condition check type', { check: condition.check });
+        return true; // Default to true for unknown checks
+    }
+  }
+
+  /**
+   * Topologically sort steps based on dependencies
+   */
+  private topologicalSort(steps: ExecutionStep[]): ExecutionStep[] {
+    const stepMap = new Map(steps.map(s => [s.id, s]));
+    const visited = new Set<string>();
+    const result: ExecutionStep[] = [];
+
+    const visit = (stepId: string) => {
+      if (visited.has(stepId)) return;
+      visited.add(stepId);
+
+      const step = stepMap.get(stepId);
+      if (!step) return;
+
+      // Visit dependencies first
+      if (step.dependsOn) {
+        for (const depId of step.dependsOn) {
+          visit(depId);
+        }
+      }
+
+      result.push(step);
+    };
+
+    // Visit all steps
+    for (const step of steps) {
+      visit(step.id);
+    }
+
+    return result;
   }
 
   /**
@@ -399,11 +557,16 @@ Circle your choice and fax back.
   /**
    * Aggregate multiple tool call results into a single response
    */
-  private aggregateResponses(toolCalls: ToolCallResult[]): string {
+  private aggregateResponses(toolCalls: ToolCallResult[], plan: ExecutionPlan): string {
     const responses: string[] = [];
 
     for (const call of toolCalls) {
-      if (!call.success) continue;
+      // Skip failed or skipped calls
+      if (!call.success || call.skipped) continue;
+
+      // Find the step description for context
+      const step = plan.steps.find(s => s.id === call.stepId);
+      const stepDescription = step?.description || '';
 
       switch (call.serverName) {
         case 'shopping':
@@ -414,19 +577,46 @@ Circle your choice and fax back.
           break;
 
         case 'email':
-          responses.push(`メール送信完了 / Email sent successfully`);
+          if (call.result?.success !== false) {
+            const recipient = call.parameters.recipientName || call.parameters.recipientEmail || 'recipient';
+            responses.push(`✓ メール送信完了 / Email sent to ${recipient}`);
+          }
           break;
 
         case 'ai_chat':
           if (call.result?.response) {
-            responses.push(call.result.response);
+            // For multiple AI chat responses, add a label if there are multiple
+            const aiChatCalls = toolCalls.filter(c => c.serverName === 'ai_chat' && c.success && !c.skipped);
+            if (aiChatCalls.length > 1 && stepDescription) {
+              responses.push(`【${stepDescription}】\n${call.result.response}`);
+            } else {
+              responses.push(call.result.response);
+            }
           }
           break;
 
         case 'payment':
-          responses.push(`支払い処理完了 / Payment processed`);
+          responses.push(`✓ 支払い処理完了 / Payment processed`);
           break;
+
+        default:
+          // Generic response for unknown server types
+          if (call.result) {
+            responses.push(`✓ ${stepDescription || call.toolName} completed`);
+          }
       }
+    }
+
+    // Add summary of skipped conditional steps
+    const skippedConditional = toolCalls.filter(c => c.skipped && !c.error);
+    if (skippedConditional.length > 0) {
+      const skippedDescs = skippedConditional
+        .map(c => {
+          const step = plan.steps.find(s => s.id === c.stepId);
+          return step?.description || c.toolName;
+        })
+        .join(', ');
+      responses.push(`\n※ 条件が満たされなかったため実行されませんでした: ${skippedDescs}`);
     }
 
     return responses.join('\n\n---\n\n');
@@ -436,7 +626,6 @@ Circle your choice and fax back.
    * Format shopping results for fax response
    */
   private formatShoppingResponse(products: any[], referenceId?: string): string {
-    // DEBUG: Log product data to see what's actually being returned
     console.log('\n=== PRODUCT DATA DEBUG ===');
     products.forEach((p, i) => {
       console.log(`Product ${i + 1}:`, {
@@ -453,21 +642,17 @@ Circle your choice and fax back.
     });
 
     const productList = products.map((p: any, i: number) => {
-      // Build display name: brand + product name + quantity
       const brand = p.brand ? `【${p.brand}】` : '';
       const name = p.productName || p.title?.substring(0, 40) || 'Unknown';
       const qty = p.quantity ? ` ${p.quantity}` : '';
       const displayName = `${brand}${name}${qty}`;
 
-      // Format price (show "価格確認中" if 0)
       const price = p.price > 0 ? `¥${p.price.toLocaleString()}` : '価格確認中';
       const prime = p.primeEligible ? '✓Prime' : '';
       const rating = p.rating ? `${p.rating}★` : '';
 
-      // Build the product entry
       let entry = `${i + 1}. ${displayName}\n   ${price} ${prime} ${rating}`.trim();
 
-      // Add description if available
       if (p.description) {
         entry += `\n   ${p.description}`;
       }

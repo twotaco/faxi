@@ -2,7 +2,10 @@
   "mcpServers": {
     "faxi-spec-validator": {
       "command": "npx",
-      "args": ["tsx", "backend/src/mcp/kiro/specValidatorMcpServer.ts"],
+      "args": [
+        "tsx",
+        "backend/src/mcp/kiro/specValidatorMcpServer.ts"
+      ],
       "env": {
         "SPECS_DIR": ".kiro/specs",
         "NODE_ENV": "development"
@@ -12,7 +15,10 @@
     },
     "faxi-auto-docs": {
       "command": "npx",
-      "args": ["tsx", "backend/src/mcp/kiro/autoDocsMcpServer.ts"],
+      "args": [
+        "tsx",
+        "backend/src/mcp/kiro/autoDocsMcpServer.ts"
+      ],
       "env": {
         "SCREENSHOT_DIR": "docs/screenshots",
         "HELP_DIR": "docs/help",
@@ -22,6 +28,26 @@
       },
       "disabled": false,
       "autoApprove": []
+    },
+    "faxi-deployment": {
+      "command": "npx",
+      "args": [
+        "tsx",
+        "backend/src/mcp/deployment/deploymentMcpServer.ts"
+      ],
+      "env": {
+        "DEPLOYMENT_ENVIRONMENTS": "development,staging,production",
+        "DEPLOYMENT_STRATEGY": "rolling",
+        "HEALTH_CHECK_TIMEOUT": "300",
+        "ROLLBACK_ENABLED": "true",
+        "LOG_ANALYSIS_MODEL": "gemini-2.0-flash-exp",
+        "INTEGRATION_TEST_TIMEOUT": "600",
+        "NODE_ENV": "development"
+      },
+      "disabled": false,
+      "autoApprove": [
+        "plan_deployment"
+      ]
     }
   }
 }

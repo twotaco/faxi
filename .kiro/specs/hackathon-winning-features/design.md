@@ -16,7 +16,7 @@ The design leverages existing infrastructure (backend API, test fixtures, AI ser
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                    Marketing Website                         │
-│                  (Next.js - Port 4002)                       │
+│                  (Next.js - Port 4003)                       │
 │  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐   │
 │  │  Hero &  │  │   Use    │  │ Interactive│  │ Metrics  │   │
 │  │ Landing  │  │  Cases   │  │   Demo     │  │Dashboard │   │

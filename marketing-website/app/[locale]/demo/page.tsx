@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useParams } from 'next/navigation';
 import { useDemo } from '@/lib/hooks/useDemo';
 import { FixtureSelection } from '@/components/demo/FixtureSelection';
 import { FileUpload } from '@/components/demo/FileUpload';
@@ -22,6 +23,8 @@ import {
 import type { DemoFixture } from '@/lib/api/types';
 
 export default function DemoPage() {
+  const params = useParams();
+  const locale = params.locale as string;
   const {
     fixtures,
     isLoadingFixtures,
@@ -85,7 +88,7 @@ export default function DemoPage() {
         <div className="text-center mb-12">
           <div className="flex justify-center items-center gap-4 mb-4">
             <h1 className="text-4xl font-bold">Interactive Demo</h1>
-            <Link href="/demo/help">
+            <Link href={`/${locale}/help#demo`}>
               <Button variant="outline" size="sm" className="gap-2">
                 <HelpCircle className="h-4 w-4" />
                 Help Guide

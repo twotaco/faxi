@@ -8,7 +8,7 @@ This repository uses npm workspaces to manage three applications:
 
 - **backend/** - Express.js API server (port 4000)
 - **admin-dashboard/** - Next.js admin interface (port 4001)
-- **marketing-website/** - Next.js marketing website (port 4002)
+- **marketing-website/** - Next.js marketing website (port 4003)
 
 See [MONOREPO.md](./MONOREPO.md) for detailed information about the monorepo structure.
 
@@ -214,6 +214,35 @@ See [marketing-website/README.md](./marketing-website/README.md) for detailed do
 
 The marketing website is deployed to Vercel. See [marketing-website/DEPLOYMENT.md](./marketing-website/DEPLOYMENT.md) for deployment instructions.
 
+## MCP Servers
+
+Faxi includes several Model Context Protocol (MCP) servers for advanced automation:
+
+### Deployment MCP
+Intelligent deployment automation with multi-tier health checks, AI-powered log analysis, and automatic rollback capabilities.
+
+**Features:**
+- Full and partial deployment orchestration
+- Multi-tier health checks (system, smoke tests, E2E)
+- AI-powered log analysis and error diagnosis
+- Intelligent rollback management
+- Secrets verification and drift detection
+- Integration testing and dependency analysis
+
+**Configuration:** See `.kiro/settings/mcp.json`
+
+**Documentation:** [Deployment MCP Guide](./backend/src/mcp/deployment/README.md)
+
+### Spec Validator MCP
+Validates Kiro spec structure, finds incomplete tasks, and checks test coverage.
+
+**Documentation:** [Spec Validator Guide](./backend/src/mcp/kiro/README.md)
+
+### Auto-Docs MCP
+Autonomously generates documentation by discovering routes, navigating UI, and capturing screenshots.
+
+**Documentation:** [Auto-Docs Guide](./backend/src/mcp/kiro/README.md)
+
 ## Documentation
 
 - [Monorepo Structure](./MONOREPO.md)
@@ -222,6 +251,7 @@ The marketing website is deployed to Vercel. See [marketing-website/DEPLOYMENT.m
 - [Marketing Website Deployment](./marketing-website/DEPLOYMENT.md)
 - [Backend CORS Configuration](./backend/CORS_CONFIGURATION.md)
 - [E2E Testing Checklist](./marketing-website/E2E_TESTING_CHECKLIST.md)
+- [Deployment MCP](./backend/src/mcp/deployment/README.md)
 
 ## License
 

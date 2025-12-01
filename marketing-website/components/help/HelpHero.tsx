@@ -52,7 +52,7 @@ export function HelpHero({ locale }: HelpHeroProps) {
   };
 
   return (
-    <section className="relative overflow-hidden bg-gradient-to-br from-faxi-brown via-faxi-brown-dark to-faxi-footer py-20 -mt-20 pt-32">
+    <section className="relative overflow-hidden bg-gradient-to-br from-faxi-brown via-faxi-brown-dark to-faxi-footer pb-36 -mt-20 pt-48">
       {/* Decorative Elements */}
       <div className="absolute top-10 right-10 w-64 h-64 bg-amber-400/20 rounded-full blur-3xl animate-blob" />
       <div className="absolute bottom-10 left-10 w-80 h-80 bg-white/10 rounded-full blur-3xl animate-blob animation-delay-2000" />

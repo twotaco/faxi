@@ -4,6 +4,7 @@ import { orderRepository, CreateOrderData } from '../repositories/orderRepositor
 import { userRepository } from '../repositories/userRepository';
 import { auditLogService } from '../services/auditLogService';
 import { conversationContextRepository } from '../repositories/conversationContextRepository';
+// isDemoMode removed - demo user exists in database, no need for mock stubs
 
 /**
  * Shopping MCP Server - Provides shopping tools to the MCP Controller Agent
@@ -265,7 +266,7 @@ export class ShoppingMCPServer implements MCPServer {
    */
   private async handleSearchProducts(params: any): Promise<any> {
     const { userId, query, filters = {} } = params;
-    
+
     try {
       // Verify user exists
       const user = await userRepository.findById(userId);
@@ -501,7 +502,7 @@ export class ShoppingMCPServer implements MCPServer {
    */
   private async handleGetProductDetails(params: any): Promise<any> {
     const { userId, asin } = params;
-    
+
     try {
       // Verify user exists
       const user = await userRepository.findById(userId);
@@ -556,7 +557,7 @@ export class ShoppingMCPServer implements MCPServer {
    */
   private async handleCreateOrder(params: any): Promise<any> {
     const { userId, referenceId, productAsin, quantity = 1 } = params;
-    
+
     try {
       // Verify user exists
       const user = await userRepository.findById(userId);
@@ -655,7 +656,7 @@ export class ShoppingMCPServer implements MCPServer {
    */
   private async handleGetOrderStatus(params: any): Promise<any> {
     const { userId, referenceId } = params;
-    
+
     try {
       // Verify user exists
       const user = await userRepository.findById(userId);
@@ -716,7 +717,7 @@ export class ShoppingMCPServer implements MCPServer {
    */
   private async handleListUserOrders(params: any): Promise<any> {
     const { userId, limit = 10 } = params;
-    
+
     try {
       // Verify user exists
       const user = await userRepository.findById(userId);

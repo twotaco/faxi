@@ -13,7 +13,8 @@ import {
   Settings,
   BarChart3,
   FileSearch,
-  ShoppingCart
+  ShoppingCart,
+  BookOpen
 } from 'lucide-react';
 
 const navigation = [
@@ -27,6 +28,7 @@ const navigation = [
   { name: 'Alerts', href: '/alerts', icon: Bell },
   { name: 'Analytics', href: '/analytics', icon: BarChart3 },
   { name: 'Audit Logs', href: '/audit', icon: FileSearch },
+  { name: 'Guides', href: '/guides', icon: BookOpen },
   { name: 'Configuration', href: '/config', icon: Settings },
 ];
 

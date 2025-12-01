@@ -224,3 +224,289 @@ export const toolNameMap: Record<string, string> = {
   'payment_register': 'register_payment_method',
   'payment_check_status': 'check_payment_status'
 };
+
+/**
+ * Execution Plan Types - For multi-step orchestration
+ */
+
+export interface StepCondition {
+  /** The step ID whose result to check */
+  step: string;
+  /** The type of check to perform */
+  check: 'contains' | 'not_contains' | 'equals' | 'not_equals' | 'truthy' | 'falsy';
+  /** The value to check against (for contains/equals checks) */
+  value?: string;
+  /** Field path in the result to check (defaults to response text) */
+  field?: string;
+}
+
+export interface ExecutionStep {
+  /** Unique identifier for this step */
+  id: string;
+  /** The tool to call (must match a key in toolToServerMap) */
+  tool: string;
+  /** Parameters to pass to the tool */
+  params: Record<string, any>;
+  /** Human-readable description of what this step does */
+  description: string;
+  /** Step IDs that must complete before this step runs */
+  dependsOn?: string[];
+  /** Optional condition that must be met for this step to execute */
+  condition?: StepCondition;
+}
+
+export interface ExecutionPlan {
+  /** Array of steps to execute */
+  steps: ExecutionStep[];
+  /** Optional summary of what the plan accomplishes */
+  summary?: string;
+}
+
+/**
+ * List of available tools for the planner prompt
+ */
+export const availableToolsList = `
+AVAILABLE TOOLS:
+- ai_chat_question: Ask questions, get information, weather, recommendations, advice
+  params: { question: string, context?: string }
+
+- shopping_search_products: Search for products on Amazon Japan
+  params: { query: string, maxPrice?: number, minPrice?: number, primeOnly?: boolean }
+
+- shopping_create_order: Create an order for a product
+  params: { productId: string, quantity?: number }
+
+- email_send: Send an email to someone
+  params: { recipientEmail?: string, recipientName?: string, subject?: string, body: string }
+
+- email_lookup_contact: Look up a contact's email address
+  params: { name: string }
+
+- payment_register: Register a payment method
+  params: { methodType: "credit_card" | "bank_transfer" | "convenience_store" }
+
+- payment_check_status: Check payment/order status
+  params: { orderId: string }
+`;
+
+/**
+ * Planner System Instruction - Guides Gemini to create execution plans
+ */
+export const PLANNER_SYSTEM_INSTRUCTION = `You are Faxi's request planner. Your job is to analyze user requests and create execution plans that orchestrate multiple tools.
+
+IMPORTANT: You must output ONLY valid JSON. No markdown, no explanations, just the JSON plan.
+
+${availableToolsList}
+
+PLAN STRUCTURE:
+{
+  "plan": {
+    "steps": [
+      {
+        "id": "step_1",
+        "tool": "tool_name",
+        "params": { ... },
+        "description": "What this step does",
+        "dependsOn": ["step_id"],  // Optional: steps that must complete first
+        "condition": {              // Optional: only run if condition is met
+          "step": "step_id",
+          "check": "contains",      // contains, not_contains, equals, not_equals, truthy, falsy
+          "value": "sunny"          // Value to check for (for contains/equals)
+        }
+      }
+    ],
+    "summary": "Brief description of the overall plan"
+  }
+}
+
+CONDITION CHECKS:
+- "contains": Result text contains the value (case-insensitive)
+- "not_contains": Result text does NOT contain the value
+- "equals": Result equals the value exactly
+- "not_equals": Result does NOT equal the value
+- "truthy": Result is successful/truthy
+- "falsy": Result is unsuccessful/falsy
+
+EXAMPLES:
+
+1. Simple question:
+Input: "What's the weather in Tokyo?"
+Output:
+{
+  "plan": {
+    "steps": [
+      {
+        "id": "step_1",
+        "tool": "ai_chat_question",
+        "params": { "question": "What's the weather in Tokyo?" },
+        "description": "Get Tokyo weather"
+      }
+    ],
+    "summary": "Answer weather question"
+  }
+}
+
+2. Multiple questions (parallel execution):
+Input: "What's the weather in Tokyo? Also recommend restaurants near Tokyo Station"
+Output:
+{
+  "plan": {
+    "steps": [
+      {
+        "id": "step_1",
+        "tool": "ai_chat_question",
+        "params": { "question": "What's the weather in Tokyo?" },
+        "description": "Get Tokyo weather"
+      },
+      {
+        "id": "step_2",
+        "tool": "ai_chat_question",
+        "params": { "question": "What are some good restaurants near Tokyo Station?" },
+        "description": "Get restaurant recommendations"
+      }
+    ],
+    "summary": "Answer weather and restaurant questions"
+  }
+}
+
+3. Conditional execution:
+Input: "If it's sunny in Tokyo tomorrow, email John about having lunch outside"
+Output:
+{
+  "plan": {
+    "steps": [
+      {
+        "id": "step_1",
+        "tool": "ai_chat_question",
+        "params": { "question": "What will the weather be like in Tokyo tomorrow? Is it going to be sunny?" },
+        "description": "Check tomorrow's weather"
+      },
+      {
+        "id": "step_2",
+        "tool": "email_send",
+        "params": { "recipientName": "John", "subject": "Lunch tomorrow?", "body": "Hi John, the weather looks great tomorrow! Want to have lunch outside?" },
+        "description": "Send lunch invitation if sunny",
+        "dependsOn": ["step_1"],
+        "condition": { "step": "step_1", "check": "contains", "value": "sunny" }
+      }
+    ],
+    "summary": "Check weather and conditionally send lunch invitation"
+  }
+}
+
+4. Mixed intents (shopping + email):
+Input: "Order some shampoo and email mom that I'm visiting next week"
+Output:
+{
+  "plan": {
+    "steps": [
+      {
+        "id": "step_1",
+        "tool": "shopping_search_products",
+        "params": { "query": "shampoo", "primeOnly": true },
+        "description": "Search for shampoo"
+      },
+      {
+        "id": "step_2",
+        "tool": "email_send",
+        "params": { "recipientName": "mom", "subject": "Visiting next week", "body": "Hi Mom, I wanted to let you know I'll be visiting next week. Looking forward to seeing you!" },
+        "description": "Email mom about visit"
+      }
+    ],
+    "summary": "Search for shampoo and send email to mom"
+  }
+}
+
+5. Sequential with dependency:
+Input: "Look up Sarah's email and send her the meeting notes"
+Output:
+{
+  "plan": {
+    "steps": [
+      {
+        "id": "step_1",
+        "tool": "email_lookup_contact",
+        "params": { "name": "Sarah" },
+        "description": "Look up Sarah's email address"
+      },
+      {
+        "id": "step_2",
+        "tool": "email_send",
+        "params": { "recipientName": "Sarah", "subject": "Meeting Notes", "body": "Hi Sarah, here are the meeting notes as discussed." },
+        "description": "Send meeting notes to Sarah",
+        "dependsOn": ["step_1"]
+      }
+    ],
+    "summary": "Look up contact and send email"
+  }
+}
+
+GUIDELINES:
+- Always create at least one step
+- Use dependsOn when one step needs the result of another
+- Use condition when execution depends on a previous result's content
+- Steps without dependsOn can run in parallel
+- Extract clear parameters from the user's request
+- For vague requests, make reasonable assumptions rather than asking for clarification
+- Preserve the user's intent and language where appropriate
+`;
+
+/**
+ * JSON Schema for structured output from Gemini planner
+ */
+export const plannerResponseSchema = {
+  type: SchemaType.OBJECT,
+  properties: {
+    plan: {
+      type: SchemaType.OBJECT,
+      properties: {
+        steps: {
+          type: SchemaType.ARRAY,
+          items: {
+            type: SchemaType.OBJECT,
+            properties: {
+              id: {
+                type: SchemaType.STRING,
+                description: 'Unique step identifier'
+              },
+              tool: {
+                type: SchemaType.STRING,
+                description: 'Tool name to call'
+              },
+              params: {
+                type: SchemaType.OBJECT,
+                description: 'Parameters for the tool'
+              },
+              description: {
+                type: SchemaType.STRING,
+                description: 'What this step does'
+              },
+              dependsOn: {
+                type: SchemaType.ARRAY,
+                items: { type: SchemaType.STRING },
+                description: 'Step IDs that must complete first'
+              },
+              condition: {
+                type: SchemaType.OBJECT,
+                properties: {
+                  step: { type: SchemaType.STRING },
+                  check: { type: SchemaType.STRING },
+                  value: { type: SchemaType.STRING },
+                  field: { type: SchemaType.STRING }
+                },
+                description: 'Condition for execution'
+              }
+            },
+            required: ['id', 'tool', 'params', 'description']
+          }
+        },
+        summary: {
+          type: SchemaType.STRING,
+          description: 'Brief summary of the plan'
+        }
+      },
+      required: ['steps']
+    }
+  },
+  required: ['plan']
+};

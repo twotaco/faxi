@@ -254,3 +254,16 @@ function buildConfig(): Config {
 
 // Validate and export configuration
 export const config = configSchema.parse(buildConfig());
+
+/**
+ * Demo mode user ID - used for marketing website demo
+ * This is a fake user ID that bypasses user validation in MCP servers
+ */
+export const DEMO_USER_ID = '00000000-0000-0000-0000-000000000001';
+
+/**
+ * Check if a user ID is the demo user
+ */
+export function isDemoMode(userId: string): boolean {
+  return userId === DEMO_USER_ID;
+}

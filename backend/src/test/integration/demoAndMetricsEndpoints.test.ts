@@ -18,7 +18,7 @@ describe('Demo and Metrics Endpoints', () => {
     app = express();
     
     app.use(cors({
-      origin: ['http://localhost:4002', 'http://localhost:4001'],
+      origin: ['http://localhost:4003', 'http://localhost:4001'],
       credentials: true,
       methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
       allowedHeaders: ['Content-Type', 'Authorization', 'Cookie'],
@@ -42,7 +42,7 @@ describe('Demo and Metrics Endpoints', () => {
     it('should include CORS headers', async () => {
       const response = await request(app)
         .get('/api/demo/fixtures')
-        .set('Origin', 'http://localhost:4002');
+        .set('Origin', 'http://localhost:4003');
 
       expect(response.headers).toHaveProperty('access-control-allow-origin');
     });
@@ -70,7 +70,7 @@ describe('Demo and Metrics Endpoints', () => {
     it('should include CORS headers', async () => {
       const response = await request(app)
         .post('/api/demo/process')
-        .set('Origin', 'http://localhost:4002')
+        .set('Origin', 'http://localhost:4003')
         .send({ fixtureId: 'test' });
 
       expect(response.headers).toHaveProperty('access-control-allow-origin');
@@ -103,7 +103,7 @@ describe('Demo and Metrics Endpoints', () => {
     it('should include CORS headers', async () => {
       const response = await request(app)
         .get('/api/metrics/accuracy')
-        .set('Origin', 'http://localhost:4002');
+        .set('Origin', 'http://localhost:4003');
 
       expect(response.headers).toHaveProperty('access-control-allow-origin');
     });
@@ -125,7 +125,7 @@ describe('Demo and Metrics Endpoints', () => {
     it('should include CORS headers', async () => {
       const response = await request(app)
         .get('/api/metrics/processing-stats')
-        .set('Origin', 'http://localhost:4002');
+        .set('Origin', 'http://localhost:4003');
 
       expect(response.headers).toHaveProperty('access-control-allow-origin');
     });

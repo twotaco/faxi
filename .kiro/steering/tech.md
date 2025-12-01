@@ -6,7 +6,7 @@ This is an npm workspaces monorepo with three applications:
 
 - `backend/` - Express.js API server (port 4000)
 - `admin-dashboard/` - Next.js admin interface (port 4001)
-- `marketing-website/` - Next.js marketing site (port 4002)
+- `marketing-website/` - Next.js marketing site (port 4003)
 
 ## Backend Stack
 

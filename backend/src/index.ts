@@ -33,7 +33,7 @@ const allowedOrigins = config.app.env === 'production'
       // Allow preview deployments
       ...(process.env.VERCEL_URL ? [`https://${process.env.VERCEL_URL}`] : [])
     ].filter(Boolean)
-  : ['http://localhost:4001', 'http://localhost:4002'];
+  : ['http://localhost:4001', 'http://localhost:4003'];
 
 app.use(cors({
   origin: (origin, callback) => {
