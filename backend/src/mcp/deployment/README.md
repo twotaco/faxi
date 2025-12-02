@@ -6,6 +6,34 @@ A Model Context Protocol server that provides intelligent, automated deployment 
 
 The Deployment MCP orchestrates end-to-end deployments across multiple environments (development, staging, production), performs comprehensive health checks and smoke tests, provides AI-powered log analysis, manages rollbacks, and ensures deployment safety through secrets verification, drift detection, and integration testing.
 
+## Primary Deployment Method
+
+**The MCP uses and maintains the automated deployment script: `scripts/deploy-to-aws.sh`**
+
+This script is the single source of truth for AWS deployments. The MCP's role is to:
+
+1. **Execute** the script for deployments
+2. **Monitor** execution and parse output for errors
+3. **Maintain** the script when issues are discovered
+4. **Update** the script with fixes from failed deployments
+5. **Document** changes in the script comments
+
+### Script-Based Deployment Flow
+
+```bash
+# The MCP executes this for full deployments
+./scripts/deploy-to-aws.sh <environment>
+```
+
+When a deployment fails:
+1. MCP analyzes the error from script output
+2. MCP updates `scripts/deploy-to-aws.sh` with the fix
+3. MCP adds comments explaining the fix
+4. MCP re-runs the deployment
+5. MCP validates the fix worked
+
+This ensures all deployment knowledge is captured in the script, making future deployments reliable and repeatable.
+
 ## Features
 
 - **Full Deployment Orchestration**: Deploy all components with a single command

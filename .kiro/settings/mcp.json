@@ -36,7 +36,7 @@
         "backend/src/mcp/deployment/deploymentMcpServer.ts"
       ],
       "env": {
-        "DEPLOYMENT_ENVIRONMENTS": "development,staging,production",
+        "DEPLOYMENT_ENVIRONMENTS": "development,qa,staging,production",
         "DEPLOYMENT_STRATEGY": "rolling",
         "HEALTH_CHECK_TIMEOUT": "300",
         "ROLLBACK_ENABLED": "true",
@@ -44,7 +44,7 @@
         "INTEGRATION_TEST_TIMEOUT": "600",
         "NODE_ENV": "development"
       },
-      "disabled": false,
+      "disabled": true,
       "autoApprove": [
         "plan_deployment"
       ]

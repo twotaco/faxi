@@ -4,10 +4,11 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { auth: string[] } }
+  { params }: { params: Promise<{ auth: string[] }> }
 ) {
   try {
-    const action = params.auth[0]; // 'login', 'logout', or 'refresh'
+    const resolvedParams = await params;
+    const action = resolvedParams.auth[0]; // 'login', 'logout', or 'refresh'
     const body = await request.json().catch(() => ({}));
 
     // Forward request to backend

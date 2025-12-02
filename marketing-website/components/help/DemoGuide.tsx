@@ -59,10 +59,10 @@ export function DemoGuide() {
             <div className="bg-gray-50 rounded-lg p-6 mb-6">
               <h5 className="font-semibold text-gray-900 mb-3">How to Use:</h5>
               <ol className="space-y-2 text-gray-700">
-                <li>1. Click the <strong>"Sample Faxes"</strong> button (selected by default)</li>
+                <li>1. Click the <strong>&quot;Sample Faxes&quot;</strong> button (selected by default)</li>
                 <li>2. Browse the gallery of sample scenarios</li>
                 <li>3. Click on any sample to preview it</li>
-                <li>4. Click <strong>"Process Selected Fax"</strong> to see how Faxi interprets it</li>
+                <li>4. Click <strong>&quot;Process Selected Fax&quot;</strong> to see how Faxi interprets it</li>
                 <li>5. View the results showing detected intent and extracted information</li>
               </ol>
             </div>
@@ -103,10 +103,10 @@ export function DemoGuide() {
             <div className="bg-gray-50 rounded-lg p-6 mb-6">
               <h5 className="font-semibold text-gray-900 mb-3">How to Use:</h5>
               <ol className="space-y-2 text-gray-700">
-                <li>1. Click the <strong>"Create Your Own"</strong> button</li>
+                <li>1. Click the <strong>&quot;Create Your Own&quot;</strong> button</li>
                 <li>2. Use the drawing canvas with your mouse, trackpad, or touch screen</li>
                 <li>3. Write your request naturally as you would on paper</li>
-                <li>4. Click <strong>"Process Fax"</strong> when done</li>
+                <li>4. Click <strong>&quot;Process Fax&quot;</strong> when done</li>
               </ol>
             </div>
 
@@ -161,7 +161,7 @@ export function DemoGuide() {
             <div className="bg-gray-50 rounded-lg p-6 mb-6">
               <h5 className="font-semibold text-gray-900 mb-3">How to Use:</h5>
               <ol className="space-y-2 text-gray-700">
-                <li>1. Click the <strong>"Upload File"</strong> button</li>
+                <li>1. Click the <strong>&quot;Upload File&quot;</strong> button</li>
                 <li>2. Click the upload area or drag and drop your file</li>
                 <li>3. Supported formats: PNG, JPG, JPEG, PDF (max 10MB)</li>
                 <li>4. Wait for upload and processing</li>
@@ -201,7 +201,7 @@ export function DemoGuide() {
             Understanding the Results
           </h3>
           <p className="text-gray-700 mb-6">
-            After processing any fax, you'll see a detailed breakdown of how Faxi interpreted your fax.
+            After processing any fax, you&apos;ll see a detailed breakdown of how Faxi interpreted your fax.
           </p>
 
           <div className="space-y-6">
@@ -251,7 +251,7 @@ export function DemoGuide() {
 
           <div className="space-y-6">
             <div className="bg-red-50 border border-red-200 rounded-lg p-6">
-              <h4 className="font-semibold text-red-900 mb-2">❌ "Processing Failed" Error</h4>
+              <h4 className="font-semibold text-red-900 mb-2">❌ &quot;Processing Failed&quot; Error</h4>
               <p className="text-red-800 mb-3">
                 <strong>Possible causes:</strong> Image quality too low, text not readable, or server connection issue
               </p>
@@ -261,7 +261,7 @@ export function DemoGuide() {
             </div>
 
             <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6">
-              <h4 className="font-semibold text-yellow-900 mb-2">⚠️ "No Intent Detected" Result</h4>
+              <h4 className="font-semibold text-yellow-900 mb-2">⚠️ &quot;No Intent Detected&quot; Result</h4>
               <p className="text-yellow-800 mb-3">
                 <strong>Possible causes:</strong> Request too vague, handwriting not legible, or missing key information
               </p>

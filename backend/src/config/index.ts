@@ -13,6 +13,7 @@ const configSchema = z.object({
     name: z.string(),
     user: z.string(),
     password: z.string(),
+    ssl: z.boolean().optional(),
     pool: z.object({
       min: z.number(),
       max: z.number(),
@@ -148,6 +149,7 @@ function buildConfig(): Config {
       name: process.env.DATABASE_NAME || 'faxi',
       user: process.env.DATABASE_USER || 'faxi_user',
       password: process.env.DATABASE_PASSWORD || '',
+      ssl: process.env.DATABASE_SSL === 'true',
       pool: {
         min: parseInt(process.env.DATABASE_POOL_MIN || '2', 10),
         max: parseInt(process.env.DATABASE_POOL_MAX || '10', 10),

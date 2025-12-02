@@ -15,6 +15,7 @@ import {
 } from '@modelcontextprotocol/sdk/types.js';
 import { z } from 'zod';
 import { DeploymentConfig } from './types/index.js';
+import { infrastructureProvisioner, InfrastructureConfig } from './services/infrastructureProvisioner.js';
 
 // Environment variable validation schema
 const configSchema = z.object({
@@ -121,6 +122,8 @@ export class DeploymentMcpServer {
             return await this.handleCreateSnapshot(args);
           case 'restore_snapshot':
             return await this.handleRestoreSnapshot(args);
+          case 'provision_infrastructure':
+            return await this.handleProvisionInfrastructure(args);
           default:
             throw new Error(`Unknown tool: ${name}`);
         }
@@ -503,6 +506,35 @@ export class DeploymentMcpServer {
           required: ['snapshotId'],
         },
       },
+      {
+        name: 'provision_infrastructure',
+        description: 'Provision AWS infrastructure (RDS, Redis, S3, ECR, ECS, ALB). Checks for existing resources and creates missing ones.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            environment: {
+              type: 'string',
+              enum: this.config.environments,
+              description: 'Target environment',
+            },
+            region: {
+              type: 'string',
+              default: 'us-east-1',
+              description: 'AWS region',
+            },
+            domains: {
+              type: 'object',
+              properties: {
+                marketing: { type: 'string', description: 'Marketing website domain (e.g., qa.faxi.jp)' },
+                admin: { type: 'string', description: 'Admin dashboard domain (e.g., qa-admin.faxi.jp)' },
+                backend: { type: 'string', description: 'Backend API domain (e.g., qa-fax.faxi.jp)' },
+              },
+              required: ['marketing', 'admin', 'backend'],
+            },
+          },
+          required: ['environment', 'domains'],
+        },
+      },
     ];
   }
 
@@ -771,6 +803,50 @@ export class DeploymentMcpServer {
         },
       ],
     };
+  }
+
+  private async handleProvisionInfrastructure(args: any) {
+    try {
+      const config: InfrastructureConfig = {
+        environment: args.environment,
+        region: args.region || 'us-east-1',
+        projectName: 'faxi',
+        domains: args.domains,
+      };
+
+      const result = await infrastructureProvisioner.provisionInfrastructure(config);
+
+      return {
+        content: [
+          {
+            type: 'text',
+            text: JSON.stringify({
+              success: result.success,
+              resourcesCreated: result.resourcesCreated,
+              resourcesExisting: result.resourcesExisting,
+              endpoints: result.endpoints,
+              errors: result.errors,
+              warnings: result.warnings,
+              message: result.success 
+                ? `Infrastructure provisioned successfully. Created ${result.resourcesCreated.length} resources, found ${result.resourcesExisting.length} existing.`
+                : 'Infrastructure provisioning completed with errors.',
+            }, null, 2),
+          },
+        ],
+      };
+    } catch (error: any) {
+      return {
+        content: [
+          {
+            type: 'text',
+            text: JSON.stringify({
+              success: false,
+              error: error.message,
+            }, null, 2),
+          },
+        ],
+      };
+    }
   }
 
   /**

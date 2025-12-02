@@ -1,0 +1,50 @@
+{
+  "family": "faxi-qa-admin",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "512",
+  "memory": "1024",
+  "executionRoleArn": "arn:aws:iam::223882168768:role/faxi-qa-infrastructure-ECSTaskExecutionRole-Aq3cBooTamV5",
+  "taskRoleArn": "arn:aws:iam::223882168768:role/faxi-qa-infrastructure-ECSTaskRole-lW6TQEqXXhnz",
+  "containerDefinitions": [
+    {
+      "name": "admin",
+      "image": "223882168768.dkr.ecr.us-east-1.amazonaws.com/faxi-admin-dashboard:qa",
+      "portMappings": [
+        {
+          "containerPort": 3000,
+          "protocol": "tcp"
+        }
+      ],
+      "essential": true,
+      "environment": [
+        {
+          "name": "NODE_ENV",
+          "value": "production"
+        },
+        {
+          "name": "NEXT_PUBLIC_API_URL",
+          "value": "https://qa-fax.faxi.jp"
+        }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/faxi-qa-admin",
+          "awslogs-region": "us-east-1",
+          "awslogs-stream-prefix": "ecs"
+        }
+      },
+      "healthCheck": {
+        "command": [
+          "CMD-SHELL",
+          "curl -f http://localhost:3000 || exit 1"
+        ],
+        "interval": 30,
+        "timeout": 5,
+        "retries": 3,
+        "startPeriod": 60
+      }
+    }
+  ]
+}

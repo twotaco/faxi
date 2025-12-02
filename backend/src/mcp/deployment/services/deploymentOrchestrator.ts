@@ -2,7 +2,7 @@
  * Deployment Orchestration Service
  * 
  * Coordinates the entire deployment process from start to finish:
- * - Full deployment of all components
+ * - Full deployment of all components via scripts/deploy-to-aws.sh
  * - Partial deployment of changed components
  * - Cross-environment deployment
  * - Build orchestration
@@ -10,11 +10,19 @@
  * - Sequential deployment with dependency ordering
  * - Health check integration after each component
  * - Deployment state tracking and persistence
+ * - Script maintenance and updates based on deployment failures
+ * 
+ * PRIMARY DEPLOYMENT METHOD:
+ * The orchestrator executes scripts/deploy-to-aws.sh for AWS deployments.
+ * When deployments fail, the orchestrator analyzes errors and updates the script.
+ * This ensures all deployment knowledge is captured in the script for repeatability.
  * 
  * Validates: Requirements 1.1, 1.2, 1.3, 1.4
  */
 
-import { execSync } from 'child_process';
+import { execSync, exec } from 'child_process';
+import { promisify } from 'util';
+const execAsync = promisify(exec);
 import * as path from 'path';
 import * as crypto from 'crypto';
 import {
@@ -121,6 +129,167 @@ export class DeploymentOrchestrator {
     this.secretsValidator = new SecretsValidator(projectRoot);
   }
 
+  /**
+   * Execute the automated deployment script (scripts/deploy-to-aws.sh)
+   * This is the primary deployment method for AWS environments.
+   * 
+   * @param environment - Target environment (qa, staging, production)
+   * @returns Deployment result with script output
+   */
+  public async executeDeploymentScript(environment: string): Promise<DeploymentResult> {
+    const deploymentId = this.generateDeploymentId();
+    const startTime = Date.now();
+    const scriptPath = path.join(this.projectRoot, 'scripts', 'deploy-to-aws.sh');
+
+    console.log(`[${deploymentId}] Executing deployment script for ${environment}...`);
+    console.log(`[${deploymentId}] Script: ${scriptPath}`);
+
+    try {
+      // Execute the deployment script
+      const { stdout, stderr } = await execAsync(`${scriptPath} ${environment}`, {
+        cwd: this.projectRoot,
+        maxBuffer: 10 * 1024 * 1024, // 10MB buffer for output
+        env: {
+          ...process.env,
+          AWS_REGION: process.env.AWS_REGION || 'us-east-1',
+        },
+      });
+
+      const duration = Date.now() - startTime;
+      const output = stdout + stderr;
+
+      console.log(`[${deploymentId}] Script completed in ${duration}ms`);
+
+      // Parse script output for component information
+      const componentsDeployed = this.parseDeployedComponents(output);
+
+      return {
+        success: true,
+        deploymentId,
+        componentsDeployed,
+        duration,
+        healthChecksPassed: true,
+        warnings: this.parseWarnings(output),
+        errors: [],
+        rollbackPerformed: false,
+        scriptOutput: output,
+      };
+
+    } catch (error: any) {
+      const duration = Date.now() - startTime;
+      const output = (error.stdout || '') + (error.stderr || '');
+
+      console.error(`[${deploymentId}] Script failed:`, error.message);
+      console.error(`[${deploymentId}] Output:`, output);
+
+      // Analyze the failure and suggest script updates
+      const analysis = this.analyzeScriptFailure(output, error.message);
+
+      return {
+        success: false,
+        deploymentId,
+        componentsDeployed: [],
+        duration,
+        healthChecksPassed: false,
+        warnings: [],
+        errors: [error.message],
+        rollbackPerformed: false,
+        scriptOutput: output,
+        failureAnalysis: analysis,
+      };
+    }
+  }
+
+  /**
+   * Parse deployed components from script output
+   */
+  private parseDeployedComponents(output: string): string[] {
+    const components: string[] = [];
+    
+    if (output.includes('backend')) components.push('backend');
+    if (output.includes('admin')) components.push('admin-dashboard');
+    if (output.includes('marketing')) components.push('marketing-website');
+
+    return components;
+  }
+
+  /**
+   * Parse warnings from script output
+   */
+  private parseWarnings(output: string): string[] {
+    const warnings: string[] = [];
+    const lines = output.split('\n');
+
+    for (const line of lines) {
+      if (line.includes('[WARN]') || line.includes('warning:')) {
+        warnings.push(line.trim());
+      }
+    }
+
+    return warnings;
+  }
+
+  /**
+   * Analyze script failure and suggest fixes
+   */
+  private analyzeScriptFailure(output: string, errorMessage: string): {
+    category: string;
+    suggestedFix: string;
+    scriptUpdate?: string;
+  } {
+    // Platform mismatch
+    if (output.includes('does not contain descriptor matching platform')) {
+      return {
+        category: 'docker_platform_mismatch',
+        suggestedFix: 'Images must be built for linux/amd64. Update docker build commands to include --platform linux/amd64',
+        scriptUpdate: 'Add --platform linux/amd64 to all docker build commands',
+      };
+    }
+
+    // SSL/TLS errors
+    if (output.includes('no pg_hba.conf entry') || output.includes('no encryption')) {
+      return {
+        category: 'database_ssl_required',
+        suggestedFix: 'RDS requires SSL. Ensure DATABASE_SSL=true in task definition and SSL is configured in connection',
+        scriptUpdate: 'Verify DATABASE_SSL environment variable is set in task definition',
+      };
+    }
+
+    // Migration errors
+    if (output.includes('relation') && output.includes('already exists')) {
+      return {
+        category: 'migration_idempotency',
+        suggestedFix: 'Migrations should handle already-existing objects. Update migrate.ts to ignore duplicate object errors',
+        scriptUpdate: 'Migration script already handles this - may be a different issue',
+      };
+    }
+
+    // Permission errors
+    if (output.includes('AccessDenied') || output.includes('not authorized')) {
+      return {
+        category: 'aws_permissions',
+        suggestedFix: 'IAM role lacks required permissions. Check ECS task role and execution role permissions',
+        scriptUpdate: 'Add permission check step before deployment',
+      };
+    }
+
+    // Health check failures
+    if (output.includes('unhealthy') || output.includes('Health checks failed')) {
+      return {
+        category: 'health_check_failure',
+        suggestedFix: 'Service is failing health checks. Check application logs and health endpoint',
+        scriptUpdate: 'Add health check validation step with detailed error reporting',
+      };
+    }
+
+    // Generic error
+    return {
+      category: 'unknown',
+      suggestedFix: `Deployment failed: ${errorMessage}. Check script output for details`,
+      scriptUpdate: 'Review script output and add specific error handling',
+    };
+  }
+
   public static getInstance(projectRoot?: string): DeploymentOrchestrator {
     if (!DeploymentOrchestrator.instance) {
       DeploymentOrchestrator.instance = new DeploymentOrchestrator(projectRoot);
@@ -133,6 +302,13 @@ export class DeploymentOrchestrator {
    * Validates: Requirements 1.1, 1.2, 1.3, 1.4
    */
   public async deployFull(options: FullDeploymentOptions): Promise<DeploymentResult> {
+    // For AWS environments (qa, staging, production), use the automated script
+    if (['qa', 'staging', 'production'].includes(options.environment)) {
+      console.log(`Using automated deployment script for ${options.environment}`);
+      return this.executeDeploymentScript(options.environment);
+    }
+
+    // For development, use the original orchestration logic
     const deploymentId = this.generateDeploymentId();
     const startTime = Date.now();
     const warnings: string[] = [];

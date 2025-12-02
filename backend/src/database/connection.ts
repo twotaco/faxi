@@ -6,7 +6,7 @@ class Database {
   private static instance: Database;
 
   private constructor() {
-    this.pool = new Pool({
+    const poolConfig: any = {
       host: config.database.host,
       port: config.database.port,
       database: config.database.name,
@@ -16,7 +16,14 @@ class Database {
       max: config.database.pool.max,
       idleTimeoutMillis: 30000,
       connectionTimeoutMillis: 2000,
-    });
+    };
+
+    // Add SSL configuration if enabled
+    if (config.database.ssl) {
+      poolConfig.ssl = { rejectUnauthorized: false };
+    }
+
+    this.pool = new Pool(poolConfig);
 
     // Handle pool errors
     this.pool.on('error', (err) => {

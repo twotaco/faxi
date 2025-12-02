@@ -84,7 +84,7 @@ setup_infrastructure() {
     
     # Create RDS instance (if not exists)
     log_info "Checking RDS instance..."
-    if ! aws rds describe-db-instances --db-instance-identifier faxi-qa-db --region $AWS_REGION &> /dev/null; then
+    if ! aws rds describe-db-instances --db-instance-identifier qa-faxi-db --region $AWS_REGION &> /dev/null; then
         log_warn "RDS instance not found. Please create it manually or run: ./scripts/setup-qa-rds.sh"
     fi
     
@@ -186,7 +186,7 @@ run_migrations() {
     
     # Get database endpoint from RDS
     DB_ENDPOINT=$(aws rds describe-db-instances \
-        --db-instance-identifier faxi-qa-db \
+        --db-instance-identifier qa-faxi-db \
         --region $AWS_REGION \
         --query 'DBInstances[0].Endpoint.Address' \
         --output text)

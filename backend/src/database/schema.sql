@@ -93,7 +93,7 @@ CREATE TABLE IF NOT EXISTS orders (
   quoted_price DECIMAL(10, 2), -- Price quoted to user in Product Options Fax
   actual_price DECIMAL(10, 2), -- Actual price at checkout
   stripe_payment_intent_id VARCHAR(255), -- Stripe payment intent ID
-  admin_user_id UUID REFERENCES admin_users(id), -- Admin who completed purchase
+  admin_user_id UUID, -- Admin who completed purchase (FK added in migration 008)
   purchased_at TIMESTAMP WITH TIME ZONE, -- When admin completed purchase
   created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP

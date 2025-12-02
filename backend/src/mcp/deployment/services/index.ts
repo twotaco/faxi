@@ -8,6 +8,7 @@ export { SecretsValidator } from './secretsValidator.js';
 export { HealthCheckService, healthCheckService } from './healthCheckService.js';
 export { DeploymentOrchestrator, deploymentOrchestrator } from './deploymentOrchestrator.js';
 export { LogAnalysisService, logAnalysisService } from './logAnalysisService.js';
+export { InfrastructureProvisioner, infrastructureProvisioner } from './infrastructureProvisioner.js';
 export type { SystemIntegrityResult as SystemIntegrityResultImpl, HealthCheckDetail, PortCheckConfig, ResourceThresholds } from './healthCheckService.js';
 
 import {

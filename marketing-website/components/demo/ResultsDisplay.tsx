@@ -170,7 +170,7 @@ export function ResultsDisplay({ result }: ResultsDisplayProps) {
                     onClick={() => {
                       // Convert data URL to blob and trigger download
                       const dataUrl = generatedResponse.responsePdfUrl;
-                      if (dataUrl.startsWith('data:')) {
+                      if (dataUrl && dataUrl.startsWith('data:')) {
                         const [header, base64] = dataUrl.split(',');
                         const mimeMatch = header.match(/data:([^;]+)/);
                         const mimeType = mimeMatch ? mimeMatch[1] : 'application/pdf';

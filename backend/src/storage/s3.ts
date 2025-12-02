@@ -3,6 +3,7 @@ import {
   PutObjectCommand,
   GetObjectCommand,
   HeadObjectCommand,
+  HeadBucketCommand,
   DeleteObjectCommand,
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
@@ -15,15 +16,25 @@ class S3Storage {
   private static instance: S3Storage;
 
   private constructor() {
-    this.client = new S3Client({
-      endpoint: config.s3.endpoint,
+    const s3Config: any = {
       region: config.s3.region,
-      credentials: {
+      forcePathStyle: config.s3.endpoint.includes('localhost') || config.s3.endpoint.includes('minio'), // Required for MinIO
+    };
+
+    // Only set endpoint if not using AWS S3
+    if (config.s3.endpoint && !config.s3.endpoint.includes('s3.amazonaws.com') && !config.s3.endpoint.includes('s3.us-east-1.amazonaws.com')) {
+      s3Config.endpoint = config.s3.endpoint;
+    }
+
+    // Only set credentials if provided (otherwise use IAM role)
+    if (config.s3.accessKeyId && config.s3.secretAccessKey) {
+      s3Config.credentials = {
         accessKeyId: config.s3.accessKeyId,
         secretAccessKey: config.s3.secretAccessKey,
-      },
-      forcePathStyle: true, // Required for MinIO
-    });
+      };
+    }
+
+    this.client = new S3Client(s3Config);
     this.bucket = config.s3.bucket;
   }
 
@@ -157,9 +168,9 @@ class S3Storage {
    */
   public async healthCheck(): Promise<boolean> {
     try {
-      const command = new HeadObjectCommand({
+      // Use HeadBucket instead of HeadObject to avoid permission issues with non-existent keys
+      const command = new HeadBucketCommand({
         Bucket: this.bucket,
-        Key: 'health-check',
       });
 
       // Add a timeout to prevent hanging
@@ -173,11 +184,13 @@ class S3Storage {
       ]);
       return true;
     } catch (error: any) {
-      // NotFound is acceptable for health check
-      if (error.name === 'NotFound') {
-        return true;
-      }
-      console.error('S3 health check failed:', error.message || error);
+      console.error('S3 health check failed:', {
+        name: error.name,
+        message: error.message,
+        code: error.code,
+        statusCode: error.$metadata?.httpStatusCode,
+        bucket: this.bucket,
+      });
       return false;
     }
   }
