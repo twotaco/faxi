@@ -38,8 +38,8 @@ RUN npm ci
 COPY --chown=faxi:nodejs backend ./backend
 
 # Create directories for runtime data
-RUN mkdir -p /app/backend/data/uploads /app/backend/data/logs && \
-    chown -R faxi:nodejs /app/backend/data
+RUN mkdir -p /app/backend/data/uploads /app/backend/data/logs /app/backend/logs && \
+    chown -R faxi:nodejs /app/backend/data /app/backend/logs
 
 # Switch to non-root user
 USER faxi
