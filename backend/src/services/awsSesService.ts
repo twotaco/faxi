@@ -58,19 +58,20 @@ export class AwsSesService {
     const accessKeyId = config.email.sesAccessKeyId || process.env.AWS_ACCESS_KEY_ID;
     const secretAccessKey = config.email.sesSecretAccessKey || process.env.AWS_SECRET_ACCESS_KEY;
 
-    if (!accessKeyId || !secretAccessKey) {
-      throw new Error('AWS SES credentials not configured. Set AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY');
-    }
+    const sesConfig: any = { region };
 
-    this.client = new SESClient({
-      region,
-      credentials: {
+    // Only set explicit credentials if provided (otherwise use IAM role)
+    if (accessKeyId && secretAccessKey) {
+      sesConfig.credentials = {
         accessKeyId,
         secretAccessKey
-      }
-    });
+      };
+      console.log(`AWS SES Service initialized with explicit credentials for region: ${region}`);
+    } else {
+      console.log(`AWS SES Service initialized with IAM role for region: ${region}`);
+    }
 
-    console.log(`AWS SES Service initialized for region: ${region}`);
+    this.client = new SESClient(sesConfig);
   }
 
   /**
