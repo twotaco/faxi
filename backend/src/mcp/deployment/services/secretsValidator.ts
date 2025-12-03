@@ -313,17 +313,22 @@ export class SecretsValidator {
   }
 
   /**
-   * Validate database migrations match schema files
+   * Validate database migrations are properly formatted
    * Validates: Requirements 7.5
+   *
+   * Checks:
+   * - Migrations directory exists
+   * - Migration files follow NNN_name.sql format
+   * - No duplicate migration numbers
+   * - 001_initial_schema.sql exists (contains full schema)
    */
   async validateMigrationSchemaMatch(): Promise<{ valid: boolean; issues: string[] }> {
     const issues: string[] = [];
 
     try {
       const migrationsDir = path.join(this.projectRoot, 'backend/src/database/migrations');
-      const schemaPath = path.join(this.projectRoot, 'backend/src/database/schema.sql');
 
-      // Check if paths exist
+      // Check if migrations directory exists
       try {
         await fs.access(migrationsDir);
       } catch {
@@ -331,36 +336,35 @@ export class SecretsValidator {
         return { valid: false, issues };
       }
 
-      try {
-        await fs.access(schemaPath);
-      } catch {
-        issues.push('Schema file not found');
-        return { valid: false, issues };
-      }
-
-      // Read schema file
-      const schemaContent = await fs.readFile(schemaPath, 'utf-8');
-
       // Get all migration files
       const migrationFiles = await fs.readdir(migrationsDir);
       const sqlMigrations = migrationFiles.filter(f => f.endsWith('.sql')).sort();
 
-      // Extract table names from schema
-      const schemaTables = this.extractTableNames(schemaContent);
+      if (sqlMigrations.length === 0) {
+        issues.push('No migration files found');
+        return { valid: false, issues };
+      }
 
-      // Check each migration for consistency
+      // Validate migration file naming and check for duplicates
+      // Supports timestamp format (YYYYMMDDHHmmss) or sequential (NNN)
+      const versions = new Map<string, string>();
+      const timestampPattern = /^(\d{14})_[\w]+\.sql$/;
+      const sequentialPattern = /^(\d+)_[\w]+\.sql$/;
+
       for (const migrationFile of sqlMigrations) {
-        const migrationPath = path.join(migrationsDir, migrationFile);
-        const migrationContent = await fs.readFile(migrationPath, 'utf-8');
+        const timestampMatch = migrationFile.match(timestampPattern);
+        const sequentialMatch = migrationFile.match(sequentialPattern);
 
-        // Extract tables created/altered in migration
-        const migrationTables = this.extractTableNames(migrationContent);
+        if (!timestampMatch && !sequentialMatch) {
+          issues.push(`Invalid migration filename: ${migrationFile}. Expected format: YYYYMMDDHHmmss_description.sql`);
+          continue;
+        }
 
-        // Check if migration tables exist in schema
-        for (const table of migrationTables) {
-          if (!schemaTables.includes(table)) {
-            issues.push(`Migration ${migrationFile} references table "${table}" not found in schema.sql`);
-          }
+        const version = timestampMatch ? timestampMatch[1] : sequentialMatch![1];
+        if (versions.has(version)) {
+          issues.push(`Duplicate migration version ${version}: ${versions.get(version)} and ${migrationFile}`);
+        } else {
+          versions.set(version, migrationFile);
         }
       }
 

@@ -132,7 +132,7 @@ ON CONFLICT (id) DO UPDATE SET
 INSERT INTO admin_users (email, password_hash, name, role, is_active)
 VALUES (
   'admin@faxi.jp',
-  '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewY5GyYIxKzJN.S6',
+  '$2b$12$OK./5bbAPbj49xUEPBcoqOkwvfNq0U/v1jfxyyoRubb1mQ9kz4A5i',
   'System Administrator',
   'super_admin',
   true
