@@ -538,19 +538,61 @@ export class DeploymentMcpServer {
     ];
   }
 
-  // Tool handler stubs - to be implemented in subsequent tasks
+  // Tool handlers
   private async handleDeployFull(args: any) {
-    return {
-      content: [
-        {
-          type: 'text',
-          text: JSON.stringify({
-            success: false,
-            error: 'Not yet implemented',
-          }, null, 2),
-        },
-      ],
-    };
+    const { environment, components, strategy, runMigrations, runTests, autoRollback } = args;
+
+    try {
+      // Use the deployment orchestrator
+      const { deploymentOrchestrator } = await import('./services/deploymentOrchestrator.js');
+
+      const result = await deploymentOrchestrator.deployFull({
+        environment,
+        components: components || ['backend', 'admin-dashboard', 'marketing-website'],
+        strategy: strategy || 'rolling',
+        runMigrations: runMigrations ?? true,
+        runTests: runTests || 'smoke',
+        autoRollback: autoRollback ?? true,
+      });
+
+      return {
+        content: [
+          {
+            type: 'text',
+            text: JSON.stringify({
+              success: result.success,
+              deploymentId: result.deploymentId,
+              componentsDeployed: result.componentsDeployed,
+              duration: result.duration,
+              healthChecksPassed: result.healthChecksPassed,
+              warnings: result.warnings,
+              errors: result.errors,
+              rollbackPerformed: result.rollbackPerformed,
+              failureAnalysis: result.failureAnalysis,
+              nextSteps: result.success
+                ? ['Run ./scripts/deploy-qa.sh health to verify', 'Check http://qa.faxi.jp']
+                : ['Run ./scripts/deploy-qa.sh troubleshoot', 'Check CloudWatch logs'],
+            }, null, 2),
+          },
+        ],
+      };
+    } catch (error: any) {
+      return {
+        content: [
+          {
+            type: 'text',
+            text: JSON.stringify({
+              success: false,
+              error: error.message,
+              troubleshooting: {
+                command: './scripts/deploy-qa.sh troubleshoot',
+                manualDeploy: './scripts/deploy-qa.sh full',
+              },
+            }, null, 2),
+          },
+        ],
+      };
+    }
   }
 
   private async handleDeployPartial(args: any) {
@@ -610,17 +652,99 @@ export class DeploymentMcpServer {
   }
 
   private async handleCheckHealth(args: any) {
-    return {
-      content: [
-        {
-          type: 'text',
-          text: JSON.stringify({
-            success: false,
-            error: 'Not yet implemented',
-          }, null, 2),
-        },
-      ],
+    const { tier, environment } = args;
+    const results: any = {
+      tier,
+      environment,
+      timestamp: new Date().toISOString(),
+      checks: {},
     };
+
+    try {
+      // Tier 0: System-level checks (can we reach the services?)
+      if (tier >= 0) {
+        const endpoints = this.getEnvironmentEndpoints(environment);
+
+        for (const [service, url] of Object.entries(endpoints)) {
+          try {
+            const response = await fetch(url, {
+              method: 'GET',
+              signal: AbortSignal.timeout(10000),
+            });
+            results.checks[service] = {
+              url,
+              status: response.status,
+              healthy: response.ok,
+              responseTime: 'N/A',
+            };
+          } catch (error: any) {
+            results.checks[service] = {
+              url,
+              status: 0,
+              healthy: false,
+              error: error.message,
+            };
+          }
+        }
+      }
+
+      // Calculate overall health
+      const allHealthy = Object.values(results.checks).every((c: any) => c.healthy);
+
+      return {
+        content: [
+          {
+            type: 'text',
+            text: JSON.stringify({
+              success: true,
+              healthy: allHealthy,
+              ...results,
+              troubleshooting: allHealthy ? null : {
+                command: './scripts/deploy-qa.sh troubleshoot',
+                commonIssues: [
+                  'Check target group health in AWS Console',
+                  'Verify ECS tasks are running: aws ecs describe-services --cluster faxi-qa-cluster --services faxi-qa-backend faxi-qa-admin faxi-qa-marketing',
+                  'Check CloudWatch logs: aws logs tail /ecs/faxi-qa-<service> --since 10m',
+                ],
+              },
+            }, null, 2),
+          },
+        ],
+      };
+    } catch (error: any) {
+      return {
+        content: [
+          {
+            type: 'text',
+            text: JSON.stringify({
+              success: false,
+              error: error.message,
+            }, null, 2),
+          },
+        ],
+      };
+    }
+  }
+
+  private getEnvironmentEndpoints(environment: string): Record<string, string> {
+    const envDomains: Record<string, Record<string, string>> = {
+      qa: {
+        backend: 'http://qa-fax.faxi.jp/health',
+        admin: 'http://qa-admin.faxi.jp/',
+        marketing: 'http://qa.faxi.jp/en',
+      },
+      staging: {
+        backend: 'http://staging-fax.faxi.jp/health',
+        admin: 'http://staging-admin.faxi.jp/',
+        marketing: 'http://staging.faxi.jp/en',
+      },
+      production: {
+        backend: 'https://fax.faxi.jp/health',
+        admin: 'https://admin.faxi.jp/',
+        marketing: 'https://faxi.jp/en',
+      },
+    };
+    return envDomains[environment] || envDomains.qa;
   }
 
   private async handleRunSmokeTests(args: any) {

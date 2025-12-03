@@ -377,9 +377,9 @@ Resources:
       VpcId: !Ref VPC
       TargetType: ip
       HealthCheckEnabled: true
-      HealthCheckPath: /health
+      HealthCheckPath: /health/live
       HealthCheckProtocol: HTTP
-      HealthCheckIntervalSeconds: 30
+      HealthCheckIntervalSeconds: 15
       HealthCheckTimeoutSeconds: 5
       HealthyThresholdCount: 2
       UnhealthyThresholdCount: 3
@@ -398,7 +398,7 @@ Resources:
       HealthCheckEnabled: true
       HealthCheckPath: /
       HealthCheckProtocol: HTTP
-      HealthCheckIntervalSeconds: 30
+      HealthCheckIntervalSeconds: 15
       HealthCheckTimeoutSeconds: 5
       HealthyThresholdCount: 2
       UnhealthyThresholdCount: 3
@@ -417,7 +417,7 @@ Resources:
       HealthCheckEnabled: true
       HealthCheckPath: /
       HealthCheckProtocol: HTTP
-      HealthCheckIntervalSeconds: 30
+      HealthCheckIntervalSeconds: 15
       HealthCheckTimeoutSeconds: 5
       HealthyThresholdCount: 2
       UnhealthyThresholdCount: 3

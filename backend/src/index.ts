@@ -22,13 +22,18 @@ import { rateLimitMonitoringService } from './services/rateLimitMonitoringServic
 const app = express();
 
 // CORS configuration for admin dashboard and marketing website
-const allowedOrigins = config.app.env === 'production' 
+const allowedOrigins = config.app.env === 'production'
   ? [
+      // Production domains
       'https://admin.faxi.jp',
       'https://app.faxi.jp',
       'https://faxi.jp',
       'https://www.faxi.jp',
-      // Add Vercel deployment URLs
+      // QA environment (HTTP - no SSL)
+      'http://qa-admin.faxi.jp',
+      'http://qa.faxi.jp',
+      'http://qa-fax.faxi.jp',
+      // Vercel deployment URLs
       process.env.MARKETING_SITE_URL || 'https://faxi-marketing.vercel.app',
       // Allow preview deployments
       ...(process.env.VERCEL_URL ? [`https://${process.env.VERCEL_URL}`] : [])
@@ -73,7 +78,12 @@ app.use(cookieParser());
 // Serve static files (favicon, etc.)
 app.use('/public', express.static(path.join(__dirname, '../public')));
 
-// Enhanced health check endpoint
+// Simple liveness check for ALB - just confirms the app is running
+app.get('/health/live', (req: Request, res: Response) => {
+  res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
+// Detailed health check endpoint for monitoring - checks all dependencies
 app.get('/health', async (req: Request, res: Response) => {
   try {
     const healthStatus = await monitoringService.getHealthStatus();

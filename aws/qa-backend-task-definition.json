@@ -87,16 +87,8 @@
           "value": "qa-faxi-faxes"
         },
         {
-          "name": "S3_ACCESS_KEY_ID",
-          "value": ""
-        },
-        {
-          "name": "S3_SECRET_ACCESS_KEY",
-          "value": ""
-        },
-        {
           "name": "BASE_URL",
-          "value": "https://qa-fax.faxi.jp"
+          "value": "http://qa-fax.faxi.jp"
         },
         {
           "name": "GEMINI_MODEL",
@@ -132,12 +124,12 @@
       "healthCheck": {
         "command": [
           "CMD-SHELL",
-          "curl -f http://localhost:4000/health || exit 1"
+          "curl -f http://localhost:4000/health/live || exit 1"
         ],
-        "interval": 30,
+        "interval": 15,
         "timeout": 5,
         "retries": 3,
-        "startPeriod": 60
+        "startPeriod": 15
       }
     }
   ]

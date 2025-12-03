@@ -432,23 +432,17 @@ class MonitoringService {
   }
 
   private async checkS3Health(): Promise<{ status: 'up' | 'down' | 'degraded'; responseTime?: number }> {
-    // Temporarily skip S3 health check due to permission issues
-    // S3 is non-critical for core functionality
-    return { status: 'up', responseTime: 0 };
-    
-    /* Disabled until S3 permissions are resolved
     const start = performance.now();
     try {
       const healthy = await s3Storage.healthCheck();
       const responseTime = performance.now() - start;
-      
+
       // Consider degraded if response time > 2000ms
       if (healthy && responseTime > 2000) {
         return { status: 'degraded', responseTime };
       }
-      
+
       return { status: healthy ? 'up' : 'down', responseTime };
-    */
     } catch (error) {
       return { status: 'down' };
     }

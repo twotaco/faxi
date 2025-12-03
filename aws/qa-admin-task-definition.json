@@ -24,7 +24,7 @@
         },
         {
           "name": "NEXT_PUBLIC_API_URL",
-          "value": "https://qa-fax.faxi.jp"
+          "value": "http://qa-fax.faxi.jp"
         }
       ],
       "logConfiguration": {
@@ -40,10 +40,10 @@
           "CMD-SHELL",
           "curl -f http://localhost:3000 || exit 1"
         ],
-        "interval": 30,
+        "interval": 15,
         "timeout": 5,
         "retries": 3,
-        "startPeriod": 60
+        "startPeriod": 15
       }
     }
   ]

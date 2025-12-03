@@ -231,62 +231,156 @@ export class DeploymentOrchestrator {
 
   /**
    * Analyze script failure and suggest fixes
+   * Based on common deployment issues encountered in QA/Production
    */
   private analyzeScriptFailure(output: string, errorMessage: string): {
     category: string;
     suggestedFix: string;
     scriptUpdate?: string;
+    commands?: string[];
   } {
-    // Platform mismatch
-    if (output.includes('does not contain descriptor matching platform')) {
+    // Platform mismatch (Mac ARM building for Linux AMD64)
+    if (output.includes('does not contain descriptor matching platform') ||
+        output.includes('exec format error') ||
+        output.includes('linux/amd64')) {
       return {
         category: 'docker_platform_mismatch',
-        suggestedFix: 'Images must be built for linux/amd64. Update docker build commands to include --platform linux/amd64',
+        suggestedFix: 'Images must be built for linux/amd64 (ECS Fargate requirement). Mac ARM builds are incompatible.',
         scriptUpdate: 'Add --platform linux/amd64 to all docker build commands',
+        commands: [
+          'docker build --platform linux/amd64 -t <image>:qa -f Dockerfile .',
+        ],
+      };
+    }
+
+    // Health check returning redirect (Next.js i18n)
+    if (output.includes('307') || output.includes('ResponseCodeMismatch')) {
+      return {
+        category: 'health_check_redirect',
+        suggestedFix: 'Next.js with i18n redirects / to /en or /ja. Update health check path to /en',
+        scriptUpdate: 'Change target group health check path from / to /en',
+        commands: [
+          'aws elbv2 modify-target-group --target-group-arn <arn> --health-check-path "/en" --region us-east-1',
+        ],
+      };
+    }
+
+    // Port mismatch (app on wrong port)
+    if (output.includes('localhost:4001') || output.includes('localhost:4003') ||
+        (output.includes('unhealthy') && output.includes('port'))) {
+      return {
+        category: 'port_mismatch',
+        suggestedFix: 'Application is running on wrong port. Ensure package.json start script uses PORT env var, not hardcoded port.',
+        scriptUpdate: 'Change "start": "next start -p 4001" to "start": "next start" in package.json',
+        commands: [
+          'Edit package.json: "start": "next start"  // Uses PORT env var from Docker',
+        ],
+      };
+    }
+
+    // CloudWatch log group missing
+    if (output.includes('CreateLogGroup') || output.includes('log group') ||
+        output.includes('awslogs-create-group')) {
+      return {
+        category: 'log_group_missing',
+        suggestedFix: 'CloudWatch log group does not exist and ECS task role cannot create it.',
+        scriptUpdate: 'Create log groups before deploying services',
+        commands: [
+          'aws logs create-log-group --log-group-name /ecs/faxi-qa-backend --region us-east-1',
+          'aws logs create-log-group --log-group-name /ecs/faxi-qa-admin --region us-east-1',
+          'aws logs create-log-group --log-group-name /ecs/faxi-qa-marketing --region us-east-1',
+        ],
+      };
+    }
+
+    // ECS image caching (old image being used)
+    if (output.includes('same image') ||
+        (output.includes('deployed') && output.includes('old'))) {
+      return {
+        category: 'image_caching',
+        suggestedFix: 'ECS may cache images by tag. Use unique timestamp tags to force new image pull.',
+        scriptUpdate: 'Use timestamp-based tags: qa-YYYYMMDDHHMMSS',
+        commands: [
+          'TAG="qa-$(date +%Y%m%d%H%M%S)"',
+          'docker tag image:qa $ECR_REGISTRY/image:$TAG',
+          'docker push $ECR_REGISTRY/image:$TAG',
+        ],
       };
     }
 
     // SSL/TLS errors
-    if (output.includes('no pg_hba.conf entry') || output.includes('no encryption')) {
+    if (output.includes('no pg_hba.conf entry') || output.includes('no encryption') ||
+        output.includes('SSL')) {
       return {
         category: 'database_ssl_required',
-        suggestedFix: 'RDS requires SSL. Ensure DATABASE_SSL=true in task definition and SSL is configured in connection',
-        scriptUpdate: 'Verify DATABASE_SSL environment variable is set in task definition',
+        suggestedFix: 'RDS requires SSL. Ensure DATABASE_SSL=true in task definition.',
+        scriptUpdate: 'Add DATABASE_SSL=true to ECS task definition environment variables',
+        commands: [
+          'Add to task definition: {"name": "DATABASE_SSL", "value": "true"}',
+        ],
       };
     }
 
     // Migration errors
-    if (output.includes('relation') && output.includes('already exists')) {
+    if (output.includes('relation') && output.includes('does not exist')) {
       return {
-        category: 'migration_idempotency',
-        suggestedFix: 'Migrations should handle already-existing objects. Update migrate.ts to ignore duplicate object errors',
-        scriptUpdate: 'Migration script already handles this - may be a different issue',
+        category: 'migrations_not_run',
+        suggestedFix: 'Database tables are missing. Run migrations before starting the application.',
+        scriptUpdate: 'Run migrations via ECS run-task before deploying services',
+        commands: [
+          './scripts/deploy-qa.sh migrate',
+        ],
       };
     }
 
     // Permission errors
-    if (output.includes('AccessDenied') || output.includes('not authorized')) {
+    if (output.includes('AccessDenied') || output.includes('not authorized') ||
+        output.includes('AccessDeniedException')) {
       return {
         category: 'aws_permissions',
-        suggestedFix: 'IAM role lacks required permissions. Check ECS task role and execution role permissions',
-        scriptUpdate: 'Add permission check step before deployment',
+        suggestedFix: 'IAM role lacks required permissions. Check ECS task role and execution role.',
+        scriptUpdate: 'Verify IAM roles have necessary permissions for ECR, S3, Secrets Manager',
+        commands: [
+          'aws iam get-role-policy --role-name <task-role> --policy-name <policy>',
+        ],
       };
     }
 
-    // Health check failures
-    if (output.includes('unhealthy') || output.includes('Health checks failed')) {
+    // Health check failures (generic)
+    if (output.includes('unhealthy') || output.includes('Health checks failed') ||
+        output.includes('draining')) {
       return {
         category: 'health_check_failure',
-        suggestedFix: 'Service is failing health checks. Check application logs and health endpoint',
-        scriptUpdate: 'Add health check validation step with detailed error reporting',
+        suggestedFix: 'Service is failing health checks. Check: 1) App port matches target group, 2) Health check path is correct, 3) App is starting without errors',
+        scriptUpdate: 'Add detailed health check diagnostics',
+        commands: [
+          './scripts/deploy-qa.sh troubleshoot',
+          'aws logs tail /ecs/faxi-qa-<service> --since 10m --region us-east-1',
+        ],
+      };
+    }
+
+    // Token expired
+    if (output.includes('ExpiredToken') || output.includes('token') && output.includes('expired')) {
+      return {
+        category: 'aws_token_expired',
+        suggestedFix: 'AWS session token has expired. Refresh your credentials.',
+        scriptUpdate: 'Add token expiry check at script start',
+        commands: [
+          'aws sso login --profile <profile>',
+          'aws sts get-caller-identity  # Verify credentials',
+        ],
       };
     }
 
     // Generic error
     return {
       category: 'unknown',
-      suggestedFix: `Deployment failed: ${errorMessage}. Check script output for details`,
+      suggestedFix: `Deployment failed: ${errorMessage}. Check script output for details.`,
       scriptUpdate: 'Review script output and add specific error handling',
+      commands: [
+        './scripts/deploy-qa.sh troubleshoot',
+      ],
     };
   }
 
