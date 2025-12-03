@@ -1,0 +1,123 @@
+name: Deploy to QA
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch: # Manual trigger
+
+env:
+  AWS_REGION: us-east-1
+  ECR_REGISTRY: 223882168768.dkr.ecr.us-east-1.amazonaws.com
+  ECS_CLUSTER: faxi-qa-cluster
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push backend
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          target: production
+          push: true
+          tags: |
+            ${{ env.ECR_REGISTRY }}/faxi-backend:qa
+            ${{ env.ECR_REGISTRY }}/faxi-backend:qa-${{ github.sha }}
+          cache-from: type=registry,ref=${{ env.ECR_REGISTRY }}/faxi-backend:qa
+          cache-to: type=inline
+          platforms: linux/amd64
+
+      - name: Build and push admin dashboard
+        uses: docker/build-push-action@v5
+        with:
+          context: ./admin-dashboard
+          file: ./admin-dashboard/Dockerfile
+          push: true
+          build-args: |
+            NEXT_PUBLIC_API_URL=http://qa-fax.faxi.jp
+          tags: |
+            ${{ env.ECR_REGISTRY }}/faxi-admin-dashboard:qa
+            ${{ env.ECR_REGISTRY }}/faxi-admin-dashboard:qa-${{ github.sha }}
+          cache-from: type=registry,ref=${{ env.ECR_REGISTRY }}/faxi-admin-dashboard:qa
+          cache-to: type=inline
+          platforms: linux/amd64
+
+      - name: Build and push marketing website
+        uses: docker/build-push-action@v5
+        with:
+          context: ./marketing-website
+          file: ./marketing-website/Dockerfile
+          push: true
+          build-args: |
+            NEXT_PUBLIC_API_URL=http://qa-fax.faxi.jp
+          tags: |
+            ${{ env.ECR_REGISTRY }}/faxi-marketing-website:qa
+            ${{ env.ECR_REGISTRY }}/faxi-marketing-website:qa-${{ github.sha }}
+          cache-from: type=registry,ref=${{ env.ECR_REGISTRY }}/faxi-marketing-website:qa
+          cache-to: type=inline
+          platforms: linux/amd64
+
+      - name: Deploy backend to ECS
+        run: |
+          aws ecs update-service \
+            --cluster ${{ env.ECS_CLUSTER }} \
+            --service faxi-qa-backend \
+            --force-new-deployment \
+            --region ${{ env.AWS_REGION }}
+
+      - name: Deploy admin dashboard to ECS
+        run: |
+          aws ecs update-service \
+            --cluster ${{ env.ECS_CLUSTER }} \
+            --service faxi-qa-admin \
+            --force-new-deployment \
+            --region ${{ env.AWS_REGION }}
+
+      - name: Deploy marketing website to ECS
+        run: |
+          aws ecs update-service \
+            --cluster ${{ env.ECS_CLUSTER }} \
+            --service faxi-qa-marketing \
+            --force-new-deployment \
+            --region ${{ env.AWS_REGION }}
+
+      - name: Wait for services to stabilize
+        run: |
+          echo "Waiting for services to stabilize..."
+          aws ecs wait services-stable \
+            --cluster ${{ env.ECS_CLUSTER }} \
+            --services faxi-qa-backend faxi-qa-admin faxi-qa-marketing \
+            --region ${{ env.AWS_REGION }} || true
+
+      - name: Check deployment status
+        run: |
+          echo "=== Deployment Status ==="
+          aws ecs describe-services \
+            --cluster ${{ env.ECS_CLUSTER }} \
+            --services faxi-qa-backend faxi-qa-admin faxi-qa-marketing \
+            --region ${{ env.AWS_REGION }} \
+            --query 'services[*].[serviceName,status,runningCount,desiredCount]' \
+            --output table
