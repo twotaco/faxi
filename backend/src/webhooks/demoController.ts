@@ -239,14 +239,22 @@ function transformToolResultForTemplate(
 const router = Router();
 
 // Rate limiting map (simple in-memory implementation)
+// Uses path-based keys so fixture images don't count against process limit
 const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
 
-// Rate limit middleware (100 requests per 15 minutes in dev, 10 in prod)
+// Rate limit middleware
+// - Fixture/image endpoints: no rate limit (static assets)
+// - Process endpoint: 30 requests per 15 minutes (the expensive AI calls)
 function rateLimitMiddleware(req: Request, res: Response, next: Function) {
+  // Skip rate limiting for static fixture assets
+  if (req.path.includes('/fixtures') || req.path.includes('/fixture-image')) {
+    return next();
+  }
+
   const ip = req.ip || req.socket.remoteAddress || 'unknown';
   const now = Date.now();
   const windowMs = 15 * 60 * 1000; // 15 minutes
-  const maxRequests = process.env.NODE_ENV === 'production' ? 10 : 100;
+  const maxRequests = 30; // Reasonable limit for AI processing requests
 
   const clientData = rateLimitMap.get(ip);
 
