@@ -313,7 +313,7 @@ app.post('/admin/auth/login', async (req: Request, res: Response) => {
     // Set refresh token as httpOnly cookie
     res.cookie('admin_refresh_token', refreshTokenId, {
       httpOnly: true,
-      secure: config.app.env === 'production',
+      secure: config.app.cookieSecure,
       sameSite: 'lax', // Changed from 'strict' to 'lax' for cross-origin
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
       path: '/', // Changed from '/admin/auth' to '/' so cookie is sent everywhere
@@ -366,7 +366,7 @@ app.post('/admin/auth/logout', async (req: Request, res: Response) => {
     // Clear the cookie
     res.clearCookie('admin_refresh_token', {
       httpOnly: true,
-      secure: config.app.env === 'production',
+      secure: config.app.cookieSecure,
       sameSite: 'lax',
       path: '/',
     });
@@ -401,7 +401,7 @@ app.post('/admin/auth/refresh', async (req: Request, res: Response) => {
     if (!refreshToken) {
       res.clearCookie('admin_refresh_token', {
         httpOnly: true,
-        secure: config.app.env === 'production',
+        secure: config.app.cookieSecure,
         sameSite: 'lax',
         path: '/',
       });
@@ -419,7 +419,7 @@ app.post('/admin/auth/refresh', async (req: Request, res: Response) => {
       await adminUserRepository.revokeRefreshToken(refreshTokenId);
       res.clearCookie('admin_refresh_token', {
         httpOnly: true,
-        secure: config.app.env === 'production',
+        secure: config.app.cookieSecure,
         sameSite: 'lax',
         path: '/',
       });
@@ -443,7 +443,7 @@ app.post('/admin/auth/refresh', async (req: Request, res: Response) => {
     // Set new refresh token cookie
     res.cookie('admin_refresh_token', newRefreshTokenId, {
       httpOnly: true,
-      secure: config.app.env === 'production',
+      secure: config.app.cookieSecure,
       sameSite: 'lax',
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
       path: '/',

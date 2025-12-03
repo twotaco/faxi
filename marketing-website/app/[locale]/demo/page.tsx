@@ -45,7 +45,8 @@ export default function DemoPage() {
 
   useEffect(() => {
     fetchFixtures();
-  }, [fetchFixtures]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only fetch on mount
 
   const handleFixtureSelect = (fixture: DemoFixture) => {
     setSelectedFixture(fixture);

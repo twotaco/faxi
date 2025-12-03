@@ -43,6 +43,7 @@ const configSchema = z.object({
     port: z.number(),
     logLevel: z.enum(['error', 'warn', 'info', 'debug']),
     testMode: z.boolean(),
+    cookieSecure: z.boolean(),
   }),
   
   // Telnyx
@@ -173,6 +174,7 @@ function buildConfig(): Config {
       port: parseInt(process.env.PORT || '3000', 10),
       logLevel: (process.env.LOG_LEVEL as any) || 'info',
       testMode: process.env.TEST_MODE === 'true',
+      cookieSecure: process.env.COOKIE_SECURE === 'true' || (process.env.NODE_ENV === 'production' && process.env.COOKIE_SECURE !== 'false'),
     },
     telnyx: {
       apiKey: process.env.TELNYX_API_KEY || '',

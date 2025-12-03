@@ -24,7 +24,7 @@ export function useDemo() {
     } finally {
       setIsLoadingFixtures(false);
     }
-  }, []);
+  }, []); // Already memoized correctly
 
   const processFixture = async (fixtureId: string) => {
     setIsProcessing(true);
