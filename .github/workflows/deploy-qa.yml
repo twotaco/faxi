@@ -97,6 +97,52 @@ jobs:
             --cli-input-json file://aws/qa-marketing-task-definition.json \
             --region ${{ env.AWS_REGION }}
 
+      - name: Run database migrations
+        run: |
+          echo "Running database migrations..."
+          
+          # Get network config from backend service
+          NETWORK_CONFIG=$(aws ecs describe-services \
+            --cluster ${{ env.ECS_CLUSTER }} \
+            --services faxi-qa-backend \
+            --region ${{ env.AWS_REGION }} \
+            --query 'services[0].networkConfiguration' \
+            --output json)
+          
+          # Run migration as one-off task
+          TASK_ARN=$(aws ecs run-task \
+            --cluster ${{ env.ECS_CLUSTER }} \
+            --task-definition faxi-qa-backend \
+            --launch-type FARGATE \
+            --network-configuration "$NETWORK_CONFIG" \
+            --overrides '{"containerOverrides":[{"name":"backend","command":["npm","run","migrate"]}]}' \
+            --region ${{ env.AWS_REGION }} \
+            --query 'tasks[0].taskArn' \
+            --output text)
+          
+          echo "Migration task: $TASK_ARN"
+          
+          # Wait for migration to complete
+          aws ecs wait tasks-stopped \
+            --cluster ${{ env.ECS_CLUSTER }} \
+            --tasks "$TASK_ARN" \
+            --region ${{ env.AWS_REGION }}
+          
+          # Check exit code
+          EXIT_CODE=$(aws ecs describe-tasks \
+            --cluster ${{ env.ECS_CLUSTER }} \
+            --tasks "$TASK_ARN" \
+            --region ${{ env.AWS_REGION }} \
+            --query 'tasks[0].containers[0].exitCode' \
+            --output text)
+          
+          if [ "$EXIT_CODE" != "0" ]; then
+            echo "Migration failed with exit code: $EXIT_CODE"
+            exit 1
+          fi
+          
+          echo "Migrations completed successfully"
+
       - name: Deploy backend to ECS
         run: |
           aws ecs update-service \
