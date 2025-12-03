@@ -104,14 +104,6 @@ jobs:
             --force-new-deployment \
             --region ${{ env.AWS_REGION }}
 
-      - name: Wait for services to stabilize
-        run: |
-          echo "Waiting for services to stabilize..."
-          aws ecs wait services-stable \
-            --cluster ${{ env.ECS_CLUSTER }} \
-            --services faxi-qa-backend faxi-qa-admin faxi-qa-marketing \
-            --region ${{ env.AWS_REGION }} || true
-
       - name: Check deployment status
         run: |
           echo "=== Deployment Status ==="
