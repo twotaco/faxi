@@ -80,11 +80,29 @@ jobs:
           cache-to: type=inline
           platforms: linux/amd64
 
+      - name: Register new task definitions
+        run: |
+          # Register backend task definition
+          aws ecs register-task-definition \
+            --cli-input-json file://aws/qa-backend-task-definition.json \
+            --region ${{ env.AWS_REGION }}
+          
+          # Register admin task definition  
+          aws ecs register-task-definition \
+            --cli-input-json file://aws/qa-admin-task-definition.json \
+            --region ${{ env.AWS_REGION }}
+          
+          # Register marketing task definition
+          aws ecs register-task-definition \
+            --cli-input-json file://aws/qa-marketing-task-definition.json \
+            --region ${{ env.AWS_REGION }}
+
       - name: Deploy backend to ECS
         run: |
           aws ecs update-service \
             --cluster ${{ env.ECS_CLUSTER }} \
             --service faxi-qa-backend \
+            --task-definition faxi-qa-backend \
             --force-new-deployment \
             --region ${{ env.AWS_REGION }}
 
@@ -93,6 +111,7 @@ jobs:
           aws ecs update-service \
             --cluster ${{ env.ECS_CLUSTER }} \
             --service faxi-qa-admin \
+            --task-definition faxi-qa-admin \
             --force-new-deployment \
             --region ${{ env.AWS_REGION }}
 
@@ -101,6 +120,7 @@ jobs:
           aws ecs update-service \
             --cluster ${{ env.ECS_CLUSTER }} \
             --service faxi-qa-marketing \
+            --task-definition faxi-qa-marketing \
             --force-new-deployment \
             --region ${{ env.AWS_REGION }}
 
