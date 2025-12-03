@@ -230,7 +230,18 @@ app.post('/admin/auth/login', async (req: Request, res: Response) => {
   try {
     const { email, password } = req.body;
 
+    loggingService.info('Admin login attempt', {
+      email: email || '(not provided)',
+      hasPassword: !!password,
+      ip: req.ip,
+      userAgent: req.headers['user-agent'],
+    });
+
     if (!email || !password) {
+      loggingService.warn('Admin login failed: missing credentials', {
+        hasEmail: !!email,
+        hasPassword: !!password,
+      });
       return res.status(400).json({
         error: 'Missing credentials',
         message: 'Email and password are required',
@@ -241,6 +252,10 @@ app.post('/admin/auth/login', async (req: Request, res: Response) => {
     const user = await adminUserRepository.findByEmailWithPassword(email);
 
     if (!user) {
+      loggingService.warn('Admin login failed: user not found', {
+        email,
+        ip: req.ip,
+      });
       // Don't reveal if user exists
       return res.status(401).json({
         error: 'Invalid credentials',
@@ -271,6 +286,12 @@ app.post('/admin/auth/login', async (req: Request, res: Response) => {
     const isValidPassword = await adminAuthService.verifyPassword(password, user.passwordHash);
 
     if (!isValidPassword) {
+      loggingService.warn('Admin login failed: invalid password', {
+        email,
+        userId: user.id,
+        ip: req.ip,
+      });
+
       await auditLogService.log({
         eventType: 'admin.login_failed',
         eventData: {
@@ -287,6 +308,12 @@ app.post('/admin/auth/login', async (req: Request, res: Response) => {
         message: 'Invalid email or password',
       });
     }
+
+    loggingService.info('Admin login successful', {
+      email,
+      userId: user.id,
+      role: user.role,
+    });
 
     // Generate tokens
     const { accessToken, refreshTokenId, expiresAt } = await adminAuthService.generateTokens(user);
