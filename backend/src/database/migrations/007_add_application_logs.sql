@@ -15,8 +15,9 @@ CREATE TABLE IF NOT EXISTS application_logs (
 -- Indexes for efficient querying
 CREATE INDEX IF NOT EXISTS idx_application_logs_level ON application_logs(level);
 CREATE INDEX IF NOT EXISTS idx_application_logs_created_at ON application_logs(created_at);
-CREATE INDEX IF NOT EXISTS idx_application_logs_context_user_id ON application_logs USING GIN ((context->>'userId'));
-CREATE INDEX IF NOT EXISTS idx_application_logs_context_fax_job_id ON application_logs USING GIN ((context->>'faxJobId'));
+-- Use btree indexes for text extraction (GIN requires jsonb, not text)
+CREATE INDEX IF NOT EXISTS idx_application_logs_context_user_id ON application_logs(((context->>'userId')));
+CREATE INDEX IF NOT EXISTS idx_application_logs_context_fax_job_id ON application_logs(((context->>'faxJobId')));
 CREATE INDEX IF NOT EXISTS idx_application_logs_level_created_at ON application_logs(level, created_at);
 
 -- Partial index for errors only (most commonly queried)
