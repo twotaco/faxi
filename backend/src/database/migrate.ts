@@ -63,7 +63,7 @@ function extractVersion(filename: string): string {
 async function ensureMigrationsTable(): Promise<void> {
   await db.query(`
     CREATE TABLE IF NOT EXISTS schema_migrations (
-      version VARCHAR(10) PRIMARY KEY,
+      version VARCHAR(20) PRIMARY KEY,
       name VARCHAR(255) NOT NULL,
       applied_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
       checksum VARCHAR(20) NOT NULL
