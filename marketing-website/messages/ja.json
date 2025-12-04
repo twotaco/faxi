@@ -42,7 +42,15 @@
     "help": "ヘルプ",
     "about": "会社概要",
     "privacy": "プライバシーポリシー",
-    "terms": "利用規約"
+    "terms": "利用規約",
+    "subscriptionPolicy": "サブスクリプション規約",
+    "privacyPolicy": "プライバシーポリシー",
+    "cookiePolicy": "クッキーポリシー",
+    "disclaimerPolicy": "免責事項",
+    "commercialPolicy": "特定商取引法に基づく表記",
+    "refundReturns": "返品・返金ポリシー",
+    "termsOfUse": "利用規約",
+    "legal": "法的情報"
   },
   "home": {
     "title": "Faxi - FAXをインターネットに接続",

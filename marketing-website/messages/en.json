@@ -42,7 +42,15 @@
     "help": "Help",
     "about": "About",
     "privacy": "Privacy Policy",
-    "terms": "Terms of Service"
+    "terms": "Terms of Service",
+    "subscriptionPolicy": "Subscription Policy",
+    "privacyPolicy": "Privacy Policy",
+    "cookiePolicy": "Cookie Policy",
+    "disclaimerPolicy": "Disclaimer",
+    "commercialPolicy": "Commercial Disclosure",
+    "refundReturns": "Return & Refund Policy",
+    "termsOfUse": "Terms of Use",
+    "legal": "Legal"
   },
   "home": {
     "title": "Faxi - Connecting Fax to the Internet",

@@ -1,13 +1,15 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useTranslations } from 'next-intl';
-import { FileText, Book, MapPin, ArrowUpRight } from 'lucide-react';
+import { FileText, Book, MapPin, ArrowUpRight, ChevronDown } from 'lucide-react';
 import { FooterContactForm } from './FooterContactForm';
 
 export function Footer({ locale }: { locale: string }) {
   const t = useTranslations('navigation');
+  const [legalExpanded, setLegalExpanded] = useState(false);
 
   const currentYear = new Date().getFullYear();
 
@@ -126,7 +128,7 @@ export function Footer({ locale }: { locale: string }) {
             </ul>
           </div>
 
-          {/* Legal & Contact Column */}
+          {/* Company Column */}
           <div>
             <h4 className="font-semibold text-lg mb-6 flex items-center gap-2">
               <span className="w-8 h-0.5 bg-faxi-brown-light rounded-full" />
@@ -142,23 +144,52 @@ export function Footer({ locale }: { locale: string }) {
                   <ArrowUpRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" />
                 </Link>
               </li>
+              {/* Legal expandable menu */}
               <li>
-                <Link
-                  href={`/${locale}/privacy`}
-                  className="group flex items-center gap-2 text-white/70 hover:text-white transition-colors"
+                <button
+                  onClick={() => setLegalExpanded(!legalExpanded)}
+                  className="group flex items-center gap-2 text-white/70 hover:text-white transition-colors w-full"
                 >
-                  <span>{t('privacy')}</span>
-                  <ArrowUpRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" />
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href={`/${locale}/terms`}
-                  className="group flex items-center gap-2 text-white/70 hover:text-white transition-colors"
-                >
-                  <span>{t('terms')}</span>
-                  <ArrowUpRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" />
-                </Link>
+                  <span>{t('legal')}</span>
+                  <ChevronDown className={`w-4 h-4 transition-transform ${legalExpanded ? 'rotate-180' : ''}`} />
+                </button>
+                <ul className={`mt-3 ml-4 space-y-2 overflow-hidden transition-all duration-200 ${legalExpanded ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'}`}>
+                  <li>
+                    <Link href="/terms-of-use" className="text-white/60 hover:text-white transition-colors text-sm">
+                      {t('termsOfUse')}
+                    </Link>
+                  </li>
+                  <li>
+                    <Link href="/privacy-policy" className="text-white/60 hover:text-white transition-colors text-sm">
+                      {t('privacyPolicy')}
+                    </Link>
+                  </li>
+                  <li>
+                    <Link href="/subscription-policy" className="text-white/60 hover:text-white transition-colors text-sm">
+                      {t('subscriptionPolicy')}
+                    </Link>
+                  </li>
+                  <li>
+                    <Link href="/cookie-policy" className="text-white/60 hover:text-white transition-colors text-sm">
+                      {t('cookiePolicy')}
+                    </Link>
+                  </li>
+                  <li>
+                    <Link href="/disclaimer-policy" className="text-white/60 hover:text-white transition-colors text-sm">
+                      {t('disclaimerPolicy')}
+                    </Link>
+                  </li>
+                  <li>
+                    <Link href="/commercial-policy" className="text-white/60 hover:text-white transition-colors text-sm">
+                      {t('commercialPolicy')}
+                    </Link>
+                  </li>
+                  <li>
+                    <Link href="/refund_returns" className="text-white/60 hover:text-white transition-colors text-sm">
+                      {t('refundReturns')}
+                    </Link>
+                  </li>
+                </ul>
               </li>
             </ul>
 
@@ -178,11 +209,11 @@ export function Footer({ locale }: { locale: string }) {
             © {currentYear} Faxi. {locale === 'ja' ? '全著作権所有' : 'All rights reserved.'}
           </p>
           <div className="flex items-center gap-6 text-sm">
-            <Link href={`/${locale}/privacy`} className="text-white/50 hover:text-white transition-colors">
-              {t('privacy')}
+            <Link href="/privacy-policy" className="text-white/50 hover:text-white transition-colors">
+              {t('privacyPolicy')}
             </Link>
-            <Link href={`/${locale}/terms`} className="text-white/50 hover:text-white transition-colors">
-              {t('terms')}
+            <Link href="/terms-of-use" className="text-white/50 hover:text-white transition-colors">
+              {t('termsOfUse')}
             </Link>
           </div>
         </div>
