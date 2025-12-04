@@ -33,6 +33,11 @@ export interface GroupedProductSelectionFaxData {
 }
 
 export class ProductSelectionFaxGenerator {
+  // Common text constants
+  private static readonly HEADER_TEXT = 'Faxi Shopping';
+  private static readonly DELIVERY_TEXT = 'All products are available with free delivery';
+  private static readonly DIVIDER = '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━';
+
   /**
    * Generate product selection fax with curated options
    * 
@@ -70,6 +75,59 @@ export class ProductSelectionFaxGenerator {
   }
 
   /**
+   * Create common header content
+   */
+  private static createHeaderContent(): FaxContent[] {
+    return [
+      {
+        type: 'header',
+        text: this.HEADER_TEXT,
+        fontSize: 34,
+        bold: true,
+        alignment: 'center',
+        marginBottom: 30
+      }
+    ];
+  }
+
+  /**
+   * Create common delivery info content
+   */
+  private static createDeliveryInfoContent(fontSize: number = 32): FaxContent[] {
+    return [
+      {
+        type: 'text',
+        text: this.DIVIDER,
+        fontSize: 34,
+        alignment: 'center',
+        marginBottom: 20
+      },
+      {
+        type: 'text',
+        text: this.DELIVERY_TEXT,
+        fontSize,
+        bold: true,
+        alignment: 'center',
+        marginBottom: 30
+      }
+    ];
+  }
+
+  /**
+   * Create common footer content
+   */
+  private static createFooterContent(label: string, referenceId: string): FaxContent {
+    return {
+      type: 'footer',
+      text: `${label} | Ref: ${referenceId} | Support: 0120-XXX-XXX`,
+      fontSize: 45,
+      bold: true,
+      alignment: 'center',
+      marginTop: 20
+    };
+  }
+
+  /**
    * Create grouped product selection template
    */
   private static createGroupedProductSelectionTemplate(
@@ -79,20 +137,12 @@ export class ProductSelectionFaxGenerator {
     const refId = referenceId || FaxTemplateEngine.generateReferenceId();
 
     const content: FaxContent[] = [
-      // Header
-      {
-        type: 'header',
-        text: 'Faxi - Amazon.co.jp Shopping',
-        fontSize: 34,
-        bold: true,
-        alignment: 'center',
-        marginBottom: 30
-      },
-
+      ...this.createHeaderContent(),
+      
       // Instructions
       {
         type: 'text',
-        text: 'We found products for your requests. Circle your choices and fax back:',
+        text: 'We found products for your requests. Circle your choices and fax this form back:',
         fontSize: 34,
         marginBottom: 30
       }
@@ -135,24 +185,8 @@ export class ProductSelectionFaxGenerator {
       });
     }
 
-    // Final divider
-    content.push({
-      type: 'text',
-      text: '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━',
-      fontSize: 34,
-      alignment: 'center',
-      marginBottom: 20
-    });
-
-    // Prime/delivery info
-    content.push({
-      type: 'text',
-      text: 'All products are Prime-eligible with free delivery',
-      fontSize: 32,
-      bold: true,
-      alignment: 'center',
-      marginBottom: 30
-    });
+    // Delivery info
+    content.push(...this.createDeliveryInfoContent(32));
 
     // Instructions for selection
     content.push({
@@ -171,14 +205,7 @@ export class ProductSelectionFaxGenerator {
     });
 
     // Footer with reference ID
-    content.push({
-      type: 'footer',
-      text: `Multi-Product Options | Ref: ${refId} | Support: 0120-XXX-XXX`,
-      fontSize: 45, // Match body text size (45 pixels at 204 DPI ≈ 16pt)
-      bold: true,
-      alignment: 'center',
-      marginTop: 20
-    });
+    content.push(this.createFooterContent('Multi-Product Options', refId));
 
     // Collect all products for context data
     const allProducts = data.groupedResults.flatMap(g => g.products.map((p, i) => ({
@@ -220,15 +247,7 @@ export class ProductSelectionFaxGenerator {
     const imageDimensions = layoutCalculator.calculateImageDimensions(layoutConstraints.imageSize);
     
     const content: FaxContent[] = [
-      // Header
-      {
-        type: 'header',
-        text: 'Faxi - Amazon.co.jp Shopping',
-        fontSize: 34, // 12pt at 204 DPI (12 * 204/72 ≈ 34)
-        bold: true,
-        alignment: 'center',
-        marginBottom: 40
-      },
+      ...this.createHeaderContent(),
       
       // Search query
       {
@@ -242,7 +261,7 @@ export class ProductSelectionFaxGenerator {
       // Instructions
       {
         type: 'text',
-        text: 'We found these products for you. Circle your choice (A, B, C, D, or E) and fax back:',
+        text: 'We found these products for you. Circle your choices and fax this form back:',
         fontSize: 34, // 12pt
         marginBottom: layoutConstraints.compactMode ? 20 : 40
       }
@@ -282,23 +301,9 @@ export class ProductSelectionFaxGenerator {
       });
     }
 
-    // Add delivery and Prime information
-    content.push({
-      type: 'text',
-      text: '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━',
-      fontSize: 34,
-      alignment: 'center',
-      marginBottom: layoutConstraints.compactMode ? 15 : 20
-    });
-
-    content.push({
-      type: 'text',
-      text: 'All products are Prime-eligible with free delivery',
-      fontSize: layoutConstraints.compactMode ? 30 : 34,
-      bold: true,
-      alignment: 'center',
-      marginBottom: layoutConstraints.compactMode ? 25 : 40
-    });
+    // Add delivery information
+    const deliveryFontSize = layoutConstraints.compactMode ? 30 : 34;
+    content.push(...this.createDeliveryInfoContent(deliveryFontSize));
 
     // Instructions for selection
     content.push({
@@ -311,7 +316,7 @@ export class ProductSelectionFaxGenerator {
 
     content.push({
       type: 'text',
-      text: '1. Circle your choice (A, B, C, D, or E)',
+      text: '1. Circle your choices',
       fontSize: layoutConstraints.compactMode ? 30 : 34,
       marginBottom: 10
     });
@@ -331,14 +336,7 @@ export class ProductSelectionFaxGenerator {
     });
 
     // Footer with reference ID
-    content.push({
-      type: 'footer',
-      text: `Product Options | Ref: ${refId} | Support: 0120-XXX-XXX`,
-      fontSize: 45, // Match body text size (45 pixels at 204 DPI ≈ 16pt)
-      bold: true,
-      alignment: 'center',
-      marginTop: 30
-    });
+    content.push(this.createFooterContent('Product Options', refId));
 
     return {
       type: 'product_selection',
@@ -489,14 +487,7 @@ export class ProductSelectionFaxGenerator {
       marginBottom: 40
     });
 
-    content.push({
-      type: 'footer',
-      text: `Product Unavailable | Ref: ${refId} | Support: 0120-XXX-XXX`,
-      fontSize: 45, // Match body text size (45 pixels at 204 DPI ≈ 16pt)
-      bold: true,
-      alignment: 'center',
-      marginTop: 30
-    });
+    content.push(this.createFooterContent('Product Unavailable', refId));
 
     const template: FaxTemplate = {
       type: 'product_selection',
@@ -621,14 +612,7 @@ export class ProductSelectionFaxGenerator {
       marginBottom: 40
     });
 
-    content.push({
-      type: 'footer',
-      text: `Price Change | Ref: ${refId} | Support: 0120-XXX-XXX`,
-      fontSize: 45, // Match body text size (45 pixels at 204 DPI ≈ 16pt)
-      bold: true,
-      alignment: 'center',
-      marginTop: 30
-    });
+    content.push(this.createFooterContent('Price Change', refId));
 
     const template: FaxTemplate = {
       type: 'product_selection',

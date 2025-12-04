@@ -85,12 +85,20 @@ export class ResponseGenerator {
         break;
 
       case 'product_selection':
-        // Note: ProductSelectionFaxGenerator now expects ProductSelectionFaxData with CuratedProduct[]
-        // The request.data should already be in the correct format when called from the pipeline
-        pdfBuffer = await ProductSelectionFaxGenerator.generateProductSelectionFax(
-          request.data,
-          referenceId
-        );
+        // Check if this is a grouped (multi-product) search or single product search
+        if (request.data.groupedResults) {
+          // Multi-product search with grouped results
+          pdfBuffer = await ProductSelectionFaxGenerator.generateGroupedProductSelectionFax(
+            request.data,
+            referenceId
+          );
+        } else {
+          // Single product search
+          pdfBuffer = await ProductSelectionFaxGenerator.generateProductSelectionFax(
+            request.data,
+            referenceId
+          );
+        }
         template = {
           type: 'product_selection',
           referenceId,

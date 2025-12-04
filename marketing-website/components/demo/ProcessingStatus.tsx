@@ -82,10 +82,6 @@ export function ProcessingStatus({ isProcessing }: ProcessingStatusProps) {
                 style={{ width: `${progress}%` }}
               />
             </div>
-            <div className="flex justify-between text-xs text-muted-foreground">
-              <span>{Math.round(progress)}% complete</span>
-              <span>~{(estimatedRemaining / 1000).toFixed(1)}s remaining</span>
-            </div>
           </div>
 
           {/* Processing steps */}

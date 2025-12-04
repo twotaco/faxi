@@ -45,9 +45,9 @@ export const defaultScrapingConfig: PlaywrightScrapingConfig = {
   locale: 'ja-JP',
   timezone: 'Asia/Tokyo',
   
-  // Use headless: false in production to avoid detection
-  // Set to true for testing/CI environments
-  headless: process.env.NODE_ENV === 'test',
+  // Must run headless in Docker containers (no X server available)
+  // Can set PLAYWRIGHT_HEADLESS=false for local debugging with a display
+  headless: process.env.PLAYWRIGHT_HEADLESS !== 'false',
   
   // Human-like delays between actions
   delayMin: 150,
