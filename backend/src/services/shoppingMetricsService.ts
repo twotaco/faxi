@@ -610,7 +610,7 @@ export class ShoppingMetricsService {
           // Log alerts to database
           for (const alert of alerts) {
             await db.query(
-              `INSERT INTO audit_logs (level, message, metadata, created_at) 
+              `INSERT INTO application_logs (level, message, metadata, created_at)
                VALUES ($1, $2, $3, $4)`,
               [
                 alert.severity === 'critical' ? 'error' : 'warn',
