@@ -26,15 +26,18 @@ export class MockFaxSender {
   private mockDeliveryDelay: number;
   private mockFailureRate: number;
   private storageDir: string;
+  private maxStoredFaxes: number;
 
   constructor(options: {
     deliveryDelay?: number;
     failureRate?: number;
     storageDir?: string;
+    maxStoredFaxes?: number;
   } = {}) {
     this.mockDeliveryDelay = options.deliveryDelay || 2000; // 2 seconds
     this.mockFailureRate = options.failureRate || 0.0; // 0% failure rate for testing
     this.storageDir = options.storageDir || join(process.cwd(), 'test-faxes');
+    this.maxStoredFaxes = options.maxStoredFaxes || 50; // Keep last 50 faxes by default
 
     // Ensure storage directory exists
     if (!existsSync(this.storageDir)) {
@@ -136,6 +139,9 @@ export class MockFaxSender {
         mediaBuffer,
         deliveryStatus: 'sent',
       });
+
+      // Auto-cleanup: Remove oldest faxes if we exceed the limit
+      this.cleanupOldFaxes(testResponseFaxes);
 
       // Log successful delivery
       await auditLogService.logFaxTransmission({
@@ -291,6 +297,47 @@ export class MockFaxSender {
    */
   private delay(ms: number): Promise<void> {
     return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
+  /**
+   * Clean up old faxes when limit is exceeded
+   * Keeps only the most recent faxes up to maxStoredFaxes
+   */
+  private cleanupOldFaxes(testResponseFaxes: Map<string, any>): void {
+    if (testResponseFaxes.size <= this.maxStoredFaxes) {
+      return;
+    }
+
+    // Sort by timestamp (oldest first)
+    const faxes = Array.from(testResponseFaxes.entries())
+      .sort((a, b) => {
+        const timeA = new Date(a[1].timestamp).getTime();
+        const timeB = new Date(b[1].timestamp).getTime();
+        return timeA - timeB;
+      });
+
+    // Calculate how many to remove
+    const toRemove = faxes.length - this.maxStoredFaxes;
+
+    // Remove oldest faxes
+    for (let i = 0; i < toRemove; i++) {
+      const [faxId, faxData] = faxes[i];
+      
+      // Remove from map
+      testResponseFaxes.delete(faxId);
+      
+      // Try to delete the file (don't fail if it doesn't exist)
+      try {
+        const fs = require('fs');
+        if (fs.existsSync(faxData.localFilePath)) {
+          fs.unlinkSync(faxData.localFilePath);
+        }
+      } catch (error) {
+        console.warn(`Failed to delete old fax file: ${faxData.localFilePath}`, error);
+      }
+    }
+
+    console.log(`Cleaned up ${toRemove} old mock faxes. Current count: ${testResponseFaxes.size}`);
   }
 
   /**

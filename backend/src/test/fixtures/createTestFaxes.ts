@@ -31,7 +31,10 @@ export class TestFaxFixtureGenerator {
     const fixtures: TestFaxFixture[] = [
       this.createEmailRequestFax(),
       this.createShoppingRequestFax(),
+      this.createMultiProductShoppingFax(),
+      this.createJapaneseShoppingFax(),
       this.createAIChatRequestFax(),
+      this.createAppointmentRequestFax(),
       this.createPaymentRegistrationFax(),
       this.createEmailReplyWithCircles(),
       this.createProductSelectionWithCheckmarks(),
@@ -94,7 +97,7 @@ export class TestFaxFixtureGenerator {
   }
 
   /**
-   * Create shopping request fax
+   * Create shopping request fax (single product)
    */
   private createShoppingRequestFax(): TestFaxFixture {
     const canvas = createCanvas(this.canvasWidth, this.canvasHeight);
@@ -108,23 +111,117 @@ export class TestFaxFixtureGenerator {
     ctx.fillText('Shopping Request', 100, 150);
     
     ctx.font = '36px Arial';
-    ctx.fillText('I need to buy:', 100, 250);
+    ctx.fillText('I need shampoo', 100, 250);
     
     ctx.font = '32px Arial';
-    ctx.fillText('• Shampoo (for dry hair)', 100, 320);
-    ctx.fillText('• Toilet paper (24 rolls)', 100, 370);
-    ctx.fillText('• Batteries (AA, 8 pack)', 100, 420);
-    
-    ctx.fillText('Deliver to my usual address', 100, 520);
-    ctx.fillText('Charge my card on file', 100, 570);
+    ctx.fillText('Preferably for dry hair', 100, 320);
+    ctx.fillText('Under ¥1000', 100, 370);
 
     const buffer = canvas.toBuffer('image/png');
     
     return {
       filename: 'shopping_request.png',
-      description: 'Shopping request with multiple items and delivery preferences',
-      scenario: 'User wants to purchase multiple items online',
+      description: 'Simple shopping request for single product (shampoo)',
+      scenario: 'User wants to purchase a single item',
       expectedIntent: 'shopping',
+      buffer,
+    };
+  }
+
+  /**
+   * Create multi-product shopping fax
+   */
+  private createMultiProductShoppingFax(): TestFaxFixture {
+    const canvas = createCanvas(this.canvasWidth, this.canvasHeight);
+    const ctx = canvas.getContext('2d');
+
+    ctx.fillStyle = 'white';
+    ctx.fillRect(0, 0, this.canvasWidth, this.canvasHeight);
+
+    ctx.fillStyle = 'black';
+    ctx.font = '48px Arial';
+    ctx.fillText('Shopping List', 100, 150);
+    
+    ctx.font = '36px Arial';
+    ctx.fillText('I need:', 100, 250);
+    
+    ctx.font = '32px Arial';
+    ctx.fillText('• Shampoo', 100, 320);
+    ctx.fillText('• Crackers (vegetable flavor)', 100, 380);
+    ctx.fillText('• Flashlight', 100, 440);
+
+    const buffer = canvas.toBuffer('image/png');
+    
+    return {
+      filename: 'multi_product_shopping.png',
+      description: 'Multi-product shopping request (shampoo, crackers, flashlight)',
+      scenario: 'User wants to purchase multiple different products',
+      expectedIntent: 'shopping',
+      buffer,
+    };
+  }
+
+  /**
+   * Create Japanese shopping fax
+   */
+  private createJapaneseShoppingFax(): TestFaxFixture {
+    const canvas = createCanvas(this.canvasWidth, this.canvasHeight);
+    const ctx = canvas.getContext('2d');
+
+    ctx.fillStyle = 'white';
+    ctx.fillRect(0, 0, this.canvasWidth, this.canvasHeight);
+
+    ctx.fillStyle = 'black';
+    ctx.font = '48px Arial';
+    ctx.fillText('買い物リクエスト', 100, 150);
+    
+    ctx.font = '36px Arial';
+    ctx.fillText('シャンプーが欲しい', 100, 250);
+    
+    ctx.font = '32px Arial';
+    ctx.fillText('乾燥した髪用', 100, 320);
+    ctx.fillText('1000円以下', 100, 370);
+
+    const buffer = canvas.toBuffer('image/png');
+    
+    return {
+      filename: 'japanese_shopping.png',
+      description: 'Japanese shopping request for shampoo',
+      scenario: 'Japanese user requests product in native language',
+      expectedIntent: 'shopping',
+      buffer,
+    };
+  }
+
+  /**
+   * Create appointment request fax
+   */
+  private createAppointmentRequestFax(): TestFaxFixture {
+    const canvas = createCanvas(this.canvasWidth, this.canvasHeight);
+    const ctx = canvas.getContext('2d');
+
+    ctx.fillStyle = 'white';
+    ctx.fillRect(0, 0, this.canvasWidth, this.canvasHeight);
+
+    ctx.fillStyle = 'black';
+    ctx.font = '48px Arial';
+    ctx.fillText('Appointment Request', 100, 150);
+    
+    ctx.font = '36px Arial';
+    ctx.fillText('I need to book:', 100, 250);
+    
+    ctx.font = '32px Arial';
+    ctx.fillText('Doctor appointment', 100, 320);
+    ctx.fillText('Next week, any afternoon', 100, 370);
+    ctx.fillText('Dr. Tanaka if possible', 100, 420);
+
+    const buffer = canvas.toBuffer('image/png');
+    
+    return {
+      filename: 'appointment_request.png',
+      description: 'Appointment booking request for doctor',
+      scenario: 'User wants to schedule a medical appointment',
+      expectedIntent: 'appointment',
       buffer,
     };
   }
