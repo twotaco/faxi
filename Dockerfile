@@ -19,10 +19,6 @@ RUN apt-get update && apt-get install -y \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Create app user for security
-RUN groupadd -g 1001 nodejs && \
-    useradd -m -s /bin/bash -u 1001 -g nodejs faxi
-
 # Set working directory
 WORKDIR /app
 
@@ -34,17 +30,14 @@ COPY backend/package*.json ./backend/
 RUN npm ci
 
 # Copy backend source
-COPY --chown=faxi:nodejs backend ./backend
+COPY backend ./backend
 
-# Create directories for runtime data
+# Create directories for runtime data (as root, before switching user)
 RUN mkdir -p /app/backend/data/uploads /app/backend/data/logs /app/backend/logs /app/backend/test-faxes /tmp/fax-processing && \
-    chown -R faxi:nodejs /app/backend/data /app/backend/logs /app/backend/test-faxes /tmp/fax-processing
+    chown -R pwuser:pwuser /app /tmp/fax-processing
 
-# Create playwright cache directory with correct permissions
-RUN mkdir -p /home/faxi/.cache && chown -R faxi:nodejs /home/faxi
-
-# Switch to non-root user
-USER faxi
+# Switch to non-root user (pwuser is the default user in Playwright image)
+USER pwuser
 
 # Set working directory to backend
 WORKDIR /app/backend
