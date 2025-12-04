@@ -97,6 +97,10 @@
         {
           "name": "COOKIE_SECURE",
           "value": "true"
+        },
+        {
+          "name": "EMAIL_PROVIDER",
+          "value": "ses"
         }
       ],
       "secrets": [
