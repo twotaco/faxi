@@ -1,5 +1,5 @@
 # Production stage with Playwright support
-FROM mcr.microsoft.com/playwright:v1.52.0-noble AS production
+FROM mcr.microsoft.com/playwright:v1.57.0-noble AS production
 
 # Install additional runtime dependencies
 RUN apt-get update && apt-get install -y \
