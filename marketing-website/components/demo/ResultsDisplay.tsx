@@ -1,6 +1,7 @@
 'use client';
 
-import { ProcessingResult } from '@/lib/api/types';
+import { useState } from 'react';
+import { ProcessingResult, ToolCallDigest } from '@/lib/api/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import Image from 'next/image';
 
@@ -201,6 +202,25 @@ export function ResultsDisplay({ result }: ResultsDisplayProps) {
         </Card>
       )}
 
+      {/* ADK Coordinator Digest - Tool Execution Details */}
+      {generatedResponse?.toolCalls && generatedResponse.toolCalls.length > 0 && (
+        <Card className="border-blue-300 bg-blue-50">
+          <CardHeader>
+            <CardTitle className="text-blue-900">🔧 Agent Coordinator Digest</CardTitle>
+            <CardDescription className="text-blue-700">
+              Tools used by the Agent - execution details
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {generatedResponse.toolCalls.map((toolCall, index) => (
+                <ToolCallCard key={index} toolCall={toolCall} index={index} />
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Intent Classification */}
       <Card>
         <CardHeader>
@@ -352,6 +372,97 @@ export function ResultsDisplay({ result }: ResultsDisplayProps) {
           </div>
         </CardContent>
       </Card>
+    </div>
+  );
+}
+
+/**
+ * ToolCallCard - Displays individual MCP tool execution details
+ */
+function ToolCallCard({ toolCall, index }: { toolCall: ToolCallDigest; index: number }) {
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  const statusIcon = toolCall.success ? '✓' : toolCall.skipped ? '○' : '✗';
+  const statusColor = toolCall.success
+    ? 'text-green-600 bg-green-100'
+    : toolCall.skipped
+    ? 'text-gray-600 bg-gray-100'
+    : 'text-red-600 bg-red-100';
+
+  const serverLabels: Record<string, string> = {
+    shopping: '🛒 Shopping',
+    email: '📧 Email',
+    ai_chat: '💬 AI Chat',
+    payment: '💳 Payment',
+    user_profile: '👤 User Profile',
+  };
+  const serverLabel = serverLabels[toolCall.serverName] || `📦 ${toolCall.serverName}`;
+
+  // Pre-stringify for TypeScript compatibility
+  const paramsJson = JSON.stringify(toolCall.parameters, null, 2);
+  const resultJson = toolCall.result ? JSON.stringify(toolCall.result, null, 2) : null;
+  const errorText = toolCall.error || null;
+
+  return (
+    <div className="bg-white rounded-lg border border-blue-200 overflow-hidden">
+      {/* Header - always visible */}
+      <button
+        onClick={() => setIsExpanded(!isExpanded)}
+        className="w-full px-4 py-3 flex items-center justify-between hover:bg-blue-50 transition-colors"
+      >
+        <div className="flex items-center gap-3">
+          <span className={`w-6 h-6 rounded-full flex items-center justify-center text-sm font-bold ${statusColor}`}>
+            {statusIcon}
+          </span>
+          <div className="text-left">
+            <p className="font-medium text-gray-900">
+              Step {index + 1}: {toolCall.toolName.replace(/_/g, ' ')}
+            </p>
+            <p className="text-sm text-gray-500">{serverLabel}</p>
+          </div>
+        </div>
+        <svg
+          className={`w-5 h-5 text-gray-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+
+      {/* Expanded details */}
+      {isExpanded ? (
+        <div className="px-4 pb-4 space-y-3 border-t border-blue-100">
+          {/* Parameters */}
+          <div className="mt-3">
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Parameters</p>
+            <pre className="bg-gray-50 rounded p-2 text-xs overflow-x-auto">
+              {paramsJson}
+            </pre>
+          </div>
+
+          {/* Result */}
+          {resultJson ? (
+            <div>
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Result</p>
+              <pre className="bg-gray-50 rounded p-2 text-xs overflow-x-auto max-h-60 overflow-y-auto">
+                {resultJson}
+              </pre>
+            </div>
+          ) : null}
+
+          {/* Error */}
+          {errorText ? (
+            <div>
+              <p className="text-xs font-semibold text-red-500 uppercase tracking-wider mb-1">Error</p>
+              <pre className="bg-red-50 text-red-700 rounded p-2 text-xs overflow-x-auto">
+                {errorText}
+              </pre>
+            </div>
+          ) : null}
+        </div>
+      ) : null}
     </div>
   );
 }

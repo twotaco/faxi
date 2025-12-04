@@ -40,10 +40,21 @@ export interface VisualizationData {
   }>;
 }
 
+export interface ToolCallDigest {
+  toolName: string;
+  serverName: string;
+  success: boolean;
+  skipped?: boolean;
+  parameters: Record<string, unknown>;
+  result: unknown;
+  error?: string;
+}
+
 export interface GeneratedResponse {
   faxContent: string;
   actionTaken: string;
   responsePdfUrl?: string;
+  toolCalls?: ToolCallDigest[];
 }
 
 export interface ProcessingResult {

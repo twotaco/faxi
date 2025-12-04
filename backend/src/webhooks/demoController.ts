@@ -530,7 +530,17 @@ router.post('/process', async (req: Request, res: Response) => {
         generatedResponse: {
           faxContent: demoResponse.responseText,
           actionTaken: demoResponse.actionTaken,
-          responsePdfUrl
+          responsePdfUrl,
+          // ADK Coordinator Digest - tool execution details for debugging/demo
+          toolCalls: demoResponse.toolCalls?.map(tc => ({
+            toolName: tc.toolName,
+            serverName: tc.serverName,
+            success: tc.success,
+            skipped: tc.skipped,
+            parameters: tc.parameters,
+            result: tc.result,
+            error: tc.error
+          }))
         }
       }
     });

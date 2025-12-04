@@ -1,9 +1,9 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import Link from 'next/link';
 import { useState, useRef, useEffect } from 'react';
-import { ArrowRight, Stethoscope, ShoppingCart, Building2, Mail } from 'lucide-react';
+import { ArrowRight, Stethoscope, ShoppingCart, Building2, Mail, Play } from 'lucide-react';
+import { VideoModal } from './VideoModal';
 
 interface UseCaseCardProps {
   icon: React.ReactNode;
@@ -14,9 +14,11 @@ interface UseCaseCardProps {
   locale: string;
   index: number;
   color: string;
+  videoSrc: string;
+  onViewDemo: () => void;
 }
 
-function UseCaseCard({ icon, title, demographic, problem, solution, locale, index, color }: UseCaseCardProps) {
+function UseCaseCard({ icon, title, demographic, problem, solution, locale, index, color, onViewDemo }: UseCaseCardProps) {
   const [isHovered, setIsHovered] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -96,13 +98,14 @@ function UseCaseCard({ icon, title, demographic, problem, solution, locale, inde
         </div>
 
         {/* CTA */}
-        <Link
-          href={`/${locale}/service`}
+        <button
+          onClick={onViewDemo}
           className="group/link inline-flex items-center gap-2 mt-6 text-faxi-brown dark:text-faxi-accent font-semibold hover:gap-3 transition-all"
         >
-          {t('viewDetails')}
+          <Play className="w-4 h-4" />
+          {locale === 'ja' ? 'デモを見る' : 'View Demo'}
           <ArrowRight className="w-4 h-4 transition-transform group-hover/link:translate-x-1" />
-        </Link>
+        </button>
       </div>
 
       {/* Hover Gradient Overlay */}
@@ -119,27 +122,32 @@ interface UseCaseSectionProps {
 
 export function UseCaseSection({ locale }: UseCaseSectionProps) {
   const t = useTranslations('home.useCases');
+  const [selectedVideo, setSelectedVideo] = useState<{ src: string; title: string } | null>(null);
 
   const useCases = [
     {
       icon: <Stethoscope className="w-8 h-8" />,
       key: 'healthcare',
       color: 'bg-faxi-brown',
+      videoSrc: '/videos/muted/appointment1-muted.mp4',
     },
     {
       icon: <ShoppingCart className="w-8 h-8" />,
       key: 'shopping',
       color: 'bg-amber-600',
+      videoSrc: '/videos/muted/ecomm1-muted.mp4',
     },
     {
       icon: <Building2 className="w-8 h-8" />,
       key: 'government',
       color: 'bg-stone-500',
+      videoSrc: '/videos/muted/govnt1-muted.mp4',
     },
     {
       icon: <Mail className="w-8 h-8" />,
       key: 'aiChat',
       color: 'bg-amber-700',
+      videoSrc: '/videos/muted/email1-muted.mp4',
     },
   ];
 
@@ -179,20 +187,21 @@ export function UseCaseSection({ locale }: UseCaseSectionProps) {
               locale={locale}
               index={index}
               color={useCase.color}
+              videoSrc={useCase.videoSrc}
+              onViewDemo={() => setSelectedVideo({ src: useCase.videoSrc, title: t(`${useCase.key}.title`) })}
             />
           ))}
         </div>
 
-        {/* Bottom CTA */}
-        <div className="text-center mt-16">
-          <Link
-            href={`/${locale}/service`}
-            className="inline-flex items-center gap-3 bg-faxi-brown hover:bg-faxi-brown-dark text-white px-8 py-4 rounded-full font-semibold text-lg shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
-          >
-            {locale === 'ja' ? 'すべてのサービスを見る' : 'View All Services'}
-            <ArrowRight className="w-5 h-5" />
-          </Link>
-        </div>
+        {/* Video Modal */}
+        <VideoModal
+          isOpen={!!selectedVideo}
+          onClose={() => setSelectedVideo(null)}
+          videoSrc={selectedVideo?.src || ''}
+          title={selectedVideo?.title || ''}
+        />
+
+
       </div>
     </section>
   );

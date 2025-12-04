@@ -373,20 +373,39 @@ export class GeneralInquiryFaxGenerator {
    * Check if content needs pagination based on estimated content height
    */
   private static needsPagination(data: GeneralInquiryTemplateData): boolean {
-    // Estimate content height
-    const questionHeight = Math.ceil(data.question.length / 80) * 60; // ~60px per line
-    const answerHeight = Math.ceil(data.answer.length / 80) * 60;
+    // More accurate line estimation:
+    // - Page width: 1728px, margins: 80px each side = 1568px content width
+    // - Font size 45px, average char width ~25px = ~62 chars per line
+    const charsPerLine = 55; // Conservative estimate for readability
+    const lineHeight = 54; // 45px font * 1.2 line height
+
+    // Count actual lines including newlines in the text
+    const countLines = (text: string): number => {
+      const lines = text.split('\n');
+      let totalLines = 0;
+      for (const line of lines) {
+        // Each line wraps based on character count
+        totalLines += Math.max(1, Math.ceil(line.length / charsPerLine));
+      }
+      return totalLines;
+    };
+
+    const questionLines = countLines(data.question);
+    const answerLines = countLines(data.answer);
+
+    const questionHeight = questionLines * lineHeight;
+    const answerHeight = answerLines * lineHeight;
     const imageCount = data.images?.length || 0;
     const imageHeight = imageCount * 350; // ~350px per image (300 + margins)
-    const relatedTopicsHeight = (data.relatedTopics?.length || 0) * 50;
-    const headerFooterHeight = 400; // Headers, separators, margins
-    
+    const relatedTopicsHeight = (data.relatedTopics?.length || 0) * 60;
+    const headerFooterHeight = 450; // Headers, title, separators, margins, footer
+
     const totalHeight = questionHeight + answerHeight + imageHeight + relatedTopicsHeight + headerFooterHeight;
-    
+
     // Check if content exceeds single page
     const layoutCalculator = new DynamicLayoutCalculator();
     const availableHeight = layoutCalculator.getAvailableContentHeight();
-    
+
     return totalHeight > availableHeight;
   }
 
@@ -395,41 +414,96 @@ export class GeneralInquiryFaxGenerator {
    */
   private static splitAnswerText(answer: string, availableHeight: number): string[] {
     const chunks: string[] = [];
-    
-    // Approximate line height (45pt font = ~60px line height)
-    const lineHeight = 60;
-    const maxLinesPerPage = Math.floor(availableHeight / lineHeight) - 5; // Reserve space for header/footer
-    
-    // Split by paragraphs first to maintain readability
-    const paragraphs = answer.split('\n\n');
+
+    // More accurate line calculation
+    const lineHeight = 54; // 45px font * 1.2
+    const charsPerLine = 55; // Conservative for readability
+
+    // Reserve space for header elements on first page (title, question, separator)
+    const firstPageReserved = 300;
+    // Reserve space for continuation header on subsequent pages
+    const continuationReserved = 100;
+    // Reserve space for footer
+    const footerReserved = 100;
+
+    const firstPageLines = Math.floor((availableHeight - firstPageReserved - footerReserved) / lineHeight);
+    const subsequentPageLines = Math.floor((availableHeight - continuationReserved - footerReserved) / lineHeight);
+
+    // Count lines for a piece of text (accounting for newlines AND wrapping)
+    const countLines = (text: string): number => {
+      const lines = text.split('\n');
+      let totalLines = 0;
+      for (const line of lines) {
+        totalLines += Math.max(1, Math.ceil(line.length / charsPerLine));
+      }
+      return totalLines;
+    };
+
+    // Split text into logical segments (by single newlines to preserve formatting)
+    const segments = answer.split('\n');
     let currentChunk = '';
     let currentLines = 0;
-    
-    for (const paragraph of paragraphs) {
-      const estimatedCharsPerLine = 80;
-      const totalParagraphLines = Math.ceil(paragraph.length / estimatedCharsPerLine);
-      
-      if (currentLines + totalParagraphLines > maxLinesPerPage && currentChunk.length > 0) {
-        // Start new page
+    let isFirstPage = true;
+    const maxLines = () => isFirstPage ? firstPageLines : subsequentPageLines;
+
+    for (let i = 0; i < segments.length; i++) {
+      const segment = segments[i];
+      const segmentLines = Math.max(1, Math.ceil(segment.length / charsPerLine));
+
+      // Check if adding this segment would overflow the page
+      if (currentLines + segmentLines > maxLines() && currentChunk.length > 0) {
+        // Save current chunk and start new page
         chunks.push(currentChunk.trim());
-        currentChunk = paragraph + '\n\n';
-        currentLines = totalParagraphLines;
+        currentChunk = segment;
+        currentLines = segmentLines;
+        isFirstPage = false;
       } else {
-        currentChunk += paragraph + '\n\n';
-        currentLines += totalParagraphLines;
+        // Add segment to current chunk
+        if (currentChunk.length > 0) {
+          currentChunk += '\n' + segment;
+        } else {
+          currentChunk = segment;
+        }
+        currentLines += segmentLines;
+      }
+
+      // Handle very long single segments that need to be split mid-text
+      while (currentLines > maxLines() && currentChunk.length > 0) {
+        // Find a good break point (word boundary near the limit)
+        const targetChars = maxLines() * charsPerLine;
+        let breakPoint = targetChars;
+
+        // Look for a space near the target to break at
+        const searchStart = Math.max(0, targetChars - 50);
+        const searchEnd = Math.min(currentChunk.length, targetChars + 50);
+        const searchRegion = currentChunk.substring(searchStart, searchEnd);
+        const lastSpace = searchRegion.lastIndexOf(' ');
+
+        if (lastSpace > 0) {
+          breakPoint = searchStart + lastSpace;
+        }
+
+        // Split at the break point
+        const firstPart = currentChunk.substring(0, breakPoint).trim();
+        const remainder = currentChunk.substring(breakPoint).trim();
+
+        chunks.push(firstPart);
+        currentChunk = remainder;
+        currentLines = countLines(remainder);
+        isFirstPage = false;
       }
     }
-    
+
     // Add remaining content
     if (currentChunk.trim().length > 0) {
       chunks.push(currentChunk.trim());
     }
-    
+
     // Ensure at least one chunk
     if (chunks.length === 0) {
       chunks.push(answer);
     }
-    
+
     return chunks;
   }
 

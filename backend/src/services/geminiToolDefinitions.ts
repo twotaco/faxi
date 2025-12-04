@@ -62,17 +62,17 @@ export const shoppingTools: FunctionDeclaration[] = [
 export const emailTools: FunctionDeclaration[] = [
   {
     name: 'email_send',
-    description: 'Send an email to someone. Use this when the user wants to email, contact, write to, or message someone.',
+    description: 'Send an email to someone. IMPORTANT: You MUST have the recipient\'s email address. If you only have a name (like "Rob" or "mom"), you MUST call user_profile_lookup_contact FIRST to get their email address before calling this tool.',
     parameters: {
       type: SchemaType.OBJECT,
       properties: {
         recipientEmail: {
           type: SchemaType.STRING,
-          description: 'Email address of the recipient (e.g., john@example.com)'
+          description: 'Email address of the recipient (REQUIRED). If you only have a name, call user_profile_lookup_contact first to get the email.'
         },
         recipientName: {
           type: SchemaType.STRING,
-          description: 'Name of the recipient if no email address provided - will look up in address book'
+          description: 'Display name of the recipient (for email greeting). This does NOT replace recipientEmail - you still need the email address.'
         },
         subject: {
           type: SchemaType.STRING,
@@ -83,23 +83,10 @@ export const emailTools: FunctionDeclaration[] = [
           description: 'Email message body content'
         }
       },
-      required: ['body']
-    }
-  },
-  {
-    name: 'email_lookup_contact',
-    description: 'Look up a contact in the address book by name to find their email address.',
-    parameters: {
-      type: SchemaType.OBJECT,
-      properties: {
-        name: {
-          type: SchemaType.STRING,
-          description: 'Name of the contact to look up'
-        }
-      },
-      required: ['name']
+      required: ['body', 'recipientEmail']
     }
   }
+  // Note: email_lookup_contact removed - use user_profile_lookup_contact instead
 ];
 
 /**
@@ -316,7 +303,6 @@ export const toolToServerMap: Record<string, string> = {
   'shopping_search_products': 'shopping',
   'shopping_create_order': 'shopping',
   'email_send': 'email',
-  'email_lookup_contact': 'email',
   'ai_chat_question': 'ai_chat',
   'payment_register': 'payment',
   'payment_check_status': 'payment',
@@ -336,7 +322,6 @@ export const toolNameMap: Record<string, string> = {
   'shopping_search_products': 'search_products',
   'shopping_create_order': 'create_order',
   'email_send': 'send_email',
-  'email_lookup_contact': 'lookup_contact',
   'ai_chat_question': 'chat',
   'payment_register': 'register_payment_method',
   'payment_check_status': 'check_payment_status',
@@ -401,11 +386,8 @@ AVAILABLE TOOLS:
 - shopping_create_order: Create an order for a product
   params: { productId: string, quantity?: number }
 
-- email_send: Send an email to someone
-  params: { recipientEmail?: string, recipientName?: string, subject?: string, body: string }
-
-- email_lookup_contact: Look up a contact's email address
-  params: { name: string }
+- email_send: Send an email to someone. REQUIRES recipientEmail - if you only have a name, call user_profile_lookup_contact first!
+  params: { recipientEmail: string (REQUIRED), recipientName?: string, subject?: string, body: string }
 
 - payment_register: Register a payment method
   params: { methodType: "credit_card" | "bank_transfer" | "convenience_store" }
@@ -513,7 +495,7 @@ Output:
   }
 }
 
-3. Conditional execution:
+3. Conditional execution (with contact lookup):
 Input: "If it's sunny in Tokyo tomorrow, email John about having lunch outside"
 Output:
 {
@@ -521,24 +503,31 @@ Output:
     "steps": [
       {
         "id": "step_1",
+        "tool": "user_profile_lookup_contact",
+        "params": { "query": "John" },
+        "description": "Look up John's email",
+        "outputKey": "john_contact"
+      },
+      {
+        "id": "step_2",
         "tool": "ai_chat_question",
         "params": { "question": "What will the weather be like in Tokyo tomorrow? Is it going to be sunny?" },
         "description": "Check tomorrow's weather"
       },
       {
-        "id": "step_2",
+        "id": "step_3",
         "tool": "email_send",
-        "params": { "recipientName": "John", "subject": "Lunch tomorrow?", "body": "Hi John, the weather looks great tomorrow! Want to have lunch outside?" },
+        "params": { "recipientEmail": "{john_contact.email}", "recipientName": "John", "subject": "Lunch tomorrow?", "body": "Hi John, the weather looks great tomorrow! Want to have lunch outside?" },
         "description": "Send lunch invitation if sunny",
-        "dependsOn": ["step_1"],
-        "condition": { "step": "step_1", "check": "contains", "value": "sunny" }
+        "dependsOn": ["step_1", "step_2"],
+        "condition": { "step": "step_2", "check": "contains", "value": "sunny" }
       }
     ],
-    "summary": "Check weather and conditionally send lunch invitation"
+    "summary": "Look up contact, check weather, and conditionally send lunch invitation"
   }
 }
 
-4. Mixed intents (shopping + email):
+4. Mixed intents (shopping + email) - MUST look up contact first:
 Input: "Order some shampoo and email mom that I'm visiting next week"
 Output:
 {
@@ -546,22 +535,30 @@ Output:
     "steps": [
       {
         "id": "step_1",
+        "tool": "user_profile_lookup_contact",
+        "params": { "query": "mom" },
+        "description": "Look up mom's email",
+        "outputKey": "mom_contact"
+      },
+      {
+        "id": "step_2",
         "tool": "shopping_search_products",
         "params": { "query": "shampoo", "primeOnly": true },
         "description": "Search for shampoo"
       },
       {
-        "id": "step_2",
+        "id": "step_3",
         "tool": "email_send",
-        "params": { "recipientName": "mom", "subject": "Visiting next week", "body": "Hi Mom, I wanted to let you know I'll be visiting next week. Looking forward to seeing you!" },
-        "description": "Email mom about visit"
+        "params": { "recipientEmail": "{mom_contact.email}", "recipientName": "mom", "subject": "Visiting next week", "body": "Hi Mom, I wanted to let you know I'll be visiting next week. Looking forward to seeing you!" },
+        "description": "Email mom about visit",
+        "dependsOn": ["step_1"]
       }
     ],
-    "summary": "Search for shampoo and send email to mom"
+    "summary": "Look up contact, search for shampoo and send email to mom"
   }
 }
 
-5. Sequential with dependency:
+5. Sequential with dependency - Email requires contact lookup first:
 Input: "Look up Sarah's email and send her the meeting notes"
 Output:
 {
@@ -569,14 +566,15 @@ Output:
     "steps": [
       {
         "id": "step_1",
-        "tool": "email_lookup_contact",
-        "params": { "name": "Sarah" },
-        "description": "Look up Sarah's email address"
+        "tool": "user_profile_lookup_contact",
+        "params": { "query": "Sarah" },
+        "description": "Look up Sarah's email address",
+        "outputKey": "sarah_contact"
       },
       {
         "id": "step_2",
         "tool": "email_send",
-        "params": { "recipientName": "Sarah", "subject": "Meeting Notes", "body": "Hi Sarah, here are the meeting notes as discussed." },
+        "params": { "recipientEmail": "{sarah_contact.email}", "recipientName": "Sarah", "subject": "Meeting Notes", "body": "Hi Sarah, here are the meeting notes as discussed." },
         "description": "Send meeting notes to Sarah",
         "dependsOn": ["step_1"]
       }
@@ -636,7 +634,7 @@ Output:
   }
 }
 
-8. Data chaining - Search products and email results:
+8. Data chaining - Search products and email results (MUST lookup contact first):
 Input: "Find keychains and email mom asking which one she wants"
 Output:
 {
@@ -644,24 +642,32 @@ Output:
     "steps": [
       {
         "id": "step_1",
+        "tool": "user_profile_lookup_contact",
+        "params": { "query": "mom" },
+        "description": "Look up mom's email address",
+        "outputKey": "mom_contact"
+      },
+      {
+        "id": "step_2",
         "tool": "shopping_search_products",
         "params": { "query": "keychains" },
         "description": "Search for keychains",
         "outputKey": "products"
       },
       {
-        "id": "step_2",
+        "id": "step_3",
         "tool": "email_send",
         "params": {
+          "recipientEmail": "{mom_contact.email}",
           "recipientName": "mom",
           "subject": "Gift ideas - which would you like?",
           "body": "Hi Mom!\n\nI'm looking at getting you a present. Here are some options I found:\n\n{products}\n\nLet me know which one you'd like!"
         },
-        "dependsOn": ["step_1"],
+        "dependsOn": ["step_1", "step_2"],
         "description": "Email product list to mom"
       }
     ],
-    "summary": "Search for keychains and email options to mom"
+    "summary": "Look up contact, search for keychains, and email options to mom"
   }
 }
 
@@ -682,6 +688,7 @@ Output:
         "id": "step_2",
         "tool": "email_send",
         "params": {
+          "recipientEmail": "{doctor_info.email}",
           "recipientName": "{doctor_info.name}",
           "subject": "Appointment Inquiry",
           "body": "Hello,\n\nI would like to inquire about scheduling an appointment.\n\nThank you."
@@ -705,6 +712,14 @@ Available output fields by tool:
 - user_profile_get_contacts: {key} = formatted list, {key.count} = number of contacts
 - user_profile_lookup_contact: {key} = formatted contact, {key.email}, {key.name}
 - ai_chat_question: {key} = the response text
+
+CONTACT LOOKUP RULES (CRITICAL):
+- email_send REQUIRES recipientEmail - you CANNOT send an email with only a name
+- If user says "email Rob", "send to mom", "contact John", etc. you MUST:
+  1. First call user_profile_lookup_contact to get their email address
+  2. Then call email_send with recipientEmail from the lookup result
+- Pattern: lookup_contact → email_send (with {contact.email})
+- NEVER skip the contact lookup step when only a name is provided
 
 GUIDELINES:
 - Always create at least one step
@@ -781,3 +796,69 @@ export const plannerResponseSchema = {
   },
   required: ['plan']
 };
+
+/**
+ * Response Synthesizer System Instruction
+ *
+ * This model takes tool execution results and composes a natural,
+ * conversational fax response to send back to the user.
+ */
+export const RESPONSE_SYNTHESIZER_INSTRUCTION = `You are Faxi, a helpful fax-based assistant. Your job is to compose a natural, conversational fax response to send back to the user based on what actions were completed on their behalf.
+
+CRITICAL RULES:
+1. MATCH THE LANGUAGE of the user's request. If they wrote in English, respond in English. If Japanese, respond in Japanese.
+2. DO NOT include ANY decorative borders, boxes, or separator lines (no ━, ─, ═, |, +, etc.)
+3. DO NOT include headers like "FAX RESPONSE" or "━━━ FAX RESPONSE ━━━" - the system adds formatting automatically.
+4. DO NOT use markdown formatting (no ** for bold, no * for bullets). Use plain text suitable for fax.
+5. Start your response directly with content - no preamble or headers.
+
+CONTEXT:
+- Users send fax requests and receive fax responses
+- You've just completed one or more actions for the user
+- You need to summarize what was done in a friendly, assistant-like manner
+
+GUIDELINES:
+1. Write as a helpful assistant, NOT as a system log
+2. Explain what you did and the outcome in natural language
+3. If you sent an email, include the email content that was sent
+4. If you searched for products, list them clearly with prices
+5. If multiple actions were taken, weave them into a coherent narrative
+6. End with next steps or what the user should expect (e.g., "I'll fax you when they reply")
+7. Keep it concise but complete - this is a fax, not a novel
+8. Use a warm, professional tone
+
+RESPONSE FORMAT:
+- Start with a brief summary of what was accomplished
+- Include relevant details (email content, product list, etc.)
+- End with next steps or a helpful note
+- Use clear formatting with line breaks for readability
+- Use simple characters for bullets (-, *) not emoji bullets
+
+EXAMPLE:
+User request: "Find keychains and email Rob asking which one he wants"
+
+BAD response:
+✓ Contact found: Rob
+---
+商品検索結果
+1. Keychain A - ¥500
+---
+✓ Email sent to Rob
+
+GOOD response:
+I found some keychains and sent Rob an email asking which one he'd like!
+
+Email Sent to Rob:
+"Hi Rob, I'm looking at keychains and found these options:
+1. Keychain A - ¥500
+2. Keychain B - ¥800
+Let me know which one catches your eye!"
+
+Products Found:
+1. Keychain A - ¥500 (Prime)
+2. Keychain B - ¥800 (Prime)
+
+I'll fax you when Rob replies with his choice. Then you can let me know if you'd like to order it!
+
+Remember: You're a helpful assistant reporting back to your user, not a computer printing a log. Match the user's language!
+`;

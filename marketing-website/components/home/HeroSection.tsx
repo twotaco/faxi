@@ -4,13 +4,50 @@ import { useTranslations } from 'next-intl';
 import Image from 'next/image';
 import Link from 'next/link';
 import { ArrowRight, Play } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
 
 interface HeroSectionProps {
   locale: string;
 }
 
+const VIDEO_SEQUENCE = [
+  '/videos/muted/ecomm2-muted.mp4',
+  '/videos/muted/email2-muted.mp4',
+  '/videos/muted/appointment1-muted.mp4',
+];
+
 export function HeroSection({ locale }: HeroSectionProps) {
   const t = useTranslations('home.hero.families');
+  const [currentVideoIndex, setCurrentVideoIndex] = useState(0);
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    const handleVideoEnd = () => {
+      // Move to next video in sequence
+      setCurrentVideoIndex((prev) => (prev + 1) % VIDEO_SEQUENCE.length);
+    };
+
+    const handleLoadedData = () => {
+      // Preload next video
+      const nextIndex = (currentVideoIndex + 1) % VIDEO_SEQUENCE.length;
+      const preloadLink = document.createElement('link');
+      preloadLink.rel = 'preload';
+      preloadLink.as = 'video';
+      preloadLink.href = VIDEO_SEQUENCE[nextIndex];
+      document.head.appendChild(preloadLink);
+    };
+
+    video.addEventListener('ended', handleVideoEnd);
+    video.addEventListener('loadeddata', handleLoadedData);
+    
+    return () => {
+      video.removeEventListener('ended', handleVideoEnd);
+      video.removeEventListener('loadeddata', handleLoadedData);
+    };
+  }, [currentVideoIndex]); // Re-attach listener when video changes
 
   return (
     <section className="relative min-h-[90vh] flex items-center overflow-hidden -mt-20 pt-20">
@@ -98,18 +135,23 @@ export function HeroSection({ locale }: HeroSectionProps) {
             </div>
           </div>
 
-          {/* Hero Image/Visual */}
+          {/* Hero Video/Visual */}
           <div className="hidden lg:block relative">
             <div className="relative">
-              {/* Main Image Card */}
+              {/* Main Video Card */}
               <div className="relative bg-white rounded-3xl shadow-2xl overflow-hidden transform rotate-2 hover:rotate-0 transition-transform duration-500">
-                <Image
-                  src="/images/service-illustration.jpg"
-                  alt="Faxi Service"
-                  width={600}
-                  height={400}
-                  className="object-cover"
-                />
+                <video
+                  ref={videoRef}
+                  autoPlay
+                  muted
+                  playsInline
+                  preload="auto"
+                  className="w-full h-auto object-cover"
+                  style={{ aspectRatio: '3/2.4' }}
+                  key={currentVideoIndex}
+                >
+                  <source src={VIDEO_SEQUENCE[currentVideoIndex]} type="video/mp4" />
+                </video>
               </div>
             </div>
           </div>

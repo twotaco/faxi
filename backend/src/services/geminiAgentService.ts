@@ -27,6 +27,7 @@ import {
   ExecutionStep,
   StepCondition,
   PLANNER_SYSTEM_INSTRUCTION,
+  RESPONSE_SYNTHESIZER_INSTRUCTION,
   plannerResponseSchema
 } from './geminiToolDefinitions';
 import type { VisualAnnotation } from '../types/vision';
@@ -58,6 +59,7 @@ export interface ToolCallResult {
 class GeminiAgentService {
   private genAI: GoogleGenerativeAI;
   private plannerModel: any;
+  private synthesizerModel: any;
 
   constructor() {
     this.genAI = new GoogleGenerativeAI(config.gemini.apiKey);
@@ -70,6 +72,12 @@ class GeminiAgentService {
       generationConfig: {
         responseMimeType: 'application/json'
       }
+    });
+
+    // Synthesizer model - composes natural responses from tool results
+    this.synthesizerModel = this.genAI.getGenerativeModel({
+      model: config.gemini.model,
+      systemInstruction: RESPONSE_SYNTHESIZER_INSTRUCTION
     });
   }
 
@@ -159,11 +167,24 @@ class GeminiAgentService {
         };
       }
 
-      const aggregatedResponse = this.aggregateResponses(toolCallResults, plan);
-      console.log('\n=== AGGREGATED RESPONSE ===');
+      // Step 3: Synthesize response
+      // For multi-tool results or complex requests, use LLM synthesis
+      // For simple single-tool results, use basic aggregation
+      let aggregatedResponse: string;
+
+      if (successfulResults.length > 1) {
+        // Use LLM to synthesize a natural, conversational response
+        console.log('\n=== SYNTHESIZING RESPONSE (LLM) ===');
+        aggregatedResponse = await this.synthesizeResponse(ocrText, toolCallResults, plan);
+      } else {
+        // Simple case - use basic aggregation
+        console.log('\n=== AGGREGATING RESPONSE (SIMPLE) ===');
+        aggregatedResponse = this.aggregateResponses(toolCallResults, plan);
+      }
+
       console.log('Response:', aggregatedResponse);
       console.log('Tool calls:', toolCallResults.length);
-      console.log('Successful:', toolCallResults.filter(t => t.success).length);
+      console.log('Successful:', successfulResults.length);
 
       return {
         success: true,
@@ -760,7 +781,54 @@ Circle your choice and fax back.
   }
 
   /**
+   * Synthesize a natural response using LLM for multi-tool results
+   */
+  private async synthesizeResponse(
+    originalRequest: string,
+    toolCalls: ToolCallResult[],
+    plan: ExecutionPlan
+  ): Promise<string> {
+    try {
+      // Build a summary of what was done
+      const toolSummaries = toolCalls
+        .filter(call => call.success && !call.skipped)
+        .map(call => {
+          const step = plan.steps.find(s => s.id === call.stepId);
+          return {
+            tool: call.toolName,
+            description: step?.description || call.toolName,
+            params: call.parameters,
+            result: call.result
+          };
+        });
+
+      const prompt = `
+USER'S ORIGINAL REQUEST:
+${originalRequest}
+
+ACTIONS COMPLETED:
+${JSON.stringify(toolSummaries, null, 2)}
+
+Based on the above, compose a friendly fax response to send back to the user. Tell them what you did and include relevant details (email content, product list, etc.). End with next steps if applicable.
+`;
+
+      const result = await this.synthesizerModel.generateContent(prompt);
+      const response = result.response.text();
+
+      // Return the synthesized response directly - no wrapper needed
+      // The GeneralInquiryFaxGenerator already provides proper formatting
+      return response;
+
+    } catch (error) {
+      loggingService.error('Response synthesis failed, falling back to aggregation', error);
+      // Fall back to simple aggregation on error
+      return this.aggregateResponses(toolCalls, plan);
+    }
+  }
+
+  /**
    * Aggregate multiple tool call results into a single response
+   * (Used for simple single-tool cases or as fallback)
    */
   private aggregateResponses(toolCalls: ToolCallResult[], plan: ExecutionPlan): string {
     const responses: string[] = [];

@@ -11,7 +11,7 @@ interface CustomFaxCreatorProps {
 }
 
 export function CustomFaxCreator({ onSubmit, isProcessing = false }: CustomFaxCreatorProps) {
-  const [activeTab, setActiveTab] = useState<'draw' | 'type'>('draw');
+  const [activeTab, setActiveTab] = useState<'draw' | 'type'>('type');
 
   return (
     <div className="space-y-6">
