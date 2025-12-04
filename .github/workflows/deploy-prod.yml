@@ -1,19 +1,20 @@
-name: Deploy to QA
+name: Deploy to Production
 
 on:
   push:
     branches:
-      - dev
+      - main
   workflow_dispatch: # Manual trigger
 
 env:
   AWS_REGION: us-east-1
   ECR_REGISTRY: 223882168768.dkr.ecr.us-east-1.amazonaws.com
-  ECS_CLUSTER: faxi-qa-cluster
+  ECS_CLUSTER: faxi-prod-cluster
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+    environment: production  # Requires approval in GitHub environment settings
     permissions:
       id-token: write
       contents: read
@@ -44,9 +45,9 @@ jobs:
           target: production
           push: true
           tags: |
-            ${{ env.ECR_REGISTRY }}/faxi-backend:qa
-            ${{ env.ECR_REGISTRY }}/faxi-backend:qa-${{ github.sha }}
-          cache-from: type=registry,ref=${{ env.ECR_REGISTRY }}/faxi-backend:qa
+            ${{ env.ECR_REGISTRY }}/faxi-backend:prod
+            ${{ env.ECR_REGISTRY }}/faxi-backend:prod-${{ github.sha }}
+          cache-from: type=registry,ref=${{ env.ECR_REGISTRY }}/faxi-backend:prod
           cache-to: type=inline
           platforms: linux/amd64
 
@@ -57,11 +58,11 @@ jobs:
           file: ./admin-dashboard/Dockerfile
           push: true
           build-args: |
-            NEXT_PUBLIC_API_URL=http://qa-fax.faxi.jp
+            NEXT_PUBLIC_API_URL=https://fax.faxi.jp
           tags: |
-            ${{ env.ECR_REGISTRY }}/faxi-admin-dashboard:qa
-            ${{ env.ECR_REGISTRY }}/faxi-admin-dashboard:qa-${{ github.sha }}
-          cache-from: type=registry,ref=${{ env.ECR_REGISTRY }}/faxi-admin-dashboard:qa
+            ${{ env.ECR_REGISTRY }}/faxi-admin-dashboard:prod
+            ${{ env.ECR_REGISTRY }}/faxi-admin-dashboard:prod-${{ github.sha }}
+          cache-from: type=registry,ref=${{ env.ECR_REGISTRY }}/faxi-admin-dashboard:prod
           cache-to: type=inline
           platforms: linux/amd64
 
@@ -72,11 +73,11 @@ jobs:
           file: ./marketing-website/Dockerfile
           push: true
           build-args: |
-            NEXT_PUBLIC_API_URL=http://qa-fax.faxi.jp
+            NEXT_PUBLIC_API_URL=https://fax.faxi.jp
           tags: |
-            ${{ env.ECR_REGISTRY }}/faxi-marketing-website:qa
-            ${{ env.ECR_REGISTRY }}/faxi-marketing-website:qa-${{ github.sha }}
-          cache-from: type=registry,ref=${{ env.ECR_REGISTRY }}/faxi-marketing-website:qa
+            ${{ env.ECR_REGISTRY }}/faxi-marketing-website:prod
+            ${{ env.ECR_REGISTRY }}/faxi-marketing-website:prod-${{ github.sha }}
+          cache-from: type=registry,ref=${{ env.ECR_REGISTRY }}/faxi-marketing-website:prod
           cache-to: type=inline
           platforms: linux/amd64
 
@@ -84,50 +85,50 @@ jobs:
         run: |
           # Register backend task definition
           aws ecs register-task-definition \
-            --cli-input-json file://aws/qa-backend-task-definition.json \
+            --cli-input-json file://aws/prod-backend-task-definition.json \
             --region ${{ env.AWS_REGION }}
-          
-          # Register admin task definition  
+
+          # Register admin task definition
           aws ecs register-task-definition \
-            --cli-input-json file://aws/qa-admin-task-definition.json \
+            --cli-input-json file://aws/prod-admin-task-definition.json \
             --region ${{ env.AWS_REGION }}
-          
+
           # Register marketing task definition
           aws ecs register-task-definition \
-            --cli-input-json file://aws/qa-marketing-task-definition.json \
+            --cli-input-json file://aws/prod-marketing-task-definition.json \
             --region ${{ env.AWS_REGION }}
 
       - name: Run database migrations
         run: |
           echo "Running database migrations..."
-          
+
           # Get network config from backend service
           NETWORK_CONFIG=$(aws ecs describe-services \
             --cluster ${{ env.ECS_CLUSTER }} \
-            --services faxi-qa-backend \
+            --services faxi-prod-backend \
             --region ${{ env.AWS_REGION }} \
             --query 'services[0].networkConfiguration' \
             --output json)
-          
+
           # Run migration as one-off task
           TASK_ARN=$(aws ecs run-task \
             --cluster ${{ env.ECS_CLUSTER }} \
-            --task-definition faxi-qa-backend \
+            --task-definition faxi-prod-backend \
             --launch-type FARGATE \
             --network-configuration "$NETWORK_CONFIG" \
             --overrides '{"containerOverrides":[{"name":"backend","command":["npm","run","migrate"]}]}' \
             --region ${{ env.AWS_REGION }} \
             --query 'tasks[0].taskArn' \
             --output text)
-          
+
           echo "Migration task: $TASK_ARN"
-          
+
           # Wait for migration to complete
           aws ecs wait tasks-stopped \
             --cluster ${{ env.ECS_CLUSTER }} \
             --tasks "$TASK_ARN" \
             --region ${{ env.AWS_REGION }}
-          
+
           # Check exit code
           EXIT_CODE=$(aws ecs describe-tasks \
             --cluster ${{ env.ECS_CLUSTER }} \
@@ -135,20 +136,20 @@ jobs:
             --region ${{ env.AWS_REGION }} \
             --query 'tasks[0].containers[0].exitCode' \
             --output text)
-          
+
           if [ "$EXIT_CODE" != "0" ]; then
             echo "Migration failed with exit code: $EXIT_CODE"
             exit 1
           fi
-          
+
           echo "Migrations completed successfully"
 
       - name: Deploy backend to ECS
         run: |
           aws ecs update-service \
             --cluster ${{ env.ECS_CLUSTER }} \
-            --service faxi-qa-backend \
-            --task-definition faxi-qa-backend \
+            --service faxi-prod-backend \
+            --task-definition faxi-prod-backend \
             --force-new-deployment \
             --region ${{ env.AWS_REGION }}
 
@@ -156,8 +157,8 @@ jobs:
         run: |
           aws ecs update-service \
             --cluster ${{ env.ECS_CLUSTER }} \
-            --service faxi-qa-admin \
-            --task-definition faxi-qa-admin \
+            --service faxi-prod-admin \
+            --task-definition faxi-prod-admin \
             --force-new-deployment \
             --region ${{ env.AWS_REGION }}
 
@@ -165,17 +166,17 @@ jobs:
         run: |
           aws ecs update-service \
             --cluster ${{ env.ECS_CLUSTER }} \
-            --service faxi-qa-marketing \
-            --task-definition faxi-qa-marketing \
+            --service faxi-prod-marketing \
+            --task-definition faxi-prod-marketing \
             --force-new-deployment \
             --region ${{ env.AWS_REGION }}
 
       - name: Check deployment status
         run: |
-          echo "=== Deployment Status ==="
+          echo "=== Production Deployment Status ==="
           aws ecs describe-services \
             --cluster ${{ env.ECS_CLUSTER }} \
-            --services faxi-qa-backend faxi-qa-admin faxi-qa-marketing \
+            --services faxi-prod-backend faxi-prod-admin faxi-prod-marketing \
             --region ${{ env.AWS_REGION }} \
             --query 'services[*].[serviceName,status,runningCount,desiredCount]' \
             --output table
