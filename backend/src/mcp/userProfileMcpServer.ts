@@ -197,7 +197,11 @@ export class UserProfileMCPServer implements MCPServer {
         },
         contactId: {
           type: 'string',
-          description: 'Contact ID to update'
+          description: 'Contact ID to update (optional if currentName provided)'
+        },
+        currentName: {
+          type: 'string',
+          description: 'Current name of contact to look up (used if contactId not provided)'
         },
         name: {
           type: 'string',
@@ -209,19 +213,19 @@ export class UserProfileMCPServer implements MCPServer {
         },
         relationship: {
           type: 'string',
-          description: 'Updated relationship'
+          description: 'Updated relationship/note'
         },
         notes: {
           type: 'string',
           description: 'Updated notes'
         }
       },
-      required: ['userId', 'contactId']
+      required: ['userId']
     };
 
     return {
       name: 'update_contact',
-      description: 'Update existing contact details',
+      description: 'Update existing contact details. Can look up by contactId or currentName.',
       inputSchema,
       handler: this.handleUpdateContact.bind(this)
     };
@@ -554,8 +558,8 @@ export class UserProfileMCPServer implements MCPServer {
    * Handle update contact request
    */
   private async handleUpdateContact(params: any): Promise<any> {
-    const { userId, contactId, name, email, relationship, notes } = params;
-    
+    const { userId, contactId, currentName, name, email, relationship, notes } = params;
+
     try {
       // Verify user exists
       const user = await userRepository.findById(userId);
@@ -566,12 +570,28 @@ export class UserProfileMCPServer implements MCPServer {
         };
       }
 
-      // Verify contact exists and belongs to user
-      const existingContact = await addressBookRepository.findById(contactId);
+      // Find contact by ID or by currentName
+      let existingContact = null;
+      if (contactId) {
+        existingContact = await addressBookRepository.findById(contactId);
+      } else if (currentName) {
+        // Look up by name if no contactId provided
+        const contacts = await addressBookRepository.searchByNameOrRelationship(userId, currentName);
+        if (contacts.length === 1) {
+          existingContact = contacts[0];
+        } else if (contacts.length > 1) {
+          return {
+            success: false,
+            error: `Multiple contacts found matching "${currentName}". Please be more specific.`,
+            matches: contacts.map(c => ({ id: c.id, name: c.name, email: c.emailAddress }))
+          };
+        }
+      }
+
       if (!existingContact || existingContact.userId !== userId) {
         return {
           success: false,
-          error: 'Contact not found or access denied'
+          error: contactId ? 'Contact not found or access denied' : `No contact found matching "${currentName}"`
         };
       }
 

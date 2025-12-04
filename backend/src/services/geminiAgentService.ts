@@ -109,17 +109,27 @@ class GeminiAgentService {
       }
 
       // Step 1: Create execution plan using Gemini Planner
+      console.log('\n=== CREATING EXECUTION PLAN ===');
+      console.log('Context text:', contextText.substring(0, 300));
       const plan = await this.createExecutionPlan(contextText, userName);
 
+      console.log('Plan received:', plan ? 'yes' : 'null');
+      console.log('Plan steps:', plan?.steps?.length || 0);
+
       if (!plan || !plan.steps || plan.steps.length === 0) {
+        console.log('=== PLAN IS EMPTY - RETURNING CLARIFICATION ===');
         loggingService.warn('Planner returned empty plan - requesting clarification');
         return this.createClarificationResponse('ご依頼の内容を確認させてください。');
       }
 
+      console.log('\n=== EXECUTION PLAN CREATED ===');
+      console.log('Steps:', JSON.stringify(plan.steps, null, 2));
+      console.log('Summary:', plan.summary);
+
       loggingService.info('Execution plan created', {
         stepCount: plan.steps.length,
         summary: plan.summary,
-        steps: plan.steps.map(s => ({ id: s.id, tool: s.tool, hasDeps: !!s.dependsOn?.length, hasCondition: !!s.condition }))
+        steps: plan.steps.map(s => ({ id: s.id, tool: s.tool, params: s.params, hasDeps: !!s.dependsOn?.length, hasCondition: !!s.condition }))
       });
 
       // Step 2: Execute the plan
@@ -149,12 +159,18 @@ class GeminiAgentService {
         };
       }
 
+      const aggregatedResponse = this.aggregateResponses(toolCallResults, plan);
+      console.log('\n=== AGGREGATED RESPONSE ===');
+      console.log('Response:', aggregatedResponse);
+      console.log('Tool calls:', toolCallResults.length);
+      console.log('Successful:', toolCallResults.filter(t => t.success).length);
+
       return {
         success: true,
         needsClarification: false,
         toolCalls: toolCallResults,
         plan,
-        aggregatedResponse: this.aggregateResponses(toolCallResults, plan)
+        aggregatedResponse
       };
 
     } catch (error: any) {
@@ -242,16 +258,19 @@ ${userRequest}`;
 
   /**
    * Execute an execution plan with dependency and condition handling
+   * Uses ADK-style shared state for data chaining between steps
    */
   private async executePlan(plan: ExecutionPlan, userId: string): Promise<ToolCallResult[]> {
     const results: ToolCallResult[] = [];
     const stepResults: Map<string, any> = new Map();
+    // ADK-style shared state for outputKey data chaining
+    const sharedState: Map<string, any> = new Map();
 
     // Topologically sort steps based on dependencies
     const sortedSteps = this.topologicalSort(plan.steps);
 
     for (const step of sortedSteps) {
-      loggingService.info('Executing step', { stepId: step.id, tool: step.tool });
+      loggingService.info('Executing step', { stepId: step.id, tool: step.tool, outputKey: step.outputKey });
 
       // Check dependencies are satisfied
       if (step.dependsOn && step.dependsOn.length > 0) {
@@ -296,17 +315,150 @@ ${userRequest}`;
         }
       }
 
-      // Execute the step
-      const result = await this.executeStep(step, userId, stepResults);
+      // Resolve {variable} placeholders in params using shared state (ADK-style)
+      const resolvedParams = this.resolveStateVariables(step.params, sharedState);
+      const stepWithResolvedParams = { ...step, params: resolvedParams };
+
+      // Execute the step with resolved params
+      const result = await this.executeStep(stepWithResolvedParams, userId, stepResults);
       results.push(result);
 
-      // Store result for dependent steps
+      // Store result for dependent steps (by step ID)
       if (result.success) {
         stepResults.set(step.id, result.result);
+
+        // Store formatted result in shared state if outputKey specified (ADK-style)
+        if (step.outputKey) {
+          const formattedOutput = this.formatStepOutput(step.tool, result.result);
+          sharedState.set(step.outputKey, formattedOutput);
+          loggingService.info('Stored output in shared state', {
+            outputKey: step.outputKey,
+            formattedPreview: formattedOutput.formatted?.substring(0, 100)
+          });
+        }
       }
     }
 
     return results;
+  }
+
+  /**
+   * Resolve {variable} and {variable.field} placeholders in params using shared state
+   * Follows ADK pattern where outputKey values can be referenced in subsequent steps
+   */
+  private resolveStateVariables(
+    params: Record<string, any>,
+    sharedState: Map<string, any>
+  ): Record<string, any> {
+    const resolve = (value: any): any => {
+      if (typeof value === 'string') {
+        // Replace {key} or {key.field} patterns
+        return value.replace(/\{(\w+)(?:\.(\w+))?\}/g, (match, key, field) => {
+          const stored = sharedState.get(key);
+          if (!stored) return match; // Keep original if not found
+          if (field) {
+            // Access specific field like {products.count}
+            return stored[field] !== undefined ? String(stored[field]) : match;
+          }
+          // Return formatted output by default
+          return stored.formatted ?? String(stored);
+        });
+      }
+      if (Array.isArray(value)) {
+        return value.map(resolve);
+      }
+      if (typeof value === 'object' && value !== null) {
+        return Object.fromEntries(
+          Object.entries(value).map(([k, v]) => [k, resolve(v)])
+        );
+      }
+      return value;
+    };
+
+    // Deep clone and resolve
+    return resolve(JSON.parse(JSON.stringify(params)));
+  }
+
+  /**
+   * Format step output for storage in shared state
+   * Creates standardized output with 'formatted' text and raw data
+   */
+  private formatStepOutput(tool: string, result: any): { formatted: string; [key: string]: any } {
+    switch (tool) {
+      case 'shopping_search_products': {
+        const products = result?.products || [];
+        return {
+          formatted: products.length > 0
+            ? products.map((p: any, i: number) =>
+                `${i + 1}. ${p.productName || p.title || 'Unknown'} - ¥${p.price?.toLocaleString() || 'N/A'}`
+              ).join('\n')
+            : 'No products found',
+          products,
+          count: products.length,
+          referenceId: result?.referenceId
+        };
+      }
+
+      case 'user_profile_get_contacts': {
+        const contacts = result?.contacts || [];
+        return {
+          formatted: contacts.length > 0
+            ? contacts.map((c: any) =>
+                `• ${c.name}${c.relationship ? ` (${c.relationship})` : ''}: ${c.email}`
+              ).join('\n')
+            : 'No contacts found',
+          contacts,
+          count: contacts.length
+        };
+      }
+
+      case 'ai_chat_question':
+        return {
+          formatted: result?.response || '',
+          response: result?.response
+        };
+
+      case 'email_send':
+        return {
+          formatted: result?.success ? 'Email sent successfully' : 'Failed to send email',
+          success: result?.success,
+          messageId: result?.messageId
+        };
+
+      case 'user_profile_lookup_contact': {
+        const contacts = result?.contacts || [];
+        if (contacts.length === 1) {
+          const c = contacts[0];
+          return {
+            formatted: `${c.name}: ${c.email}`,
+            contact: c,
+            email: c.email,
+            name: c.name
+          };
+        }
+        return {
+          formatted: contacts.map((c: any) => `${c.name}: ${c.email}`).join('\n'),
+          contacts,
+          count: contacts.length
+        };
+      }
+
+      default:
+        // Generic fallback
+        if (typeof result === 'string') {
+          return { formatted: result };
+        }
+        if (result?.message) {
+          return { formatted: result.message, ...result };
+        }
+        if (result?.response) {
+          return { formatted: result.response, ...result };
+        }
+        return {
+          formatted: JSON.stringify(result, null, 2),
+          ...result
+        };
+    }
   }
 
   /**
@@ -339,6 +491,14 @@ ${userRequest}`;
 
       // Execute via MCP Controller Agent
       const mcpResult = await mcpControllerAgent.executeTool(serverName, mcpToolName, mcpParams);
+
+      console.log('\n=== STEP EXECUTION RESULT ===');
+      console.log('Step ID:', step.id);
+      console.log('Tool:', step.tool);
+      console.log('Server:', serverName);
+      console.log('MCP Tool Name:', mcpToolName);
+      console.log('MCP Params:', JSON.stringify(mcpParams, null, 2));
+      console.log('Result:', JSON.stringify(mcpResult, null, 2));
 
       loggingService.info('Step execution result', {
         stepId: step.id,
@@ -521,6 +681,17 @@ ${userRequest}`;
           query: rest.query
         };
 
+      case 'user_profile_update_contact':
+        return {
+          userId,
+          contactId: rest.contactId,
+          currentName: rest.currentName,  // Used to look up contact if no contactId
+          name: rest.name,
+          email: rest.email,
+          relationship: rest.note,  // Map user-facing "note" to internal "relationship" field
+          notes: rest.notes
+        };
+
       case 'user_profile_delete_contact':
         return {
           userId,
@@ -644,6 +815,15 @@ Circle your choice and fax back.
             if (call.result?.success) {
               const name = call.result.contact?.name || call.parameters.name;
               responses.push(`✓ Contact added: ${name}`);
+            }
+          } else if (call.toolName === 'user_profile_update_contact') {
+            if (call.result?.success) {
+              const name = call.result.contact?.name || call.parameters.name;
+              responses.push(`✓ Contact updated: ${name}`);
+            } else if (call.result?.error) {
+              responses.push(`✗ Failed to update contact: ${call.result.error}`);
+            } else {
+              responses.push(`✗ Failed to update contact`);
             }
           } else if (call.toolName === 'user_profile_lookup_contact') {
             const contacts = call.result?.contacts || [];

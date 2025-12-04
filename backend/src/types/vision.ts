@@ -19,7 +19,7 @@ export interface ConversationContext {
 }
 
 export interface InterpretationResult {
-  intent: 'email' | 'shopping' | 'ai_chat' | 'payment_registration' | 'reply' | 'blocklist_management' | 'unknown';
+  intent: 'email' | 'shopping' | 'ai_chat' | 'payment_registration' | 'reply' | 'blocklist_management' | 'contact_management' | 'unknown';
   confidence: number; // 0-1
   parameters: IntentParameters;
   visualAnnotations?: VisualAnnotation[];
@@ -71,6 +71,13 @@ export interface IntentParameters {
   blocklistAction?: 'block' | 'unblock';
   targetEmail?: string; // Email address to block/unblock
   targetName?: string; // Contact name to block/unblock (requires lookup)
+
+  // Contact management intent
+  contactAction?: 'add' | 'update' | 'delete' | 'list';
+  currentName?: string; // Current name for update/delete operations
+  newName?: string; // New name for add/update operations
+  email?: string; // Email for add/update operations
+  note?: string; // Note/relationship for add/update operations
 }
 
 export interface VisualAnnotation {

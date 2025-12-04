@@ -210,6 +210,36 @@ export const userProfileTools: FunctionDeclaration[] = [
     }
   },
   {
+    name: 'user_profile_update_contact',
+    description: 'Update or edit an existing contact in the address book. Use this when the user wants to change, modify, or update a contact\'s name, email, or note.',
+    parameters: {
+      type: SchemaType.OBJECT,
+      properties: {
+        contactId: {
+          type: SchemaType.STRING,
+          description: 'ID of the contact to update (if known)'
+        },
+        currentName: {
+          type: SchemaType.STRING,
+          description: 'Current name of the contact to look up (used if contactId not provided)'
+        },
+        name: {
+          type: SchemaType.STRING,
+          description: 'New name for the contact'
+        },
+        email: {
+          type: SchemaType.STRING,
+          description: 'New email address for the contact'
+        },
+        note: {
+          type: SchemaType.STRING,
+          description: 'New note/relationship for the contact (e.g., "friend", "doctor")'
+        }
+      },
+      required: []
+    }
+  },
+  {
     name: 'user_profile_delete_contact',
     description: 'Delete or remove a contact from the address book.',
     parameters: {
@@ -288,6 +318,7 @@ export const toolToServerMap: Record<string, string> = {
   'payment_check_status': 'payment',
   'user_profile_get_contacts': 'user_profile',
   'user_profile_add_contact': 'user_profile',
+  'user_profile_update_contact': 'user_profile',
   'user_profile_lookup_contact': 'user_profile',
   'user_profile_delete_contact': 'user_profile',
   'user_profile_get_profile': 'user_profile',
@@ -307,6 +338,7 @@ export const toolNameMap: Record<string, string> = {
   'payment_check_status': 'check_payment_status',
   'user_profile_get_contacts': 'get_address_book',
   'user_profile_add_contact': 'add_contact',
+  'user_profile_update_contact': 'update_contact',
   'user_profile_lookup_contact': 'lookup_contact',
   'user_profile_delete_contact': 'delete_contact',
   'user_profile_get_profile': 'get_user_profile'
@@ -340,6 +372,8 @@ export interface ExecutionStep {
   dependsOn?: string[];
   /** Optional condition that must be met for this step to execute */
   condition?: StepCondition;
+  /** Key to store this step's result in shared state (ADK-style output_key) */
+  outputKey?: string;
 }
 
 export interface ExecutionPlan {
@@ -380,6 +414,10 @@ AVAILABLE TOOLS:
 
 - user_profile_add_contact: Add a new contact to the address book
   params: { name: string, email: string, note?: string }
+
+- user_profile_update_contact: Update or edit an existing contact's details (name, email, or note)
+  params: { contactId?: string, currentName?: string, name?: string, email?: string, note?: string }
+  Note: Use currentName to look up the contact if contactId is not known
 
 - user_profile_lookup_contact: Look up a specific contact by name or note
   params: { query: string }
@@ -577,6 +615,93 @@ Output:
   }
 }
 
+7b. Update contact:
+Input: "Update contact bob_smith name to Bob Smit. Note: Friend"
+Output:
+{
+  "plan": {
+    "steps": [
+      {
+        "id": "step_1",
+        "tool": "user_profile_update_contact",
+        "params": { "currentName": "bob_smith", "name": "Bob Smith", "note": "Friend" },
+        "description": "Update contact name and note"
+      }
+    ],
+    "summary": "Update existing contact in address book"
+  }
+}
+
+8. Data chaining - Search products and email results:
+Input: "Find keychains and email mom asking which one she wants"
+Output:
+{
+  "plan": {
+    "steps": [
+      {
+        "id": "step_1",
+        "tool": "shopping_search_products",
+        "params": { "query": "keychains" },
+        "description": "Search for keychains",
+        "outputKey": "products"
+      },
+      {
+        "id": "step_2",
+        "tool": "email_send",
+        "params": {
+          "recipientName": "mom",
+          "subject": "Gift ideas - which would you like?",
+          "body": "Hi Mom!\n\nI'm looking at getting you a present. Here are some options I found:\n\n{products}\n\nLet me know which one you'd like!"
+        },
+        "dependsOn": ["step_1"],
+        "description": "Email product list to mom"
+      }
+    ],
+    "summary": "Search for keychains and email options to mom"
+  }
+}
+
+9. Data chaining - Look up contact then email:
+Input: "Find my doctor's email and send them a message about my appointment"
+Output:
+{
+  "plan": {
+    "steps": [
+      {
+        "id": "step_1",
+        "tool": "user_profile_lookup_contact",
+        "params": { "query": "doctor" },
+        "description": "Look up doctor contact",
+        "outputKey": "doctor_info"
+      },
+      {
+        "id": "step_2",
+        "tool": "email_send",
+        "params": {
+          "recipientName": "{doctor_info.name}",
+          "subject": "Appointment Inquiry",
+          "body": "Hello,\n\nI would like to inquire about scheduling an appointment.\n\nThank you."
+        },
+        "dependsOn": ["step_1"],
+        "description": "Email doctor about appointment"
+      }
+    ],
+    "summary": "Look up doctor and send appointment email"
+  }
+}
+
+DATA CHAINING (outputKey):
+When one step's result should be used in a subsequent step:
+1. Add "outputKey": "key_name" to the first step to store its result
+2. Use {key_name} in subsequent step params to insert the formatted result
+3. Use {key_name.field} to access specific fields (e.g., {products.count}, {contact.email})
+
+Available output fields by tool:
+- shopping_search_products: {key} = formatted list, {key.count} = number of products
+- user_profile_get_contacts: {key} = formatted list, {key.count} = number of contacts
+- user_profile_lookup_contact: {key} = formatted contact, {key.email}, {key.name}
+- ai_chat_question: {key} = the response text
+
 GUIDELINES:
 - Always create at least one step
 - Use dependsOn when one step needs the result of another
@@ -633,6 +758,10 @@ export const plannerResponseSchema = {
                   field: { type: SchemaType.STRING }
                 },
                 description: 'Condition for execution'
+              },
+              outputKey: {
+                type: SchemaType.STRING,
+                description: 'Key to store result in shared state for use by subsequent steps'
               }
             },
             required: ['id', 'tool', 'params', 'description']

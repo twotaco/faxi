@@ -40,7 +40,8 @@ export class IntentExtractor {
       this.detectAIChatIntent(text, visualAnnotations),
       this.detectPaymentIntent(text, visualAnnotations),
       this.detectReplyIntent(text, visualAnnotations),
-      this.detectBlocklistIntent(text, visualAnnotations)
+      this.detectBlocklistIntent(text, visualAnnotations),
+      this.detectContactManagementIntent(text, visualAnnotations)
     ]);
 
     // Find the highest confidence intent
@@ -600,6 +601,125 @@ export class IntentExtractor {
   }
 
   /**
+   * Detect contact management intent (add/update/delete/list contacts)
+   */
+  private async detectContactManagementIntent(text: string, annotations: VisualAnnotation[]): Promise<{
+    intent: string;
+    confidence: number;
+    parameters: IntentParameters;
+  }> {
+    let confidence = 0;
+    const parameters: IntentParameters = {};
+
+    // Add contact keywords
+    const addKeywords = [
+      'add contact', 'save contact', 'new contact', 'create contact',
+      'add to contacts', 'add to address book'
+    ];
+
+    // Update contact keywords
+    const updateKeywords = [
+      'update contact', 'edit contact', 'change contact', 'modify contact',
+      'rename contact', 'update name', 'change name'
+    ];
+
+    // Delete contact keywords
+    const deleteKeywords = [
+      'delete contact', 'remove contact', 'remove from contacts',
+      'delete from address book'
+    ];
+
+    // List/view contacts keywords
+    const listKeywords = [
+      'show contacts', 'list contacts', 'my contacts', 'view contacts',
+      'address book', 'contact list', 'see contacts', 'get contacts',
+      'show my contacts', 'show address book'
+    ];
+
+    // Check for specific actions
+    const hasAddKeyword = addKeywords.some(keyword => text.includes(keyword));
+    const hasUpdateKeyword = updateKeywords.some(keyword => text.includes(keyword));
+    const hasDeleteKeyword = deleteKeywords.some(keyword => text.includes(keyword));
+    const hasListKeyword = listKeywords.some(keyword => text.includes(keyword));
+
+    if (hasAddKeyword) {
+      parameters.contactAction = 'add';
+      confidence += 0.7;
+    } else if (hasUpdateKeyword) {
+      parameters.contactAction = 'update';
+      confidence += 0.7;
+    } else if (hasDeleteKeyword) {
+      parameters.contactAction = 'delete';
+      confidence += 0.7;
+    } else if (hasListKeyword) {
+      parameters.contactAction = 'list';
+      confidence += 0.8;
+    }
+
+    // Extract contact name for update/delete operations
+    // Pattern: "update contact <name> name to <newname>"
+    const updateNamePattern = /(?:update|edit|change|modify|rename)\s+contact\s+([^\s]+)\s+(?:name\s+)?to\s+([^.]+)/i;
+    const updateMatch = text.match(updateNamePattern);
+    if (updateMatch) {
+      parameters.currentName = updateMatch[1].trim();
+      parameters.newName = updateMatch[2].trim();
+      confidence += 0.2;
+    }
+
+    // Pattern: "update contact <name>"
+    const simpleUpdatePattern = /(?:update|edit|change|modify)\s+contact\s+([a-zA-Z0-9_]+)/i;
+    const simpleUpdateMatch = text.match(simpleUpdatePattern);
+    if (simpleUpdateMatch && !parameters.currentName) {
+      parameters.currentName = simpleUpdateMatch[1].trim();
+      confidence += 0.1;
+    }
+
+    // Extract note/relationship: "Note: <value>" or "note <value>"
+    const notePattern = /note[:\s]+([^.]+?)(?:\.|$)/i;
+    const noteMatch = text.match(notePattern);
+    if (noteMatch) {
+      parameters.note = noteMatch[1].trim();
+      confidence += 0.1;
+    }
+
+    // Extract email address
+    const emailPattern = /([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/;
+    const emailMatch = text.match(emailPattern);
+    if (emailMatch) {
+      parameters.email = emailMatch[1];
+      confidence += 0.15;
+    }
+
+    // For add contact: "add contact: <name>, <email>, <note>"
+    const addContactPattern = /add\s+contact[:\s]+([^,]+),\s*([^,]+)(?:,\s*(.+))?/i;
+    const addMatch = text.match(addContactPattern);
+    if (addMatch) {
+      parameters.newName = addMatch[1].trim();
+      if (addMatch[2] && addMatch[2].includes('@')) {
+        parameters.email = addMatch[2].trim();
+      }
+      if (addMatch[3]) {
+        parameters.note = addMatch[3].trim();
+      }
+      confidence += 0.2;
+    }
+
+    // For delete contact: "delete contact <name>"
+    const deletePattern = /(?:delete|remove)\s+contact\s+([a-zA-Z0-9_\s]+)/i;
+    const deleteMatch = text.match(deletePattern);
+    if (deleteMatch && parameters.contactAction === 'delete') {
+      parameters.currentName = deleteMatch[1].trim();
+      confidence += 0.1;
+    }
+
+    return {
+      intent: 'contact_management',
+      confidence: Math.min(confidence, 1.0),
+      parameters
+    };
+  }
+
+  /**
    * Extract implicit email body when no explicit body is found
    */
   private extractImplicitEmailBody(text: string, parameters: IntentParameters): string | undefined {
@@ -709,6 +829,22 @@ export class IntentExtractor {
         else if (parameters.targetName) blocklistScore += 0.3;
         return blocklistScore;
 
+      case 'contact_management':
+        let contactScore = 0;
+        if (parameters.contactAction) contactScore += 0.4;
+        if (parameters.contactAction === 'list') {
+          contactScore += 0.6; // List action is complete by itself
+        } else if (parameters.contactAction === 'add') {
+          if (parameters.newName) contactScore += 0.3;
+          if (parameters.email) contactScore += 0.3;
+        } else if (parameters.contactAction === 'update') {
+          if (parameters.currentName) contactScore += 0.3;
+          if (parameters.newName || parameters.note || parameters.email) contactScore += 0.3;
+        } else if (parameters.contactAction === 'delete') {
+          if (parameters.currentName) contactScore += 0.6;
+        }
+        return contactScore;
+
       default:
         return 0.1;
     }
@@ -724,7 +860,8 @@ export class IntentExtractor {
       ai_chat: 'Contains question patterns or inquiry keywords',
       payment_registration: 'Contains payment or billing-related keywords',
       reply: 'Contains circled options or reference to previous communication',
-      blocklist_management: 'Contains block/unblock keywords and email address'
+      blocklist_management: 'Contains block/unblock keywords and email address',
+      contact_management: 'Contains contact management keywords (add/update/delete/list)'
     };
     return reasons[intent] || 'Pattern match detected';
   }

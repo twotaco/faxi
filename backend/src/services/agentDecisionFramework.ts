@@ -39,10 +39,54 @@ export class AgentDecisionFramework {
       
       case 'reply':
         return this.canCompleteReplyImmediately(context);
-      
+
+      case 'contact_management':
+        return this.canCompleteContactManagementImmediately(context);
+
+      case 'blocklist_management':
+        return this.canCompleteBlocklistImmediately(context);
+
       default:
         return false;
     }
+  }
+
+  /**
+   * Determine if contact management can be completed immediately
+   */
+  private canCompleteContactManagementImmediately(context: DecisionContext): boolean {
+    const params = context.interpretation.parameters;
+    const action = params.contactAction;
+
+    switch (action) {
+      case 'list':
+        // List always can complete immediately
+        return true;
+
+      case 'add':
+        // Need name and email to add
+        return !!(params.newName && params.email);
+
+      case 'update':
+        // Need current name and at least one field to update
+        return !!(params.currentName && (params.newName || params.email || params.note));
+
+      case 'delete':
+        // Need name to delete
+        return !!params.currentName;
+
+      default:
+        return false;
+    }
+  }
+
+  /**
+   * Determine if blocklist management can be completed immediately
+   */
+  private canCompleteBlocklistImmediately(context: DecisionContext): boolean {
+    const params = context.interpretation.parameters;
+    // Need action and target (email or name)
+    return !!(params.blocklistAction && (params.targetEmail || params.targetName));
   }
 
   /**
