@@ -161,6 +161,84 @@ export const paymentTools: FunctionDeclaration[] = [
 ];
 
 /**
+ * User Profile Tools - Contact management and user data
+ */
+export const userProfileTools: FunctionDeclaration[] = [
+  {
+    name: 'user_profile_get_contacts',
+    description: 'Get the user\'s contact list/address book. Use this when the user wants to see their contacts, view their address book, list who they can email, or asks about their saved contacts.',
+    parameters: {
+      type: SchemaType.OBJECT,
+      properties: {},
+      required: []
+    }
+  },
+  {
+    name: 'user_profile_add_contact',
+    description: 'Add a new contact to the address book. Use this when the user wants to add, save, or create a new contact.',
+    parameters: {
+      type: SchemaType.OBJECT,
+      properties: {
+        name: {
+          type: SchemaType.STRING,
+          description: 'Name of the contact'
+        },
+        email: {
+          type: SchemaType.STRING,
+          description: 'Email address of the contact'
+        },
+        note: {
+          type: SchemaType.STRING,
+          description: 'Note about this contact (e.g., "doctor", "auto repair", "dentist", "accountant")'
+        }
+      },
+      required: ['name', 'email']
+    }
+  },
+  {
+    name: 'user_profile_lookup_contact',
+    description: 'Look up a specific contact by name or note to find their details.',
+    parameters: {
+      type: SchemaType.OBJECT,
+      properties: {
+        query: {
+          type: SchemaType.STRING,
+          description: 'Name or note to search for (e.g., "John", "doctor", "auto repair")'
+        }
+      },
+      required: ['query']
+    }
+  },
+  {
+    name: 'user_profile_delete_contact',
+    description: 'Delete or remove a contact from the address book.',
+    parameters: {
+      type: SchemaType.OBJECT,
+      properties: {
+        contactId: {
+          type: SchemaType.STRING,
+          description: 'ID of the contact to delete'
+        },
+        name: {
+          type: SchemaType.STRING,
+          description: 'Name of the contact to delete (used for lookup if ID not provided)'
+        }
+      },
+      required: []
+    }
+  },
+  {
+    name: 'user_profile_get_profile',
+    description: 'Get user profile information including delivery address, preferences, and account details.',
+    parameters: {
+      type: SchemaType.OBJECT,
+      properties: {},
+      required: []
+    }
+  }
+];
+
+/**
  * Clarification Tool - Request more information from user
  */
 export const clarificationTools: FunctionDeclaration[] = [
@@ -193,6 +271,7 @@ export const allGeminiTools: FunctionDeclaration[] = [
   ...emailTools,
   ...aiChatTools,
   ...paymentTools,
+  ...userProfileTools,
   ...clarificationTools
 ];
 
@@ -207,6 +286,11 @@ export const toolToServerMap: Record<string, string> = {
   'ai_chat_question': 'ai_chat',
   'payment_register': 'payment',
   'payment_check_status': 'payment',
+  'user_profile_get_contacts': 'user_profile',
+  'user_profile_add_contact': 'user_profile',
+  'user_profile_lookup_contact': 'user_profile',
+  'user_profile_delete_contact': 'user_profile',
+  'user_profile_get_profile': 'user_profile',
   'request_clarification': 'clarification'
 };
 
@@ -220,7 +304,12 @@ export const toolNameMap: Record<string, string> = {
   'email_lookup_contact': 'lookup_contact',
   'ai_chat_question': 'chat',
   'payment_register': 'register_payment_method',
-  'payment_check_status': 'check_payment_status'
+  'payment_check_status': 'check_payment_status',
+  'user_profile_get_contacts': 'get_address_book',
+  'user_profile_add_contact': 'add_contact',
+  'user_profile_lookup_contact': 'lookup_contact',
+  'user_profile_delete_contact': 'delete_contact',
+  'user_profile_get_profile': 'get_user_profile'
 };
 
 /**
@@ -285,6 +374,21 @@ AVAILABLE TOOLS:
 
 - payment_check_status: Check payment/order status
   params: { orderId: string }
+
+- user_profile_get_contacts: Get user's contact list/address book. Use when user asks to see contacts, address book, or who they can email.
+  params: {} (no parameters needed)
+
+- user_profile_add_contact: Add a new contact to the address book
+  params: { name: string, email: string, note?: string }
+
+- user_profile_lookup_contact: Look up a specific contact by name or note
+  params: { query: string }
+
+- user_profile_delete_contact: Delete a contact from the address book
+  params: { contactId?: string, name?: string }
+
+- user_profile_get_profile: Get user profile information and preferences
+  params: {} (no parameters needed)
 `;
 
 /**
@@ -436,6 +540,40 @@ Output:
       }
     ],
     "summary": "Look up contact and send email"
+  }
+}
+
+6. Contact list request:
+Input: "Send me my contact list" or "Show my contacts" or "Who do I have in my address book?"
+Output:
+{
+  "plan": {
+    "steps": [
+      {
+        "id": "step_1",
+        "tool": "user_profile_get_contacts",
+        "params": {},
+        "description": "Get user's contact list"
+      }
+    ],
+    "summary": "Retrieve user's address book contacts"
+  }
+}
+
+7. Add contact:
+Input: "Add contact John Smith, john@example.com, friend"
+Output:
+{
+  "plan": {
+    "steps": [
+      {
+        "id": "step_1",
+        "tool": "user_profile_add_contact",
+        "params": { "name": "John Smith", "email": "john@example.com", "note": "friend" },
+        "description": "Add John Smith as a contact"
+      }
+    ],
+    "summary": "Add new contact to address book"
   }
 }
 

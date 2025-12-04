@@ -504,6 +504,32 @@ ${userRequest}`;
           methodType: rest.methodType
         };
 
+      case 'user_profile_get_address_book':
+        return { userId };
+
+      case 'user_profile_add_contact':
+        return {
+          userId,
+          name: rest.name,
+          email: rest.email,
+          relationship: rest.note  // Map user-facing "note" to internal "relationship" field
+        };
+
+      case 'user_profile_lookup_contact':
+        return {
+          userId,
+          query: rest.query
+        };
+
+      case 'user_profile_delete_contact':
+        return {
+          userId,
+          contactId: rest.contactId
+        };
+
+      case 'user_profile_get_user_profile':
+        return { userId };
+
       default:
         return { userId, ...rest };
     }
@@ -606,6 +632,37 @@ Circle your choice and fax back.
           responses.push(`✓ 支払い処理完了 / Payment processed`);
           break;
 
+        case 'user_profile':
+          if (call.toolName === 'user_profile_get_contacts') {
+            const contacts = call.result?.contacts || [];
+            if (contacts.length === 0) {
+              responses.push(this.formatEmptyContactList());
+            } else {
+              responses.push(this.formatContactList(contacts));
+            }
+          } else if (call.toolName === 'user_profile_add_contact') {
+            if (call.result?.success) {
+              const name = call.result.contact?.name || call.parameters.name;
+              responses.push(`✓ Contact added: ${name}`);
+            }
+          } else if (call.toolName === 'user_profile_lookup_contact') {
+            const contacts = call.result?.contacts || [];
+            if (contacts.length === 0) {
+              responses.push(`No contacts found matching "${call.parameters.query}"`);
+            } else {
+              responses.push(this.formatContactList(contacts));
+            }
+          } else if (call.toolName === 'user_profile_delete_contact') {
+            if (call.result?.success) {
+              responses.push(`✓ ${call.result.message || 'Contact deleted'}`);
+            }
+          } else if (call.toolName === 'user_profile_get_profile') {
+            if (call.result?.profile) {
+              responses.push(this.formatUserProfile(call.result.profile));
+            }
+          }
+          break;
+
         default:
           // Generic response for unknown server types
           if (call.result) {
@@ -679,6 +736,95 @@ Circle your choice and fax back.
 ${referenceId ? `\n参照番号 / Reference: ${referenceId}` : ''}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 `.trim();
+  }
+
+  /**
+   * Format contact list for fax response
+   */
+  private formatContactList(contacts: any[]): string {
+    const contactList = contacts.map((c: any, i: number) => {
+      const note = c.relationship ? ` (${c.relationship})` : '';
+      return `${i + 1}. ${c.name}${note}\n   Email: ${c.email}`;
+    }).join('\n\n');
+
+    return `
+━━━ YOUR CONTACT LIST ━━━
+連絡先リスト / Address Book
+
+You have ${contacts.length} contact(s):
+
+${contactList}
+
+━━━ MANAGE CONTACTS ━━━
+連絡先の管理
+
+To add a contact, fax:
+"Add contact: [Name], [Email], [Note]"
+連絡先追加: 名前, メール, メモ
+
+To email a contact, fax:
+"Email [name]: [your message]"
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+`.trim();
+  }
+
+  /**
+   * Format empty contact list message
+   */
+  private formatEmptyContactList(): string {
+    return `
+━━━ YOUR CONTACT LIST ━━━
+連絡先リスト / Address Book
+
+Your address book is empty.
+連絡先リストは空です。
+
+━━━ HOW TO ADD CONTACTS ━━━
+連絡先の追加方法
+
+Option 1: Fax "Add contact: [Name], [Email], [Note]"
+連絡先追加: 名前, メール, メモ
+Example: "Add contact: Dr. Tanaka, tanaka@clinic.jp, dentist"
+
+Option 2: Send an email - recipients are automatically saved:
+Example: "Email john@email.com: Hello John!"
+
+Your contacts will be saved for easy access in the future.
+連絡先は保存され、今後簡単にアクセスできます。
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+`.trim();
+  }
+
+  /**
+   * Format user profile information
+   */
+  private formatUserProfile(profile: any): string {
+    const lines: string[] = [
+      '━━━ YOUR PROFILE ━━━',
+      'プロフィール / Account Info',
+      ''
+    ];
+
+    if (profile.name) {
+      lines.push(`Name: ${profile.name}`);
+    }
+    if (profile.phoneNumber) {
+      lines.push(`Phone: ${profile.phoneNumber}`);
+    }
+    if (profile.emailAddress) {
+      lines.push(`Email: ${profile.emailAddress}`);
+    }
+    if (profile.contactCount !== undefined) {
+      lines.push(`Contacts: ${profile.contactCount}`);
+    }
+    if (profile.memberSince) {
+      const date = new Date(profile.memberSince).toLocaleDateString();
+      lines.push(`Member since: ${date}`);
+    }
+
+    lines.push('━━━━━━━━━━━━━━━━━━━━━━━━━━');
+
+    return lines.join('\n');
   }
 }
 
