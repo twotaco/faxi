@@ -278,10 +278,11 @@ export class ShoppingMCPServer implements MCPServer {
       }
 
       // Set default filters per requirements
+      // Note: primeOnly is ALWAYS true - all products must have free Prime shipping
       const searchFilters = {
         priceMin: filters.priceMin,
         priceMax: filters.priceMax,
-        primeOnly: filters.primeOnly !== undefined ? filters.primeOnly : true,
+        primeOnly: true, // Enforced: Only Prime products with free shipping
         minRating: filters.minRating !== undefined ? filters.minRating : 3.5,
         category: filters.category
       };
@@ -395,10 +396,11 @@ export class ShoppingMCPServer implements MCPServer {
       }
 
       // Set default filters
+      // Note: primeOnly is ALWAYS true - all products must have free Prime shipping
       const searchFilters = {
         priceMin: filters.priceMin,
         priceMax: filters.priceMax,
-        primeOnly: filters.primeOnly !== undefined ? filters.primeOnly : true,
+        primeOnly: true, // Enforced: Only Prime products with free shipping
         minRating: filters.minRating !== undefined ? filters.minRating : 3.5,
         maxResults: 3 // Limit products per query to fit on fax
       };

@@ -124,40 +124,70 @@ class ProductSearchService {
           cacheHit = true;
 
           // Filter by user requirements (quantity, brand, etc.)
-          const filteredProducts = this.filterByRequirements(
+          let filteredProducts = this.filterByRequirements(
             categoryProducts,
             extraction.requirements
           );
 
-          const responseTime = Date.now() - startTime;
+          // Apply price filters from search filters
+          filteredProducts = this.applyPriceFilters(filteredProducts, filters);
 
-          loggingService.info('Returning category-cached results', {
-            query,
-            category: extraction.category,
-            cacheCount: categoryProducts.length,
-            filteredCount: filteredProducts.length
-          });
+          // Quality check: If user has no price filter but cached products have low ratings,
+          // this suggests cache is from a budget-filtered search - scrape for better quality
+          const hasNoPriceFilter = !filters.priceMax && !filters.priceMin;
+          const avgRating = filteredProducts.length > 0
+            ? filteredProducts.reduce((sum, p) => sum + p.rating, 0) / filteredProducts.length
+            : 0;
+          const lowQuality = avgRating < 4.0;
 
-          // Record metrics
-          await shoppingMetricsService.recordSearchMetric(
-            true,
-            filteredProducts.length,
-            responseTime,
-            true,
-            query
-          );
-
-          // Audit log
-          if (userId) {
-            await auditLogService.logProductSearch({
-              userId,
+          if (hasNoPriceFilter && lowQuality && filteredProducts.length < 10) {
+            loggingService.info('Category cache has low-quality products, will scrape for better options', {
               query,
-              filters,
-              resultCount: filteredProducts.length
+              category: extraction.category,
+              avgRating,
+              productCount: filteredProducts.length
+            });
+            // Fall through to scraping
+          } else if (filteredProducts.length >= 3) {
+            const responseTime = Date.now() - startTime;
+
+            loggingService.info('Returning category-cached results', {
+              query,
+              category: extraction.category,
+              cacheCount: categoryProducts.length,
+              filteredCount: filteredProducts.length
+            });
+
+            // Record metrics
+            await shoppingMetricsService.recordSearchMetric(
+              true,
+              filteredProducts.length,
+              responseTime,
+              true,
+              query
+            );
+
+            // Audit log
+            if (userId) {
+              await auditLogService.logProductSearch({
+                userId,
+                query,
+                filters,
+                resultCount: filteredProducts.length
+              });
+            }
+
+            return filteredProducts.slice(0, 5);  // Return top 5
+          } else {
+            // Not enough filtered results - fall through to scraping
+            loggingService.info('Category cache insufficient after filtering, will scrape', {
+              query,
+              category: extraction.category,
+              cacheCount: categoryProducts.length,
+              filteredCount: filteredProducts.length,
+              required: 3
             });
           }
-
-          return filteredProducts.slice(0, 5);  // Return top 5
         }
       }
 
@@ -374,6 +404,38 @@ class ProductSearchService {
       });
       throw new Error(`Multi-product search failed: ${error.message}`);
     }
+  }
+
+  /**
+   * Apply price and quality filters to products
+   */
+  private applyPriceFilters(
+    products: ScrapedProduct[],
+    filters: SearchFilters
+  ): ScrapedProduct[] {
+    return products.filter(product => {
+      // Apply minimum price filter
+      if (filters.priceMin !== undefined && product.price < filters.priceMin) {
+        return false;
+      }
+
+      // Apply maximum price filter
+      if (filters.priceMax !== undefined && product.price > filters.priceMax) {
+        return false;
+      }
+
+      // Apply Prime filter
+      if (filters.primeOnly && !product.primeEligible) {
+        return false;
+      }
+
+      // Apply minimum rating filter
+      if (filters.minRating !== undefined && product.rating < filters.minRating) {
+        return false;
+      }
+
+      return true;
+    });
   }
 
   /**

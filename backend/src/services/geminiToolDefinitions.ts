@@ -30,10 +30,8 @@ export const shoppingTools: FunctionDeclaration[] = [
           type: SchemaType.NUMBER,
           description: 'Minimum price in Japanese Yen (JPY) if specified'
         },
-        primeOnly: {
-          type: SchemaType.BOOLEAN,
-          description: 'Only show Prime-eligible products. Default true for faster delivery.'
-        }
+        // primeOnly is enforced server-side - not exposed to AI
+        // All products must be Prime-eligible with free shipping
       },
       required: ['query']
     }
