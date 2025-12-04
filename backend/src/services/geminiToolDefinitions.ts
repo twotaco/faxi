@@ -223,6 +223,10 @@ export const userProfileTools: FunctionDeclaration[] = [
           type: SchemaType.STRING,
           description: 'Current name of the contact to look up (used if contactId not provided)'
         },
+        currentEmail: {
+          type: SchemaType.STRING,
+          description: 'Current email address of the contact to look up (useful for auto-created contacts)'
+        },
         name: {
           type: SchemaType.STRING,
           description: 'New name for the contact'
@@ -416,8 +420,8 @@ AVAILABLE TOOLS:
   params: { name: string, email: string, note?: string }
 
 - user_profile_update_contact: Update or edit an existing contact's details (name, email, or note)
-  params: { contactId?: string, currentName?: string, name?: string, email?: string, note?: string }
-  Note: Use currentName to look up the contact if contactId is not known
+  params: { contactId?: string, currentName?: string, currentEmail?: string, name?: string, email?: string, note?: string }
+  Note: Use currentName or currentEmail to look up the contact if contactId is not known
 
 - user_profile_lookup_contact: Look up a specific contact by name or note
   params: { query: string }

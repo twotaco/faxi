@@ -87,7 +87,7 @@ export class AddressBookRepository {
   }
 
   /**
-   * Search contacts by name or relationship
+   * Search contacts by name, email, or relationship
    * Case-insensitive partial match
    */
   async searchByNameOrRelationship(
@@ -97,9 +97,9 @@ export class AddressBookRepository {
     const result = await db.query<AddressBookEntry>(
       `SELECT id, user_id as "userId", name, email_address as "emailAddress",
               relationship, notes, created_at as "createdAt", updated_at as "updatedAt"
-       FROM address_book 
-       WHERE user_id = $1 
-         AND (name ILIKE $2 OR relationship ILIKE $2)
+       FROM address_book
+       WHERE user_id = $1
+         AND (name ILIKE $2 OR email_address ILIKE $2 OR relationship ILIKE $2)
        ORDER BY name ASC`,
       [userId, `%${query}%`]
     );

@@ -686,6 +686,7 @@ ${userRequest}`;
           userId,
           contactId: rest.contactId,
           currentName: rest.currentName,  // Used to look up contact if no contactId
+          currentEmail: rest.currentEmail,  // Can also look up by email (for auto-created contacts)
           name: rest.name,
           email: rest.email,
           relationship: rest.note,  // Map user-facing "note" to internal "relationship" field
