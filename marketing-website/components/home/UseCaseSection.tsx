@@ -22,7 +22,6 @@ function UseCaseCard({ icon, title, demographic, problem, solution, locale, inde
   const [isHovered, setIsHovered] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
-  const t = useTranslations('home.useCases');
 
   useEffect(() => {
     const observer = new IntersectionObserver(
