@@ -389,9 +389,13 @@ export class ProductSelectionFaxGenerator {
   /**
    * Format price in Japanese Yen with comma separators
    * Example: 1234 -> "¥1,234"
+   * Note: Japanese Yen has no decimal places - always whole numbers
    */
   private static formatPrice(price: number): string {
-    return `¥${price.toLocaleString('ja-JP')}`;
+    // Ensure price is an integer (no decimals for JPY)
+    const wholePrice = Math.round(price);
+    // Format with commas manually to avoid locale issues
+    return `¥${wholePrice.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',')}`;
   }
 
   /**

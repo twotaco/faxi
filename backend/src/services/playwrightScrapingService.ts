@@ -636,7 +636,8 @@ Return ONLY valid JSON, no markdown or explanation:`;
   }
   
   /**
-   * Parse price from Japanese Yen text
+   * Parse price from text (e.g., "¥1,234" or "￥764")
+   * Preserves decimal places if present in source data
    */
   private parsePrice(priceText: string): number {
     // Remove all non-numeric characters except decimal point
