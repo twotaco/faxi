@@ -115,6 +115,14 @@
         {
           "name": "STRIPE_SECRET_KEY",
           "valueFrom": "arn:aws:secretsmanager:us-east-1:223882168768:secret:faxi/qa/stripe:secret_key::"
+        },
+        {
+          "name": "AWS_ACCESS_KEY_ID",
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:223882168768:secret:faxi/qa/ses:access_key_id::"
+        },
+        {
+          "name": "AWS_SECRET_ACCESS_KEY",
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:223882168768:secret:faxi/qa/ses:secret_access_key::"
         }
       ],
       "logConfiguration": {
