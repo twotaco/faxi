@@ -44,7 +44,7 @@ data:
   SMTP_HOST: "mail.faxi.jp"
   SMTP_PORT: "587"
   SMTP_SECURE: "true"
-  SMTP_USER: "noreply@faxi.jp"
+  SMTP_USER: "contact@faxi.jp"
   
   # Base URL
   BASE_URL: "https://api.faxi.jp"

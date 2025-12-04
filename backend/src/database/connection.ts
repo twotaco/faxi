@@ -47,8 +47,15 @@ class Database {
       const result = await this.pool.query<T>(text, params);
       const duration = Date.now() - start;
       
+      // Only log queries in debug mode, filtering out noisy routine queries
       if (config.app.logLevel === 'debug') {
-        console.log('Executed query', { text, duration, rows: result.rowCount });
+        const isNoisyQuery = text === 'SELECT 1' ||
+                            text.includes('application_logs') ||
+                            text.includes('audit_logs') ||
+                            text.includes('email_metrics');
+        if (!isNoisyQuery) {
+          console.log('Executed query', { text, duration, rows: result.rowCount });
+        }
       }
       
       return result;

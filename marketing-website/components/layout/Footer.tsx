@@ -3,7 +3,8 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { useTranslations } from 'next-intl';
-import { FileText, Book, Mail, MapPin, ArrowUpRight } from 'lucide-react';
+import { FileText, Book, MapPin, ArrowUpRight } from 'lucide-react';
+import { FooterContactForm } from './FooterContactForm';
 
 export function Footer({ locale }: { locale: string }) {
   const t = useTranslations('navigation');
@@ -37,20 +38,12 @@ export function Footer({ locale }: { locale: string }) {
               </div>
               <span className="text-2xl font-bold">Faxi</span>
             </Link>
-            <p className="text-white/70 mb-6 leading-relaxed">
+            <p className="text-white/70 mb-4 leading-relaxed">
               {locale === 'ja'
                 ? 'AIの力でFAXをインターネットに接続し、すべての人にデジタルサービスへのアクセスを提供します。'
                 : 'Connecting fax machines to the internet with AI, making digital services accessible to everyone.'}
             </p>
-            <div className="flex gap-3">
-              <a
-                href="mailto:contact@faxi.jp"
-                className="w-10 h-10 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center transition-colors"
-                aria-label="Email"
-              >
-                <Mail className="h-5 w-5" />
-              </a>
-            </div>
+            <FooterContactForm locale={locale} />
           </div>
 
           {/* Services Column */}
@@ -174,10 +167,6 @@ export function Footer({ locale }: { locale: string }) {
               <div className="flex items-center gap-3 text-white/60 text-sm">
                 <MapPin className="w-4 h-4 flex-shrink-0" />
                 <span>{locale === 'ja' ? '東京都' : 'Tokyo, Japan'}</span>
-              </div>
-              <div className="flex items-center gap-3 text-white/60 text-sm">
-                <Mail className="w-4 h-4 flex-shrink-0" />
-                <span>contact@faxi.jp</span>
               </div>
             </div>
           </div>

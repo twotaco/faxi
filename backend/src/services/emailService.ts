@@ -287,8 +287,15 @@ export class EmailService {
     try {
       // Check if AWS SES is configured
       if (!awsSesService.isConfigured()) {
+        console.error('[EmailService] AWS SES not configured');
         throw new Error('AWS SES is not configured. Set AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY');
       }
+
+      console.log('[EmailService] Sending email via SES:', {
+        from: message.from,
+        to: message.to,
+        subject: message.subject
+      });
 
       // Send email via AWS SES
       const result = await awsSesService.sendEmail({
@@ -298,11 +305,14 @@ export class EmailService {
         body: message.body
       });
 
+      console.log('[EmailService] Email sent successfully:', result.messageId);
+
       return {
         success: true,
         messageId: result.messageId
       };
     } catch (error) {
+      console.error('[EmailService] SES send failed:', error);
       // Handle AWS-specific error codes
       const errorMessage = error instanceof Error ? error.message : String(error);
       

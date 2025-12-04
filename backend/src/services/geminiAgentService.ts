@@ -19,6 +19,7 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 import { config } from '../config';
 import { loggingService } from './loggingService';
 import { mcpControllerAgent } from './mcpControllerAgent';
+import { userRepository } from '../repositories/userRepository';
 import {
   toolToServerMap,
   toolNameMap,
@@ -91,6 +92,10 @@ class GeminiAgentService {
         annotationCount: visualAnnotations.length
       });
 
+      // Fetch user info for personalization
+      const user = await userRepository.findById(userId);
+      const userName = user?.name || 'User';
+
       // Build context from annotations if present
       let contextText = ocrText;
       if (visualAnnotations.length > 0) {
@@ -104,7 +109,7 @@ class GeminiAgentService {
       }
 
       // Step 1: Create execution plan using Gemini Planner
-      const plan = await this.createExecutionPlan(contextText);
+      const plan = await this.createExecutionPlan(contextText, userName);
 
       if (!plan || !plan.steps || plan.steps.length === 0) {
         loggingService.warn('Planner returned empty plan - requesting clarification');
@@ -170,31 +175,28 @@ class GeminiAgentService {
   /**
    * Create an execution plan using Gemini
    */
-  private async createExecutionPlan(userRequest: string): Promise<ExecutionPlan | null> {
+  private async createExecutionPlan(userRequest: string, userName: string = 'User'): Promise<ExecutionPlan | null> {
     try {
-      console.log('\n=== CREATING EXECUTION PLAN ===');
-      console.log('User request:', userRequest.substring(0, 200));
-
       loggingService.info('Creating execution plan', { requestPreview: userRequest.substring(0, 200) });
 
+      // Add user context to the request
+      const contextualRequest = `[SENDER INFO: The user's name is "${userName}". Use this name when signing emails or messages on their behalf.]
+
+${userRequest}`;
+
       const result = await this.plannerModel.generateContent({
-        contents: [{ role: 'user', parts: [{ text: userRequest }] }]
+        contents: [{ role: 'user', parts: [{ text: contextualRequest }] }]
       });
 
       const response = result.response;
       const text = response.text();
 
-      console.log('\n=== PLANNER RAW RESPONSE ===');
-      console.log(text);
-      console.log('=== END PLANNER RESPONSE ===\n');
-
       // Parse JSON response
       let parsed: { plan: ExecutionPlan };
       try {
         parsed = JSON.parse(text);
-        console.log('Parsed plan:', JSON.stringify(parsed, null, 2));
       } catch (parseError) {
-        console.error('JSON parse error:', parseError);
+        console.error('[Planner] JSON parse error:', parseError, 'Response:', text.substring(0, 200));
         loggingService.error('Failed to parse planner response', parseError as Error, undefined, {
           responseText: text.substring(0, 500)
         });
@@ -202,7 +204,7 @@ class GeminiAgentService {
       }
 
       if (!parsed.plan || !parsed.plan.steps) {
-        console.error('Invalid plan structure - missing plan or steps:', parsed);
+        console.error('[Planner] Invalid plan structure - missing plan or steps');
         loggingService.warn('Invalid plan structure', { parsed });
         return null;
       }
@@ -212,15 +214,18 @@ class GeminiAgentService {
         step.id && step.tool && step.params
       );
 
-      console.log(`Valid steps: ${validSteps.length} of ${parsed.plan.steps.length}`);
-
       if (validSteps.length === 0) {
-        console.error('No valid steps in plan');
+        console.error('[Planner] No valid steps in plan');
         loggingService.warn('No valid steps in plan');
         return null;
       }
 
-      console.log('=== PLAN CREATED SUCCESSFULLY ===');
+      loggingService.info('Execution plan created', {
+        stepCount: validSteps.length,
+        steps: validSteps.map(s => ({ id: s.id, tool: s.tool, hasDeps: !!s.dependsOn, hasCondition: !!s.condition })),
+        summary: parsed.plan.summary
+      });
+
       return {
         steps: validSteps,
         summary: parsed.plan.summary
@@ -339,7 +344,9 @@ class GeminiAgentService {
         stepId: step.id,
         tool: step.tool,
         hasResult: !!mcpResult,
-        success: mcpResult?.success !== false
+        success: mcpResult?.success !== false,
+        error: mcpResult?.error || null,
+        result: mcpResult
       });
 
       const isSuccess = mcpResult && mcpResult.success !== false;

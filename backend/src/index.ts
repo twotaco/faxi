@@ -1482,10 +1482,12 @@ app.get('/', (req: Request, res: Response) => {
 // Demo and Metrics API endpoints (for marketing website)
 import { demoController } from './webhooks/demoController';
 import { metricsController } from './webhooks/metricsController';
+import { contactController } from './webhooks/contactController';
 import * as shoppingMetricsController from './webhooks/shoppingMetricsController';
 
 app.use('/api/demo', demoController);
 app.use('/api/metrics', metricsController);
+app.use('/api/contact', contactController);
 
 // Shopping Metrics API endpoints (for admin dashboard)
 app.get('/api/admin/shopping/metrics/dashboard', requireAdminAuth, requirePermission('dashboard:view'), shoppingMetricsController.getShoppingDashboard);

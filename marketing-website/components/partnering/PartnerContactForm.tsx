@@ -74,7 +74,7 @@ export default function PartnerContactForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       return;
     }
@@ -83,13 +83,19 @@ export default function PartnerContactForm() {
     setSubmitStatus('idle');
 
     try {
-      // For now, just log the form data
-      // In production, this would send to a backend endpoint or email service
-      console.log('Partner contact form submitted:', formData);
-      
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+      const response = await fetch(`${apiUrl}/api/contact/partner`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to submit form');
+      }
+
       setSubmitStatus('success');
       setFormData({
         partnerType: '',

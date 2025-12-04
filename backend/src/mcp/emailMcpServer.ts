@@ -449,8 +449,17 @@ export class EmailMCPServer implements MCPServer {
         threadId: threadId
       };
 
+      console.log('[EmailMCP] Sending email:', {
+        to: recipientEmail,
+        from: user.emailAddress,
+        subject: subject,
+        userId: userId
+      });
+
       // Send email
       const result = await emailService.sendEmail(emailMessage, userId);
+
+      console.log('[EmailMCP] Send result:', result);
       
       if (result.success) {
         // Log successful email send

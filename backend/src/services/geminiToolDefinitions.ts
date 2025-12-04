@@ -447,6 +447,8 @@ GUIDELINES:
 - Extract clear parameters from the user's request
 - For vague requests, make reasonable assumptions rather than asking for clarification
 - Preserve the user's intent and language where appropriate
+- For emails: Use the sender's name (provided in [SENDER INFO]) to sign emails appropriately (e.g., "Best, John" not "Best, [Your Name]")
+- Write professional, natural email content - never use placeholders like [Your Name] or [Date]
 `;
 
 /**

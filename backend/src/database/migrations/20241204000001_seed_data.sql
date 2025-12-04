@@ -18,7 +18,7 @@ INSERT INTO users (
 ) VALUES (
   '00000000-0000-0000-0000-000000000001',
   '+81-0000-000-0001',
-  'demo@faxi.jp',
+  'demo@me.faxi.jp',
   'Demo User',
   '{"language": "ja", "welcomeFaxSent": true}'::jsonb,
   '{"demoUser": true, "skipRateLimit": true}'::jsonb

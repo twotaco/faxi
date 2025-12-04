@@ -180,7 +180,7 @@ setup_aws_secrets() {
         "from_domain": "me.faxi.jp",
         "smtp_host": "mail.faxi.jp",
         "smtp_port": "587",
-        "smtp_user": "noreply@faxi.jp",
+        "smtp_user": "contact@faxi.jp",
         "smtp_pass": "CHANGE_ME_SMTP_PASSWORD"
     }'
     
@@ -348,7 +348,7 @@ setup_k8s_secrets() {
         echo "  --from-literal=from-domain=me.faxi.jp \\"
         echo "  --from-literal=smtp-host=mail.faxi.jp \\"
         echo "  --from-literal=smtp-port=587 \\"
-        echo "  --from-literal=smtp-user=noreply@faxi.jp \\"
+        echo "  --from-literal=smtp-user=contact@faxi.jp \\"
         echo "  --from-literal=smtp-pass=CHANGE_ME_SMTP_PASSWORD"
     else
         kubectl create secret generic faxi-email \
@@ -359,7 +359,7 @@ setup_k8s_secrets() {
             --from-literal=from-domain="me.faxi.jp" \
             --from-literal=smtp-host="mail.faxi.jp" \
             --from-literal=smtp-port="587" \
-            --from-literal=smtp-user="noreply@faxi.jp" \
+            --from-literal=smtp-user="contact@faxi.jp" \
             --from-literal=smtp-pass="CHANGE_ME_SMTP_PASSWORD" \
             2>/dev/null || log_warning "Email secret may already exist"
     fi
@@ -548,7 +548,7 @@ AWS_SES_SECRET_ACCESS_KEY=CHANGE_ME_SES_SECRET_ACCESS_KEY
 SMTP_HOST=mail.faxi.jp
 SMTP_PORT=587
 SMTP_SECURE=true
-SMTP_USER=noreply@faxi.jp
+SMTP_USER=contact@faxi.jp
 SMTP_PASS=CHANGE_ME_SMTP_PASSWORD
 
 # =============================================================================

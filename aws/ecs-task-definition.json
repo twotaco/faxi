@@ -112,7 +112,7 @@
         },
         {
           "name": "SMTP_USER",
-          "value": "noreply@faxi.jp"
+          "value": "contact@faxi.jp"
         },
         {
           "name": "BASE_URL",

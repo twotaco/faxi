@@ -46,9 +46,7 @@ export class FaxGenerator {
     const opts = { ...this.DEFAULT_OPTIONS, ...options };
     const pageBuffers: Buffer[] = [];
 
-    console.log(`Generating PDF with ${template.pages.length} pages`);
     for (const page of template.pages) {
-      console.log(`Page ${page.pageNumber} has ${page.content.length} content elements`);
       const canvas = createCanvas(opts.width, opts.height);
       const ctx = canvas.getContext('2d');
 
@@ -61,14 +59,10 @@ export class FaxGenerator {
       let currentY = opts.margins.top;
 
       // Render each content element
-      console.log('Starting page render at Y:', currentY);
       for (const content of page.content) {
-        console.log(`Rendering ${content.type} at Y: ${currentY}`);
         const newY = await this.renderContent(ctx, content, currentY, opts);
-        console.log(`After rendering ${content.type}, Y moved from ${currentY} to ${newY}`);
         currentY = newY;
       }
-      console.log('Final Y position:', currentY);
 
       // Convert canvas to PNG buffer for PDF conversion
       const pngBuffer = canvas.toBuffer('image/png');
@@ -209,17 +203,12 @@ export class FaxGenerator {
     const lines = this.wrapText(ctx, content.text, contentWidth);
     const lineHeight = fontSize * 1.2;
 
-    console.log(`  Text: "${content.text?.substring(0, 50)}..." - ${lines.length} lines, lineHeight: ${lineHeight}`);
-
     lines.forEach((line, index) => {
       const lineY = y + (index * lineHeight);
-      console.log(`    Line ${index} at Y: ${lineY}`);
       ctx.fillText(line, x, lineY);
     });
 
-    const finalY = y + (lines.length * lineHeight);
-    console.log(`  Text final Y: ${finalY}`);
-    return finalY;
+    return y + (lines.length * lineHeight);
   }
 
   /**

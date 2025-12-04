@@ -458,7 +458,7 @@ SENDGRID_API_KEY=SG.your_production_api_key_here
 SMTP_HOST=mail.faxi.jp
 SMTP_PORT=587
 SMTP_SECURE=true
-SMTP_USER=noreply@faxi.jp
+SMTP_USER=contact@faxi.jp
 SMTP_PASS=your_smtp_password
 
 # Stripe Configuration
