@@ -1,7 +1,7 @@
 {
   "family": "faxi-prod-marketing",
-  "taskRoleArn": "PLACEHOLDER_TASK_ROLE_ARN",
-  "executionRoleArn": "PLACEHOLDER_EXECUTION_ROLE_ARN",
+  "taskRoleArn": "arn:aws:iam::223882168768:role/faxi-prod-ECSTaskRole",
+  "executionRoleArn": "arn:aws:iam::223882168768:role/faxi-prod-ECSTaskExecutionRole",
   "networkMode": "awsvpc",
   "requiresCompatibilities": ["FARGATE"],
   "cpu": "512",

@@ -4,8 +4,8 @@
   "requiresCompatibilities": ["FARGATE"],
   "cpu": "1024",
   "memory": "2048",
-  "executionRoleArn": "PLACEHOLDER_EXECUTION_ROLE_ARN",
-  "taskRoleArn": "PLACEHOLDER_TASK_ROLE_ARN",
+  "executionRoleArn": "arn:aws:iam::223882168768:role/faxi-prod-ECSTaskExecutionRole",
+  "taskRoleArn": "arn:aws:iam::223882168768:role/faxi-prod-ECSTaskRole",
   "containerDefinitions": [
     {
       "name": "backend",
@@ -36,7 +36,7 @@
         },
         {
           "name": "DATABASE_HOST",
-          "value": "PLACEHOLDER_RDS_HOST"
+          "value": "prod-faxi-db.cazismkei51t.us-east-1.rds.amazonaws.com"
         },
         {
           "name": "DATABASE_PORT",
@@ -64,7 +64,7 @@
         },
         {
           "name": "REDIS_HOST",
-          "value": "PLACEHOLDER_REDIS_HOST"
+          "value": "prod-faxi-redis.ub4jqi.0001.use1.cache.amazonaws.com"
         },
         {
           "name": "REDIS_PORT",
