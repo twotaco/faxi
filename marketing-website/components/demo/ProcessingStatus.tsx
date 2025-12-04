@@ -61,7 +61,7 @@ export function ProcessingStatus({ isProcessing }: ProcessingStatusProps) {
   }
 
   const estimatedTotal = processingSteps.reduce((sum, step) => sum + step.duration, 0);
-  const estimatedRemaining = Math.max(0, estimatedTotal - elapsedTime);
+  const _estimatedRemaining = Math.max(0, estimatedTotal - elapsedTime);
 
   return (
     <Card className="border-primary/50 bg-primary/5">

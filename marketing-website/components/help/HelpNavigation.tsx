@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { BookOpen, PlayCircle, HelpCircle, AlertCircle } from 'lucide-react';
 
 interface HelpNavigationProps {
@@ -10,7 +10,7 @@ interface HelpNavigationProps {
 export function HelpNavigation({ locale }: HelpNavigationProps) {
   const [activeSection, setActiveSection] = useState('getting-started');
 
-  const sections = [
+  const sections = useMemo(() => [
     {
       id: 'getting-started',
       icon: BookOpen,
@@ -31,7 +31,7 @@ export function HelpNavigation({ locale }: HelpNavigationProps) {
       icon: AlertCircle,
       label: locale === 'ja' ? 'よくある質問' : 'FAQ',
     },
-  ];
+  ], [locale]);
 
   useEffect(() => {
     // Check URL hash on mount
@@ -50,7 +50,7 @@ export function HelpNavigation({ locale }: HelpNavigationProps) {
 
     window.addEventListener('hashchange', handleHashChange);
     return () => window.removeEventListener('hashchange', handleHashChange);
-  }, []);
+  }, [sections]);
 
   const scrollToSection = (sectionId: string) => {
     setActiveSection(sectionId);

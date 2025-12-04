@@ -251,7 +251,7 @@ Thank you for using Faxi!`;
           },
           {
             type: 'footer',
-            text: `Ref: ${referenceId || FaxTemplateEngine.generateReferenceId()} | Support: help@faxi.jp | +81-3-1234-5678`,
+            text: `Ref: ${referenceId || FaxTemplateEngine.generateReferenceId()}`,
             fontSize: 45, // Match body text size (45 pixels at 204 DPI ≈ 16pt)
             bold: true,
             alignment: 'center',

@@ -119,7 +119,7 @@ export class ProductSelectionFaxGenerator {
   private static createFooterContent(label: string, referenceId: string): FaxContent {
     return {
       type: 'footer',
-      text: `${label} | Ref: ${referenceId} | Support: 0120-XXX-XXX`,
+      text: `${label} | Ref: ${referenceId}`,
       fontSize: 45,
       bold: true,
       alignment: 'center',

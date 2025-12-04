@@ -452,7 +452,7 @@ export class GeneralInquiryFaxGenerator {
   private static createFooter(referenceId: string): FaxContent {
     return {
       type: 'footer',
-      text: `Reply via fax. Ref: ${referenceId} | Support: help@faxi.jp | +81-3-1234-5678`,
+      text: `Reply via fax. Ref: ${referenceId}`,
       fontSize: 45, // Match body text size (45 pixels at 204 DPI ≈ 16pt)
       bold: true,
       alignment: 'center',
@@ -466,7 +466,7 @@ export class GeneralInquiryFaxGenerator {
   private static createFooterWithPageNumber(referenceId: string, pageNumber: number, totalPages: number): FaxContent {
     return {
       type: 'footer',
-      text: `Reply via fax. Ref: ${referenceId} | Page ${pageNumber} of ${totalPages} | Support: help@faxi.jp | +81-3-1234-5678`,
+      text: `Reply via fax. Ref: ${referenceId} | Page ${pageNumber} of ${totalPages}`,
       fontSize: 45, // Match body text size (45 pixels at 204 DPI ≈ 16pt)
       bold: true,
       alignment: 'center',

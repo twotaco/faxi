@@ -187,8 +187,25 @@ function transformToolResultForTemplate(
   switch (serverName) {
     case 'shopping':
       // ProductSelectionData format
+      console.log('[Demo] Transforming shopping tool result:', {
+        hasProducts: !!toolResult.products,
+        productCount: toolResult.products?.length,
+        hasQuery: !!toolResult.query,
+        queryValue: toolResult.query,
+        hasGroupedResults: !!toolResult.groupedResults
+      });
+      
+      // Handle grouped results (multi-product search)
+      if (toolResult.groupedResults) {
+        return {
+          groupedResults: toolResult.groupedResults
+        };
+      }
+      
+      // Handle single product search
       return {
         products: toolResult.products || [],
+        searchQuery: toolResult.query || originalQuestion,
         complementaryItems: toolResult.complementaryItems || [],
         hasPaymentMethod: false,
         deliveryAddress: undefined

@@ -442,18 +442,49 @@ export class FaxGenerator {
       // Load image into canvas
       const image = await loadImage(imageBuffer);
 
+      // Calculate dimensions preserving aspect ratio
+      const originalWidth = image.width;
+      const originalHeight = image.height;
+      const aspectRatio = originalWidth / originalHeight;
+      
+      let finalWidth = imageData.width;
+      let finalHeight = imageData.height;
+      
+      // Preserve aspect ratio - fit within the specified dimensions
+      if (imageData.width && imageData.height) {
+        const targetAspectRatio = imageData.width / imageData.height;
+        
+        if (aspectRatio > targetAspectRatio) {
+          // Image is wider - constrain by width
+          finalWidth = imageData.width;
+          finalHeight = imageData.width / aspectRatio;
+        } else {
+          // Image is taller - constrain by height
+          finalHeight = imageData.height;
+          finalWidth = imageData.height * aspectRatio;
+        }
+      } else if (imageData.width) {
+        // Only width specified
+        finalWidth = imageData.width;
+        finalHeight = imageData.width / aspectRatio;
+      } else if (imageData.height) {
+        // Only height specified
+        finalHeight = imageData.height;
+        finalWidth = imageData.height * aspectRatio;
+      }
+
       // Calculate position based on alignment
       let x = margins.left;
       if (imageData.alignment === 'center') {
-        x = margins.left + (contentWidth - imageData.width) / 2;
+        x = margins.left + (contentWidth - finalWidth) / 2;
       } else if (imageData.alignment === 'right') {
-        x = margins.left + contentWidth - imageData.width;
+        x = margins.left + contentWidth - finalWidth;
       }
 
-      // Draw image
-      ctx.drawImage(image, x, y, imageData.width, imageData.height);
+      // Draw image with preserved aspect ratio
+      ctx.drawImage(image, x, y, finalWidth, finalHeight);
 
-      let currentY = y + imageData.height;
+      let currentY = y + finalHeight;
 
       // Add caption if provided
       if (imageData.caption) {

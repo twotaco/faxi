@@ -342,7 +342,7 @@ export class ShoppingMCPServer implements MCPServer {
         success: true
       });
 
-      return {
+      const response = {
         success: true,
         products: productsWithMarkers,
         query,
@@ -350,6 +350,14 @@ export class ShoppingMCPServer implements MCPServer {
         resultCount: productsWithMarkers.length,
         referenceId // Include reference ID in response for fax generation
       };
+      
+      console.log('[Shopping MCP] Search products response:', {
+        query,
+        productCount: productsWithMarkers.length,
+        referenceId
+      });
+      
+      return response;
       
     } catch (error) {
       return {

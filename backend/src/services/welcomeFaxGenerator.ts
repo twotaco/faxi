@@ -210,7 +210,7 @@ export class WelcomeFaxGenerator {
     // Footer with reference ID and support
     content.push({
       type: 'footer',
-      text: `Welcome! Ref: ${refId} | Support: help@faxi.jp | +81-3-1234-5678`,
+      text: `Welcome! Ref: ${refId}`,
       fontSize: 45, // Match body text size (45 pixels at 204 DPI ≈ 16pt)
       bold: true,
       alignment: 'center',
@@ -328,7 +328,7 @@ export class WelcomeFaxGenerator {
 
     content.push({
       type: 'footer',
-      text: `Help Guide | Ref: ${refId} | Support: help@faxi.jp | +81-3-1234-5678`,
+      text: `Help Guide | Ref: ${refId}`,
       fontSize: 45, // Match body text size (45 pixels at 204 DPI ≈ 16pt)
       bold: true,
       alignment: 'center',
@@ -546,7 +546,7 @@ export class WelcomeFaxGenerator {
       },
       {
         type: 'footer',
-        text: `Payment Registration | Ref: ${refId} | Support: help@faxi.jp | +81-3-1234-5678`,
+        text: `Payment Registration | Ref: ${refId}`,
         fontSize: 45, // Match body text size (45 pixels at 204 DPI ≈ 16pt)
         bold: true,
         alignment: 'center',

@@ -394,7 +394,7 @@ export class ShoppingOrderConfirmationFaxGenerator {
     // Footer
     content.push({
       type: 'footer',
-      text: `ご注文確認 | 参照: ${data.referenceId} | お問い合わせ: 0120-XXX-XXX`,
+      text: `ご注文確認 | 参照: ${data.referenceId}`,
       fontSize: 96, // 34pt minimum for reference ID prominence (96 pixels at 204 DPI ≈ 34pt)
       bold: true,
       alignment: 'center',
@@ -574,7 +574,7 @@ export class ShoppingOrderConfirmationFaxGenerator {
     // Footer
     content.push({
       type: 'footer',
-      text: `購入完了 | 参照: ${data.referenceId} | お問い合わせ: 0120-XXX-XXX`,
+      text: `購入完了 | 参照: ${data.referenceId}`,
       fontSize: 96, // 34pt minimum for reference ID prominence (96 pixels at 204 DPI ≈ 34pt)
       bold: true,
       alignment: 'center',
@@ -748,7 +748,7 @@ export class ShoppingOrderConfirmationFaxGenerator {
     // Footer
     content.push({
       type: 'footer',
-      text: `配達完了 | 参照: ${data.referenceId} | お問い合わせ: 0120-XXX-XXX`,
+      text: `配達完了 | 参照: ${data.referenceId}`,
       fontSize: 96, // 34pt minimum for reference ID prominence (96 pixels at 204 DPI ≈ 34pt)
       bold: true,
       alignment: 'center',

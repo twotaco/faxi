@@ -493,7 +493,7 @@ You can try resending by faxing us your message again, or contact us for help.`,
       });
       content.push({
         type: 'footer',
-        text: `Reply via fax. Ref: ${refId} | Page ${pageNumber} of ${totalPages} | Support: help@faxi.jp | +81-3-1234-5678`,
+        text: `Reply via fax. Ref: ${refId} | Page ${pageNumber} of ${totalPages}`,
         fontSize: 45, // Match body text size (45 pixels at 204 DPI ≈ 16pt)
         bold: true,
         alignment: 'center',
