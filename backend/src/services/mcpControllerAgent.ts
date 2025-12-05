@@ -662,7 +662,12 @@ export class MCPControllerAgent {
           userId,
           productAsin: rest.productId,
           quantity: rest.quantity || 1,
-          referenceId: rest.referenceId
+          referenceId: rest.referenceId,
+          // Pass through quoted product info so we don't need to re-scrape Amazon
+          quotedPrice: rest.quotedPrice,
+          quotedTitle: rest.quotedTitle,
+          quotedImageUrl: rest.quotedImageUrl,
+          quotedPrimeEligible: rest.quotedPrimeEligible
         };
 
       case 'email_send_email':

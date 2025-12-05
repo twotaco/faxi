@@ -73,8 +73,17 @@ export class AgentDecisionFramework {
 
     // Build context-aware request text that includes reference ID
     let contextualRequest = extractedText;
+
+    // Add selected products context from vision detection
+    // This is CRITICAL - the planner must know which products were selected by the user
+    const selectedProducts = context.interpretation.parameters.selectedProductIds;
+    if (selectedProducts && selectedProducts.length > 0) {
+      console.log('[AgentDecision] Adding selectedProductIds to planner context:', selectedProducts);
+      contextualRequest = `[SELECTED PRODUCTS: The user has selected products: ${selectedProducts.join(', ')}. ONLY create orders for these specific product letters, not all products shown. Do NOT order products that were not selected.]\n\n${contextualRequest}`;
+    }
+
     if (referenceId) {
-      contextualRequest = `[CONTEXT: Reference ID: ${referenceId} - This may be a reply to a previous request. Include referenceId in tool params where relevant.]\n\n${extractedText}`;
+      contextualRequest = `[CONTEXT: Reference ID: ${referenceId} - This may be a reply to a previous request. Include referenceId in tool params where relevant.]\n\n${contextualRequest}`;
     }
 
     const plannerResult = await geminiPlannerService.createExecutionPlan(
@@ -90,7 +99,8 @@ export class AgentDecisionFramework {
     console.log('[AgentDecision] Plan created successfully:', {
       stepCount: plannerResult.plan.steps.length,
       summary: plannerResult.plan.summary,
-      referenceId: referenceId || 'none'
+      referenceId: referenceId || 'none',
+      selectedProducts: selectedProducts || 'none'
     });
 
     return plannerResult.plan;
