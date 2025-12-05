@@ -180,8 +180,8 @@ describe('Admin Dashboard API Integration Tests', () => {
     });
 
     it('should support date range filtering', async () => {
-      const startDate = new Date('2024-01-01').toISOString();
-      const endDate = new Date('2024-12-31').toISOString();
+      const startDate = new Date('2025-01-01').toISOString();
+      const endDate = new Date('2025-12-31').toISOString();
       
       const response = await request(app)
         .get(`/api/admin/audit/logs?startDate=${startDate}&endDate=${endDate}`)

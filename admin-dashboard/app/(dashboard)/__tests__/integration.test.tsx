@@ -238,8 +238,8 @@ describe('Admin Dashboard Integration Tests', () => {
           last24Hours: 25,
           byStatus: { completed: 450, failed: 50 },
           perDay: [
-            { date: '2024-12-01', count: 20 },
-            { date: '2024-12-02', count: 25 },
+            { date: '2025-12-01', count: 20 },
+            { date: '2025-12-02', count: 25 },
           ],
         },
         orders: {

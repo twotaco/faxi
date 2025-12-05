@@ -563,7 +563,7 @@ const data = {
   slots: [
     {
       id: 'slot-1',
-      date: new Date('2024-02-15'),
+      date: new Date('2025-02-15'),
       startTime: '9:00 AM',
       endTime: '10:00 AM',
       duration: 60,
@@ -572,7 +572,7 @@ const data = {
     },
     {
       id: 'slot-2',
-      date: new Date('2024-02-15'),
+      date: new Date('2025-02-15'),
       startTime: '10:00 AM',
       endTime: '11:00 AM',
       duration: 60,
@@ -844,5 +844,5 @@ For questions or issues with the template system:
 
 ---
 
-**Last Updated**: December 2024
+**Last Updated**: December 2025
 **Version**: 1.0.0

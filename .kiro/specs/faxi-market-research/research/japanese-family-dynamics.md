@@ -4,7 +4,7 @@
 
 This document contains comprehensive research on Japanese family dynamics, intergenerational relationships, caregiving patterns, decision-making hierarchies, digital literacy levels among adult children, and communication patterns between generations.
 
-**Research Date**: November 27, 2024
+**Research Date**: November 27, 2025
 **Task**: Task 3 - Research Japanese family dynamics and caregiving patterns
 **Requirements Addressed**: 1.2, 9.2
 
@@ -21,7 +21,7 @@ The traditional Japanese family system (ie seido) emphasized:
 - Clear hierarchical relationships and obligations
 - Co-residence of elderly parents with adult children (primarily eldest son)
 
-Source: Ministry of Health, Labour and Welfare, "White Paper on Aging Society 2023", June 2023, https://www.mhlw.go.jp/english/wp/wp-hw/index.html, accessed November 27, 2024
+Source: Ministry of Health, Labour and Welfare, "White Paper on Aging Society 2023", June 2023, https://www.mhlw.go.jp/english/wp/wp-hw/index.html, accessed November 27, 2025
 
 **Modern Transformation**:
 The traditional ie system has undergone significant changes:
@@ -30,7 +30,7 @@ The traditional ie system has undergone significant changes:
 - Elderly living alone or with spouse only: 59.5% (2023) vs 28.1% (1980)
 - Geographic separation common: adult children in urban areas, parents in rural/suburban areas
 
-Source: National Institute of Population and Social Security Research, "Household Projections for Japan 2023", April 2023, https://www.ipss.go.jp/pp-ajsetai/e/index.html, accessed November 27, 2024
+Source: National Institute of Population and Social Security Research, "Household Projections for Japan 2023", April 2023, https://www.ipss.go.jp/pp-ajsetai/e/index.html, accessed November 27, 2025
 
 ### 1.2 Current Living Arrangements
 
@@ -47,7 +47,7 @@ Source: National Institute of Population and Social Security Research, "Househol
 - Co-residence declining but still higher than Western countries
 - Regional variations: rural areas have higher co-residence rates (42%) vs urban (24%)
 
-Source: Ministry of Health, Labour and Welfare, "Comprehensive Survey of Living Conditions 2022", July 2023, https://www.mhlw.go.jp/english/database/db-hss/cslc-index.html, accessed November 27, 2024
+Source: Ministry of Health, Labour and Welfare, "Comprehensive Survey of Living Conditions 2022", July 2023, https://www.mhlw.go.jp/english/database/db-hss/cslc-index.html, accessed November 27, 2025
 
 ### 1.3 Geographic Proximity Patterns
 
@@ -62,7 +62,7 @@ Source: Ministry of Health, Labour and Welfare, "Comprehensive Survey of Living 
 - Rural elderly: 22% have children living more than 1 hour away
 - Migration pattern: children move to cities for work, parents remain in hometown
 
-Source: Cabinet Office, "Survey on Attitudes of the Elderly 2023", March 2023, https://www8.cao.go.jp/kourei/english/index.html, accessed November 27, 2024
+Source: Cabinet Office, "Survey on Attitudes of the Elderly 2023", March 2023, https://www8.cao.go.jp/kourei/english/index.html, accessed November 27, 2025
 
 ### 1.4 Frequency of Contact
 
@@ -81,7 +81,7 @@ Source: Cabinet Office, "Survey on Attitudes of the Elderly 2023", March 2023, h
 
 Note: Remote communication frequency inversely correlated with geographic proximity
 
-Source: Ministry of Internal Affairs and Communications, "Survey on Information and Communications 2023", August 2023, https://www.soumu.go.jp/johotsusintokei/statistics/statistics05.html, accessed November 27, 2024
+Source: Ministry of Internal Affairs and Communications, "Survey on Information and Communications 2023", August 2023, https://www.soumu.go.jp/johotsusintokei/statistics/statistics05.html, accessed November 27, 2025
 
 ---
 
@@ -101,7 +101,7 @@ Source: Ministry of Internal Affairs and Communications, "Survey on Information 
 - However, 62.1% also believe "professional care services are acceptable"
 - Shift from direct physical care to "ensuring parents are cared for"
 
-Source: Cabinet Office, "International Survey on Attitudes Toward Aging 2023", May 2023, https://www8.cao.go.jp/kourei/english/index.html, accessed November 27, 2024
+Source: Cabinet Office, "International Survey on Attitudes Toward Aging 2023", May 2023, https://www8.cao.go.jp/kourei/english/index.html, accessed November 27, 2025
 
 ### 2.2 Primary Caregivers
 
@@ -118,7 +118,7 @@ Source: Cabinet Office, "International Survey on Attitudes Toward Aging 2023", M
 - Average age of family caregivers: 59.7 years (often elderly caring for elderly)
 - 17.8% of caregivers are employed full-time (work-care balance challenge)
 
-Source: Ministry of Health, Labour and Welfare, "Comprehensive Survey of Living Conditions 2022", July 2023, https://www.mhlw.go.jp/english/database/db-hss/cslc-index.html, accessed November 27, 2024
+Source: Ministry of Health, Labour and Welfare, "Comprehensive Survey of Living Conditions 2022", July 2023, https://www.mhlw.go.jp/english/database/db-hss/cslc-index.html, accessed November 27, 2025
 
 ### 2.3 Types of Support Provided
 
@@ -139,7 +139,7 @@ Source: Ministry of Health, Labour and Welfare, "Comprehensive Survey of Living 
 - 10-20 hours per week: 12.4%
 - 20+ hours per week (intensive caregiving): 9.4%
 
-Source: Japan Institute for Labour Policy and Training, "Survey on Work-Life Balance and Caregiving 2022", November 2022, https://www.jil.go.jp/english/index.html, accessed November 27, 2024
+Source: Japan Institute for Labour Policy and Training, "Survey on Work-Life Balance and Caregiving 2022", November 2022, https://www.jil.go.jp/english/index.html, accessed November 27, 2025
 
 ### 2.4 Caregiving Burden and Challenges
 
@@ -159,7 +159,7 @@ Source: Japan Institute for Labour Policy and Training, "Survey on Work-Life Bal
 - Significant economic impact: lost income, reduced pension contributions
 - Government initiatives to reduce kaigo rishi through workplace support
 
-Source: Ministry of Health, Labour and Welfare, "Employment and Caregiving Survey 2022", September 2022, https://www.mhlw.go.jp/english/policy/care-welfare/index.html, accessed November 27, 2024
+Source: Ministry of Health, Labour and Welfare, "Employment and Caregiving Survey 2022", September 2022, https://www.mhlw.go.jp/english/policy/care-welfare/index.html, accessed November 27, 2025
 
 ### 2.5 Use of Professional Care Services
 
@@ -182,7 +182,7 @@ Source: Ministry of Health, Labour and Welfare, "Employment and Caregiving Surve
 - Lack of awareness about available services: 19.8%
 - Service availability in rural areas: 15.3%
 
-Source: Ministry of Health, Labour and Welfare, "Survey on Long-Term Care Insurance 2023", July 2023, https://www.mhlw.go.jp/english/policy/care-welfare/care-welfare-elderly/index.html, accessed November 27, 2024
+Source: Ministry of Health, Labour and Welfare, "Survey on Long-Term Care Insurance 2023", July 2023, https://www.mhlw.go.jp/english/policy/care-welfare/care-welfare-elderly/index.html, accessed November 27, 2025
 
 ---
 
@@ -202,7 +202,7 @@ Source: Ministry of Health, Labour and Welfare, "Survey on Long-Term Care Insura
 - Adult children increasingly involved in major decisions affecting parents
 - Consensus-building remains important cultural value
 
-Source: National Institute of Population and Social Security Research, "National Survey on Family and Households 2023", March 2023, https://www.ipss.go.jp/index-e.asp, accessed November 27, 2024
+Source: National Institute of Population and Social Security Research, "National Survey on Family and Households 2023", March 2023, https://www.ipss.go.jp/index-e.asp, accessed November 27, 2025
 
 ### 3.2 Decision-Making for Elderly Care
 
@@ -229,7 +229,7 @@ Source: National Institute of Population and Social Security Research, "National
 - Family members' work situations: 48.9%
 - Quality of family relationships: 42.1%
 
-Source: Cabinet Office, "Survey on Family Caregiving Decision-Making 2022", December 2022, https://www8.cao.go.jp/kourei/english/index.html, accessed November 27, 2024
+Source: Cabinet Office, "Survey on Family Caregiving Decision-Making 2022", December 2022, https://www8.cao.go.jp/kourei/english/index.html, accessed November 27, 2025
 
 ### 3.3 Technology Adoption Decisions
 
@@ -254,7 +254,7 @@ Source: Cabinet Office, "Survey on Family Caregiving Decision-Making 2022", Dece
 - Lack of family support for setup/training: 38.2%
 - Privacy concerns: 27.6%
 
-Source: Ministry of Internal Affairs and Communications, "Survey on ICT Usage Among Elderly 2023", August 2023, https://www.soumu.go.jp/johotsusintokei/statistics/statistics05.html, accessed November 27, 2024
+Source: Ministry of Internal Affairs and Communications, "Survey on ICT Usage Among Elderly 2023", August 2023, https://www.soumu.go.jp/johotsusintokei/statistics/statistics05.html, accessed November 27, 2025
 
 ### 3.4 Financial Decision-Making
 
@@ -275,7 +275,7 @@ Source: Ministry of Internal Affairs and Communications, "Survey on ICT Usage Am
 - One-time support for major expenses: 48.3%
 - Shared household expenses (co-residence): 31.8%
 
-Source: Bank of Japan, "Survey on Household Financial Behavior 2023", June 2023, https://www.boj.or.jp/en/statistics/index.htm, accessed November 27, 2024
+Source: Bank of Japan, "Survey on Household Financial Behavior 2023", June 2023, https://www.boj.or.jp/en/statistics/index.htm, accessed November 27, 2025
 
 ---
 
@@ -293,7 +293,7 @@ Source: Bank of Japan, "Survey on Household Financial Behavior 2023", June 2023,
 - 50s: Adopted technology in adulthood, comfortable with digital tools
 - 60s: Mixed comfort levels, some approaching elderly status themselves
 
-Source: Statistics Bureau of Japan, "Population Estimates by Age 2023", October 2023, https://www.stat.go.jp/english/data/jinsui/index.html, accessed November 27, 2024
+Source: Statistics Bureau of Japan, "Population Estimates by Age 2023", October 2023, https://www.stat.go.jp/english/data/jinsui/index.html, accessed November 27, 2025
 
 ### 4.2 Internet and Device Usage
 
@@ -313,7 +313,7 @@ Source: Statistics Bureau of Japan, "Population Estimates by Age 2023", October 
 - Tablet (50-59): 38.2%
 - Tablet (60-69): 28.4%
 
-Source: Ministry of Internal Affairs and Communications, "Communications Usage Trend Survey 2023", August 2023, https://www.soumu.go.jp/johotsusintokei/statistics/statistics05.html, accessed November 27, 2024
+Source: Ministry of Internal Affairs and Communications, "Communications Usage Trend Survey 2023", August 2023, https://www.soumu.go.jp/johotsusintokei/statistics/statistics05.html, accessed November 27, 2025
 
 ### 4.3 Digital Skills and Competencies
 
@@ -336,7 +336,7 @@ Source: Ministry of Internal Affairs and Communications, "Communications Usage T
 - Set up new devices: 31.7%
 - Teach others to use technology: 24.6%
 
-Source: Ministry of Economy, Trade and Industry, "Survey on Digital Skills in Japan 2023", May 2023, https://www.meti.go.jp/english/index.html, accessed November 27, 2024
+Source: Ministry of Economy, Trade and Industry, "Survey on Digital Skills in Japan 2023", May 2023, https://www.meti.go.jp/english/index.html, accessed November 27, 2025
 
 ### 4.4 Technology Usage Patterns
 
@@ -356,7 +356,7 @@ Source: Ministry of Economy, Trade and Industry, "Survey on Digital Skills in Ja
 - 3-5 hours/day: 32.1%
 - 5+ hours/day: 16.8%
 
-Source: Ministry of Internal Affairs and Communications, "Survey on Information and Communications 2023", August 2023, https://www.soumu.go.jp/johotsusintokei/statistics/statistics05.html, accessed November 27, 2024
+Source: Ministry of Internal Affairs and Communications, "Survey on Information and Communications 2023", August 2023, https://www.soumu.go.jp/johotsusintokei/statistics/statistics05.html, accessed November 27, 2025
 
 ### 4.5 Attitudes Toward Helping Parents with Technology
 
@@ -390,7 +390,7 @@ Source: Ministry of Internal Affairs and Communications, "Survey on Information 
 - Frustration with repeated questions: 24.6%
 - Lack of patience: 18.4%
 
-Source: NTT Data Institute of Management Consulting, "Survey on Intergenerational Technology Support 2022", October 2022, https://www.nttdata-strategy.com/en/, accessed November 27, 2024
+Source: NTT Data Institute of Management Consulting, "Survey on Intergenerational Technology Support 2022", October 2022, https://www.nttdata-strategy.com/en/, accessed November 27, 2025
 
 ---
 
@@ -419,7 +419,7 @@ Source: NTT Data Institute of Management Consulting, "Survey on Intergenerationa
 - 50s: Phone (82.4%), Messaging (38.2%), In-person (72.1%)
 - 60s: Phone (89.3%), In-person (78.4%), Messaging (21.7%)
 
-Source: Ministry of Internal Affairs and Communications, "Survey on Family Communication Patterns 2023", August 2023, https://www.soumu.go.jp/johotsusintokei/statistics/statistics05.html, accessed November 27, 2024
+Source: Ministry of Internal Affairs and Communications, "Survey on Family Communication Patterns 2023", August 2023, https://www.soumu.go.jp/johotsusintokei/statistics/statistics05.html, accessed November 27, 2025
 
 ### 5.2 Communication Content and Topics
 
@@ -445,7 +445,7 @@ Source: Ministry of Internal Affairs and Communications, "Survey on Family Commu
 - Dissatisfied: 5.2%
 - Very dissatisfied: 1.3%
 
-Source: Cabinet Office, "Survey on Intergenerational Relationships 2023", March 2023, https://www8.cao.go.jp/kourei/english/index.html, accessed November 27, 2024
+Source: Cabinet Office, "Survey on Intergenerational Relationships 2023", March 2023, https://www8.cao.go.jp/kourei/english/index.html, accessed November 27, 2025
 
 ### 5.3 Communication Challenges
 
@@ -466,7 +466,7 @@ Source: Cabinet Office, "Survey on Intergenerational Relationships 2023", March 
 - Parents forget how to use features: 42.3%
 - Difficulty scheduling video calls: 15.7%
 
-Source: NTT Data Institute of Management Consulting, "Survey on Intergenerational Communication Barriers 2022", October 2022, https://www.nttdata-strategy.com/en/, accessed November 27, 2024
+Source: NTT Data Institute of Management Consulting, "Survey on Intergenerational Communication Barriers 2022", October 2022, https://www.nttdata-strategy.com/en/, accessed November 27, 2025
 
 ### 5.4 Communication Preferences and Expectations
 
@@ -492,7 +492,7 @@ Source: NTT Data Institute of Management Consulting, "Survey on Intergenerationa
 - Elderly parents: Daily (34.2%), Several times/week (42.7%)
 - Adult children: Several times/week (38.4%), Weekly (32.1%)
 
-Source: Cabinet Office, "Survey on Family Communication Expectations 2023", March 2023, https://www8.cao.go.jp/kourei/english/index.html, accessed November 27, 2024
+Source: Cabinet Office, "Survey on Family Communication Expectations 2023", March 2023, https://www8.cao.go.jp/kourei/english/index.html, accessed November 27, 2025
 
 ### 5.5 Role of Communication in Caregiving
 
@@ -522,7 +522,7 @@ Source: Cabinet Office, "Survey on Family Communication Expectations 2023", Marc
 - Privacy concerns: 18.4%
 - Time zone differences (international families): 6.8%
 
-Source: Japan Institute for Labour Policy and Training, "Survey on Family Caregiving Communication 2022", November 2022, https://www.jil.go.jp/english/index.html, accessed November 27, 2024
+Source: Japan Institute for Labour Policy and Training, "Survey on Family Caregiving Communication 2022", November 2022, https://www.jil.go.jp/english/index.html, accessed November 27, 2025
 
 ---
 
@@ -672,7 +672,7 @@ All data meets or exceeds freshness requirements:
 
 ## Document Metadata
 
-**Research Completed**: November 27, 2024
+**Research Completed**: November 27, 2025
 **Task**: Task 3 - Research Japanese family dynamics and caregiving patterns
 **Requirements Addressed**: 1.2 (Online-Families demographics and psychographics), 9.2 (Family dynamics analysis)
 **Next Steps**: Integrate findings into master research document ICP 2 section

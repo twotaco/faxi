@@ -15,14 +15,14 @@ Source: [Organization Name], "[Report Title]", [Publication Date], [URL], access
 ```
 10 million active fax users in Japan
 Source: Ministry of Internal Affairs and Communications, "Communications Usage Trend Survey 2023", 
-August 2023, https://www.soumu.go.jp/johotsusintokei/statistics/statistics05.html, accessed November 27, 2024
+August 2023, https://www.soumu.go.jp/johotsusintokei/statistics/statistics05.html, accessed November 27, 2025
 ```
 
 **Good Example**:
 ```
 65+ population represents 29.1% of total Japanese population
 Source: Statistics Bureau of Japan, "Population Estimates", October 2023, 
-https://www.stat.go.jp/english/data/jinsui/index.html, accessed November 27, 2024
+https://www.stat.go.jp/english/data/jinsui/index.html, accessed November 27, 2025
 ```
 
 ## Source Quality Criteria
@@ -66,15 +66,15 @@ https://www.stat.go.jp/english/data/jinsui/index.html, accessed November 27, 202
 
 | Source ID | Organization | Report Title | Publication Date | URL | Access Date | Data Type | Used In Section |
 |-----------|--------------|--------------|------------------|-----|-------------|-----------|-----------------|
-| S001 | Statistics Bureau of Japan | Population Estimates Monthly Report | October 2023 | https://www.stat.go.jp/english/data/jinsui/index.html | November 27, 2024 | Demographic | ICP 1 - Age Range, Market Size |
-| S002 | Ministry of Health, Labour and Welfare | Life Expectancy and Healthy Life Expectancy 2023 | July 2023 | https://www.mhlw.go.jp/english/database/db-hw/index.html | November 27, 2024 | Demographic | ICP 1 - Gender Distribution |
-| S003 | Statistics Bureau of Japan | Population Census 2020 - Age Distribution by Prefecture | June 2021 | https://www.stat.go.jp/english/data/kokusei/index.html | November 27, 2024 | Demographic | ICP 1 - Geographic Distribution |
-| S004 | Ministry of Health, Labour and Welfare | Comprehensive Survey of Living Conditions 2022 | July 2023 | https://www.mhlw.go.jp/english/database/db-hss/cslc-index.html | November 27, 2024 | Economic | ICP 1 - Income Level |
-| S005 | Statistics Bureau of Japan | Employment Status Survey 2022 | July 2023 | https://www.stat.go.jp/english/data/shugyou/index.html | November 27, 2024 | Demographic | ICP 1 - Education Level |
-| S006 | National Institute of Population and Social Security Research | Household Projections for Japan 2023 | April 2023 | https://www.ipss.go.jp/pp-ajsetai/e/index.html | November 27, 2024 | Demographic | ICP 1 - Living Situation |
-| S007 | Ministry of Internal Affairs and Communications | Communications Usage Trend Survey 2023 | August 2023 | https://www.soumu.go.jp/johotsusintokei/statistics/statistics05.html | November 27, 2024 | Technology | ICP 1 - Technology Adoption, Fax Usage |
-| S008 | Cabinet Office | Survey on Attitudes of the Elderly 2023 | March 2023 | https://www8.cao.go.jp/kourei/english/index.html | November 27, 2024 | Psychographic | ICP 1 - Technology Anxiety |
-| S009 | Statistics Bureau of Japan | Population Projections for Japan 2023 | April 2023 | https://www.stat.go.jp/english/data/jinsui/index.html | November 27, 2024 | Market Sizing | ICP 1 - Market Growth Trends |
+| S001 | Statistics Bureau of Japan | Population Estimates Monthly Report | October 2023 | https://www.stat.go.jp/english/data/jinsui/index.html | November 27, 2025 | Demographic | ICP 1 - Age Range, Market Size |
+| S002 | Ministry of Health, Labour and Welfare | Life Expectancy and Healthy Life Expectancy 2023 | July 2023 | https://www.mhlw.go.jp/english/database/db-hw/index.html | November 27, 2025 | Demographic | ICP 1 - Gender Distribution |
+| S003 | Statistics Bureau of Japan | Population Census 2020 - Age Distribution by Prefecture | June 2021 | https://www.stat.go.jp/english/data/kokusei/index.html | November 27, 2025 | Demographic | ICP 1 - Geographic Distribution |
+| S004 | Ministry of Health, Labour and Welfare | Comprehensive Survey of Living Conditions 2022 | July 2023 | https://www.mhlw.go.jp/english/database/db-hss/cslc-index.html | November 27, 2025 | Economic | ICP 1 - Income Level |
+| S005 | Statistics Bureau of Japan | Employment Status Survey 2022 | July 2023 | https://www.stat.go.jp/english/data/shugyou/index.html | November 27, 2025 | Demographic | ICP 1 - Education Level |
+| S006 | National Institute of Population and Social Security Research | Household Projections for Japan 2023 | April 2023 | https://www.ipss.go.jp/pp-ajsetai/e/index.html | November 27, 2025 | Demographic | ICP 1 - Living Situation |
+| S007 | Ministry of Internal Affairs and Communications | Communications Usage Trend Survey 2023 | August 2023 | https://www.soumu.go.jp/johotsusintokei/statistics/statistics05.html | November 27, 2025 | Technology | ICP 1 - Technology Adoption, Fax Usage |
+| S008 | Cabinet Office | Survey on Attitudes of the Elderly 2023 | March 2023 | https://www8.cao.go.jp/kourei/english/index.html | November 27, 2025 | Psychographic | ICP 1 - Technology Anxiety |
+| S009 | Statistics Bureau of Japan | Population Projections for Japan 2023 | April 2023 | https://www.stat.go.jp/english/data/jinsui/index.html | November 27, 2025 | Market Sizing | ICP 1 - Market Growth Trends |
 
 ## Data Quality Checklist
 
@@ -150,7 +150,7 @@ Use this checklist to validate data quality before including in research documen
 ✅ **Correct**: "Ministry of Internal Affairs and Communications, 'Communications Usage Trend Survey 2023', August 2023"
 
 ❌ **No access date**: "Source: Statistics Bureau, https://www.stat.go.jp/..."
-✅ **Correct**: "Source: Statistics Bureau, https://www.stat.go.jp/..., accessed November 27, 2024"
+✅ **Correct**: "Source: Statistics Bureau, https://www.stat.go.jp/..., accessed November 27, 2025"
 
 ❌ **Vague source**: "According to government data..."
 ✅ **Correct**: "Source: Ministry of Economy, Trade and Industry, 'E-Commerce Market Survey 2023', June 2023"

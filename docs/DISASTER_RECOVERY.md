@@ -493,5 +493,5 @@ After each incident, document:
 ---
 
 **Document Version**: 1.0  
-**Last Updated**: November 18, 2024  
-**Next Review**: December 18, 2024
+**Last Updated**: November 18, 2025  
+**Next Review**: December 18, 2025

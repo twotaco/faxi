@@ -159,7 +159,7 @@ TIPS:
       answer: 'Test answer'
     };
 
-    const customRefId = 'FX-2024-123456';
+    const customRefId = 'FX-2025-123456';
     const pdfBuffer = await GeneralInquiryFaxGenerator.generateInquiryFax(data, customRefId);
 
     expect(pdfBuffer).toBeInstanceOf(Buffer);

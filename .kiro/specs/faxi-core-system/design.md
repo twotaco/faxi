@@ -109,7 +109,7 @@ The system processes incoming faxes through a webhook, uses multimodal AI to int
 │ │                                 │ │
 │ └─────────────────────────────────┘ │
 │                                     │
-│ Reply via fax. Ref: FX-2024-001234  │
+│ Reply via fax. Ref: FX-2025-001234  │
 │ You can reply on a blank page.      │
 │ We'll match it.                     │
 └─────────────────────────────────────┘
@@ -126,7 +126,7 @@ The system processes incoming faxes through a webhook, uses multimodal AI to int
 │ is well!                            │
 │                                     │
 │ ─────────────────────────────────── │
-│ Reply via fax. Ref: FX-2024-001234  │
+│ Reply via fax. Ref: FX-2025-001234  │
 │ You can reply on a blank page.      │
 │ We'll match it.                     │
 └─────────────────────────────────────┘
@@ -152,7 +152,7 @@ The system processes incoming faxes through a webhook, uses multimodal AI to int
 ```
 ┌─────────────────────────────────────┐
 │ SHOPPING ORDER FORM                 │
-│ Ref: FX-2024-001235                 │
+│ Ref: FX-2025-001235                 │
 │                                     │
 │ SHAMPOO OPTIONS (Circle one):       │
 │ ○ A. Brand X Shampoo - ¥850         │
@@ -197,7 +197,7 @@ The system processes incoming faxes through a webhook, uses multimodal AI to int
 ```
 ┌─────────────────────────────────────┐
 │ SHOPPING OPTIONS                    │
-│ Ref: FX-2024-001236                 │
+│ Ref: FX-2025-001236                 │
 │                                     │
 │ SHAMPOO:                            │
 │ A. Brand X - ¥850                   │
@@ -251,7 +251,7 @@ The system processes incoming faxes through a webhook, uses multimodal AI to int
 ```
 ┌─────────────────────────────────────┐
 │ CONFIRMATION & HOTEL OPTIONS        │
-│ Ref: FX-2024-001237                 │
+│ Ref: FX-2025-001237                 │
 │                                     │
 │ ✓ EMAIL SENT                        │
 │ To: son@example.com (from address   │
@@ -309,10 +309,10 @@ The system processes incoming faxes through a webhook, uses multimodal AI to int
 │                                     │
 │ Recent conversations:               │
 │ A. Shampoo order (2 days ago)       │
-│    Ref: FX-2024-001235              │
+│    Ref: FX-2025-001235              │
 │                                     │
 │ B. Email to friend (1 day ago)      │
-│    Ref: FX-2024-001234              │
+│    Ref: FX-2025-001234              │
 │                                     │
 │ Please write the letter (A or B)    │
 │ and fax back with your original.    │
@@ -352,7 +352,7 @@ When user requests items, agent should:
 │ We'll only send items for your      │
 │ chosen flashlight.                  │
 │                                     │
-│ Reply via fax. Ref: FX-2024-001240  │
+│ Reply via fax. Ref: FX-2025-001240  │
 └─────────────────────────────────────┘
 ```
 
@@ -375,7 +375,7 @@ When user requests items, agent should:
 │ We'll only send items for your      │
 │ chosen coffee maker.                │
 │                                     │
-│ Reply via fax. Ref: FX-2024-001241  │
+│ Reply via fax. Ref: FX-2025-001241  │
 └─────────────────────────────────────┘
 ```
 
@@ -1778,7 +1778,7 @@ When a fax is received from a phone number:
 │ ○ All of the above                  │
 │                                     │
 │ Fax back for more information.      │
-│ Ref: FX-2024-001000                 │
+│ Ref: FX-2025-001000                 │
 │                                     │
 │ Support: [phone/fax number]         │
 └─────────────────────────────────────┘

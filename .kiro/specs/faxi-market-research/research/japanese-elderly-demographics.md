@@ -2,7 +2,7 @@
 
 ## Research Overview
 
-**Research Date**: November 27, 2024
+**Research Date**: November 27, 2025
 **Focus**: Japanese elderly population (65+) with emphasis on fax usage and technology adoption
 **Primary Sources**: Japanese government agencies and official statistics
 
@@ -49,7 +49,7 @@
 - After 2042, gradual decline expected as smaller birth cohorts age
 - However, proportion of 75+ will continue increasing
 
-**Source**: Statistics Bureau of Japan, "Population Estimates Monthly Report", October 2023, https://www.stat.go.jp/english/data/jinsui/index.html, accessed November 27, 2024
+**Source**: Statistics Bureau of Japan, "Population Estimates Monthly Report", October 2023, https://www.stat.go.jp/english/data/jinsui/index.html, accessed November 27, 2025
 
 **Market Implications**:
 - Large and stable market for next 15-20 years
@@ -74,7 +74,7 @@
 - 75+: Significantly more women (approximately 60% female)
 - 85+: Heavily female-dominated (approximately 70% female)
 
-**Source**: Ministry of Health, Labour and Welfare, "Life Expectancy and Healthy Life Expectancy 2023", July 2023, https://www.mhlw.go.jp/english/database/db-hw/index.html, accessed November 27, 2024
+**Source**: Ministry of Health, Labour and Welfare, "Life Expectancy and Healthy Life Expectancy 2023", July 2023, https://www.mhlw.go.jp/english/database/db-hw/index.html, accessed November 27, 2025
 
 **Market Implications**:
 - Marketing and messaging should consider female perspective
@@ -101,7 +101,7 @@
 - **Major cities**: 20-25% of population is 65+
 - Rural areas aging faster due to youth migration to cities
 
-**Source**: Statistics Bureau of Japan, "Population Census 2020 - Age Distribution by Prefecture", June 2021, https://www.stat.go.jp/english/data/kokusei/index.html, accessed November 27, 2024
+**Source**: Statistics Bureau of Japan, "Population Census 2020 - Age Distribution by Prefecture", June 2021, https://www.stat.go.jp/english/data/kokusei/index.html, accessed November 27, 2025
 
 **Market Implications**:
 - Urban markets offer scale and density for customer acquisition
@@ -128,7 +128,7 @@
 - Part-time work: 18.7%
 - Family support: 12.4%
 
-**Source**: Ministry of Health, Labour and Welfare, "Comprehensive Survey of Living Conditions 2022", July 2023, https://www.mhlw.go.jp/english/database/db-hss/cslc-index.html, accessed November 27, 2024
+**Source**: Ministry of Health, Labour and Welfare, "Comprehensive Survey of Living Conditions 2022", July 2023, https://www.mhlw.go.jp/english/database/db-hss/cslc-index.html, accessed November 27, 2025
 
 **Market Implications**:
 - Majority have modest but stable income from pensions
@@ -152,7 +152,7 @@
 - 75+: Lower formal education (post-war generation)
 - Education expansion occurred in 1960s-1970s
 
-**Source**: Statistics Bureau of Japan, "Employment Status Survey 2022", July 2023, https://www.stat.go.jp/english/data/shugyou/index.html, accessed November 27, 2024
+**Source**: Statistics Bureau of Japan, "Employment Status Survey 2022", July 2023, https://www.stat.go.jp/english/data/shugyou/index.html, accessed November 27, 2025
 
 **Market Implications**:
 - Majority have high school education or less
@@ -177,7 +177,7 @@
 - Multi-generational households declining
 - Geographic separation from children common
 
-**Source**: National Institute of Population and Social Security Research, "Household Projections for Japan 2023", April 2023, https://www.ipss.go.jp/pp-ajsetai/e/index.html, accessed November 27, 2024
+**Source**: National Institute of Population and Social Security Research, "Household Projections for Japan 2023", April 2023, https://www.ipss.go.jp/pp-ajsetai/e/index.html, accessed November 27, 2025
 
 **Market Implications**:
 - Large and growing segment living independently
@@ -214,7 +214,7 @@
 - **Regular fax users** (weekly or more): 23.4% (8.6 million people)
 - **Occasional fax users**: Additional 15.3% (5.6 million people)
 
-**Source**: Ministry of Internal Affairs and Communications, "Communications Usage Trend Survey 2023", August 2023, https://www.soumu.go.jp/johotsusintokei/statistics/statistics05.html, accessed November 27, 2024
+**Source**: Ministry of Internal Affairs and Communications, "Communications Usage Trend Survey 2023", August 2023, https://www.soumu.go.jp/johotsusintokei/statistics/statistics05.html, accessed November 27, 2025
 
 #### Technology Anxiety Levels
 
@@ -224,7 +224,7 @@
 
 **Total with technology anxiety**: 76% report some level of anxiety
 
-**Source**: Cabinet Office, "Survey on Attitudes of the Elderly 2023", March 2023, https://www8.cao.go.jp/kourei/english/index.html, accessed November 27, 2024
+**Source**: Cabinet Office, "Survey on Attitudes of the Elderly 2023", March 2023, https://www8.cao.go.jp/kourei/english/index.html, accessed November 27, 2025
 
 **Market Implications**:
 - 40.5% of elderly (14.9 million) have low/no internet usage
@@ -267,7 +267,7 @@
 - However, 75+ segment (lowest internet adoption) will continue growing
 - Technology adoption may increase over time, but slowly
 
-**Source**: Statistics Bureau of Japan, "Population Projections for Japan 2023", April 2023, https://www.stat.go.jp/english/data/jinsui/index.html, accessed November 27, 2024
+**Source**: Statistics Bureau of Japan, "Population Projections for Japan 2023", April 2023, https://www.stat.go.jp/english/data/jinsui/index.html, accessed November 27, 2025
 
 **Market Implications**:
 - Substantial market of 6-7.5 million potential users
@@ -401,6 +401,6 @@ All data sourced from official Japanese government agencies:
 ---
 
 **Document Version**: 1.0
-**Last Updated**: November 27, 2024
+**Last Updated**: November 27, 2025
 **Research Completed By**: Market Research Team
 **Review Status**: Complete - Ready for validation

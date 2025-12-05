@@ -544,7 +544,7 @@ aws cloudwatch put-metric-alarm \
 
 ## Cost Estimation
 
-AWS SES pricing (as of 2024):
+AWS SES pricing (as of 2025):
 - **Outbound emails**: $0.10 per 1,000 emails
 - **Inbound emails**: $0.10 per 1,000 emails
 - **Data transfer**: $0.12 per GB (after first 1 GB free)

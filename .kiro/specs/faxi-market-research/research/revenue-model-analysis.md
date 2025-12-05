@@ -1,7 +1,7 @@
 # Revenue Model Analysis - Faxi
 
 **Document Version**: 1.0  
-**Last Updated**: November 27, 2024  
+**Last Updated**: November 27, 2025  
 **Research Completed By**: Market Research Team  
 **Review Status**: Complete - Ready for validation
 
@@ -92,8 +92,8 @@
 ### Pricing Assumptions
 
 **Data Sources**:
-- Ministry of Health, Labour and Welfare, "Comprehensive Survey of Living Conditions 2022", July 2023, https://www.mhlw.go.jp/english/database/db-hss/cslc-index.html, accessed November 27, 2024
-- Ministry of Internal Affairs and Communications, "Family Income and Expenditure Survey 2023", September 2023, https://www.stat.go.jp/english/data/kakei/index.html, accessed November 27, 2024
+- Ministry of Health, Labour and Welfare, "Comprehensive Survey of Living Conditions 2022", July 2023, https://www.mhlw.go.jp/english/database/db-hss/cslc-index.html, accessed November 27, 2025
+- Ministry of Internal Affairs and Communications, "Family Income and Expenditure Survey 2023", September 2023, https://www.stat.go.jp/english/data/kakei/index.html, accessed November 27, 2025
 
 **Income Distribution (Elderly 65+)**:
 - Under ¥2M/year: 28.3% (likely cannot afford)
@@ -857,5 +857,5 @@
 
 **Document Status**: Complete - Ready for stakeholder review  
 **Validation Required**: Finance team review of projections and assumptions  
-**Next Review Date**: December 15, 2024
+**Next Review Date**: December 15, 2025
 

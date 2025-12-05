@@ -269,7 +269,7 @@ If you have questions about:
 
 ## Version History
 
-- **v1.0** (2024-11-27): Initial infrastructure setup with all templates
+- **v1.0** (2025-11-27): Initial infrastructure setup with all templates
 
 ---
 

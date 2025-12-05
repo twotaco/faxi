@@ -123,7 +123,7 @@ describe('EmailToFaxConverter - Email Content Cleaning (Property 9)', () => {
         fc.emailAddress(),
         fc.string({ minLength: 10, maxLength: 100 }),
         async (mainContent, email, quotedContent) => {
-          const replyPattern = `\n\nOn Mon, Jan 1, 2024 at 10:00 AM ${email} wrote:\n${quotedContent}`;
+          const replyPattern = `\n\nOn Mon, Jan 1, 2025 at 10:00 AM ${email} wrote:\n${quotedContent}`;
           const emailBody = `${mainContent}${replyPattern}`;
           
           const result = await EmailToFaxConverter.convertEmailToFax({

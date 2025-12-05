@@ -177,8 +177,8 @@ await emailMetricsService.recordEmailEvent({
 
 ```typescript
 const metrics = await emailMetricsService.calculateMetrics(
-  new Date('2024-01-01'),
-  new Date('2024-01-31')
+  new Date('2025-01-01'),
+  new Date('2025-01-31')
 );
 ```
 
@@ -473,7 +473,7 @@ LIMIT 10;
 **Email to operations team**:
 ```
 Email Metrics - Daily Report
-Date: 2024-01-15
+Date: 2025-01-15
 
 24-Hour Metrics:
 - Emails Sent: 1,234
@@ -499,7 +499,7 @@ Trends (vs. yesterday):
 **Email to management**:
 ```
 Email Metrics - Weekly Report
-Week of: 2024-01-08 to 2024-01-14
+Week of: 2025-01-08 to 2025-01-14
 
 Weekly Summary:
 - Total Sent: 8,456

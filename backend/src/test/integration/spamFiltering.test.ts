@@ -303,7 +303,7 @@ describe('Spam Filtering Integration Tests', () => {
           to: '1234567890@me.faxi.jp',
           from: 'billing@utilities.com',
           subject: 'Your Monthly Bill is Ready',
-          body: 'Your monthly utility bill for $125.50 is now available. Due date: March 15, 2024.',
+          body: 'Your monthly utility bill for $125.50 is now available. Due date: March 15, 2025.',
           headers: {
             'message-id': '<bill@utilities.com>',
             'date': new Date().toISOString(),

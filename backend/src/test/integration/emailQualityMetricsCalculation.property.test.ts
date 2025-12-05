@@ -35,9 +35,9 @@ describe('Property 40: Email quality metrics calculation', () => {
         }),
         async (eventCounts) => {
           // Create a time window for the test
-          const startDate = new Date('2024-01-01T00:00:00Z');
-          const endDate = new Date('2024-01-02T00:00:00Z');
-          const testTime = new Date('2024-01-01T12:00:00Z');
+          const startDate = new Date('2025-01-01T00:00:00Z');
+          const endDate = new Date('2025-01-02T00:00:00Z');
+          const testTime = new Date('2025-01-01T12:00:00Z');
 
           // Record sent events (user_id is optional, so we can omit it for testing)
           for (let i = 0; i < eventCounts.sentCount; i++) {
@@ -121,8 +121,8 @@ describe('Property 40: Email quality metrics calculation', () => {
       fc.asyncProperty(
         fc.constant(null), // No input needed
         async () => {
-          const startDate = new Date('2024-01-01T00:00:00Z');
-          const endDate = new Date('2024-01-02T00:00:00Z');
+          const startDate = new Date('2025-01-01T00:00:00Z');
+          const endDate = new Date('2025-01-02T00:00:00Z');
 
           // Don't record any events
           const metrics = await emailMetricsService.calculateMetrics(startDate, endDate);
@@ -151,10 +151,10 @@ describe('Property 40: Email quality metrics calculation', () => {
           outsideCount: fc.integer({ min: 1, max: 50 }),
         }),
         async (counts) => {
-          const startDate = new Date('2024-01-01T00:00:00Z');
-          const endDate = new Date('2024-01-02T00:00:00Z');
-          const insideTime = new Date('2024-01-01T12:00:00Z');
-          const outsideTime = new Date('2024-01-03T12:00:00Z'); // Outside range
+          const startDate = new Date('2025-01-01T00:00:00Z');
+          const endDate = new Date('2025-01-02T00:00:00Z');
+          const insideTime = new Date('2025-01-01T12:00:00Z');
+          const outsideTime = new Date('2025-01-03T12:00:00Z'); // Outside range
 
           // Record events inside the time range
           for (let i = 0; i < counts.insideCount; i++) {
@@ -201,9 +201,9 @@ describe('Property 40: Email quality metrics calculation', () => {
           // Clean up BEFORE recording events to ensure clean state
           await db.query('DELETE FROM email_metrics');
 
-          const startDate = new Date('2024-01-01T00:00:00Z');
-          const endDate = new Date('2024-01-02T00:00:00Z');
-          const testTime = new Date('2024-01-01T12:00:00Z');
+          const startDate = new Date('2025-01-01T00:00:00Z');
+          const endDate = new Date('2025-01-02T00:00:00Z');
+          const testTime = new Date('2025-01-01T12:00:00Z');
 
           const delivered = Math.floor(params.sent * params.deliveredRatio);
           const bounced = Math.floor(params.sent * params.bouncedRatio);

@@ -14,6 +14,12 @@ import { config } from '../config';
 
 export interface FaxProcessingOptions {
   onProgress?: (progress: number) => Promise<void>;
+  /** For demo: pass image buffer directly instead of downloading from Telnyx */
+  imageBuffer?: Buffer;
+  /** For demo: skip sending response fax via Telnyx */
+  skipFaxSend?: boolean;
+  /** For demo: use this user ID instead of looking up by phone number */
+  userId?: string;
 }
 
 export interface FaxProcessingResult {
@@ -23,6 +29,8 @@ export interface FaxProcessingResult {
   errorMessage?: string;
   interpretation?: InterpretationResult;
   agentResponse?: AgentResponse;
+  /** For demo: the generated response PDF buffer */
+  responsePdfBuffer?: Buffer;
 }
 
 export class FaxProcessingPipeline {
@@ -33,17 +41,24 @@ export class FaxProcessingPipeline {
     faxData: FaxJobData,
     options: FaxProcessingOptions = {}
   ): Promise<FaxProcessingResult> {
-    const { onProgress } = options;
+    const { onProgress, imageBuffer: providedImageBuffer, skipFaxSend, userId: providedUserId } = options;
     let user: any = null;
-    
+
     try {
-      // Step 1: Download and store fax image (if not already done)
+      // Step 1: Download and store fax image (or use provided buffer for demo)
       await onProgress?.(10);
-      const imageBuffer = await this.downloadFaxImageWithErrorHandling(faxData);
-      
-      // Step 2: Get or create user
+      const imageBuffer = providedImageBuffer || await this.downloadFaxImageWithErrorHandling(faxData);
+
+      // Step 2: Get or create user (or use provided userId for demo)
       await onProgress?.(20);
-      user = await this.getOrCreateUserWithErrorHandling(faxData);
+      if (providedUserId) {
+        user = await userRepository.findById(providedUserId);
+        if (!user) {
+          throw new Error(`Demo user not found: ${providedUserId}`);
+        }
+      } else {
+        user = await this.getOrCreateUserWithErrorHandling(faxData);
+      }
       
       // Step 3: AI Vision Interpretation
       await onProgress?.(30);
@@ -65,41 +80,49 @@ export class FaxProcessingPipeline {
       await onProgress?.(70);
       const responsePdf = await this.generateResponseFaxWithErrorHandling(agentResponse, faxData);
 
-      // Step 7: Send Response Fax
+      // Step 7: Send Response Fax (skip for demo mode)
       await onProgress?.(90);
-      const sendResult = await this.sendResponseFaxWithErrorHandling(
-        responsePdf,
-        faxData,
-        agentResponse.faxTemplate.referenceId
-      );
-      
-      // Step 8: Check and send welcome fax for new users
-      if (user && !user.preferences?.welcomeFaxSent) {
+      let sendResult: { faxId: string };
+      if (skipFaxSend) {
+        // Demo mode: don't actually send via Telnyx
+        sendResult = { faxId: `demo-${agentResponse.faxTemplate.referenceId}` };
+        console.log('[Pipeline] Demo mode: skipping fax send');
+      } else {
+        sendResult = await this.sendResponseFaxWithErrorHandling(
+          responsePdf,
+          faxData,
+          agentResponse.faxTemplate.referenceId
+        );
+      }
+
+      // Step 8: Check and send welcome fax for new users (skip for demo)
+      if (!skipFaxSend && user && !user.preferences?.welcomeFaxSent) {
         await this.checkAndSendWelcomeFax(user.id, faxData.fromNumber);
       }
-      
-      // Step 9: Handle welcome fax replies (help topic requests)
-      if (interpretation.intent === 'reply' && 
-          interpretation.context?.contextData?.isWelcomeFax && 
+
+      // Step 9: Handle welcome fax replies (skip for demo)
+      if (!skipFaxSend && interpretation.intent === 'reply' &&
+          interpretation.context?.contextData?.isWelcomeFax &&
           interpretation.parameters?.selectedOptions) {
         await this.handleWelcomeFaxReply(user.id, faxData.fromNumber, interpretation.parameters.selectedOptions);
       }
-      
-      // Step 10: Handle payment method registration requests
-      if (interpretation.intent === 'payment_registration' || 
-          (interpretation.parameters?.freeformText && 
-           interpretation.parameters.freeformText.toLowerCase().includes('payment method'))) {
+
+      // Step 10: Handle payment method registration requests (skip for demo)
+      if (!skipFaxSend && (interpretation.intent === 'payment_registration' ||
+          (interpretation.parameters?.freeformText &&
+           interpretation.parameters.freeformText.toLowerCase().includes('payment method')))) {
         await this.handlePaymentRegistrationRequest(user.id, faxData.fromNumber);
       }
-      
+
       await onProgress?.(100);
-      
+
       return {
         success: true,
         responseReferenceId: agentResponse.faxTemplate.referenceId,
         responseFaxId: sendResult.faxId,
         interpretation: contextualInterpretation,
         agentResponse,
+        responsePdfBuffer: skipFaxSend ? responsePdf : undefined, // Return PDF for demo
       };
       
     } catch (error) {

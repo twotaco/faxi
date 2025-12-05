@@ -710,15 +710,15 @@ const colors = {
 │                                                               │
 │  Active Jobs (3)                    Queue Status             │
 │  ┌─────────────────────────────┐   ┌──────────────────┐    │
-│  │ FX-2024-001234              │   │ Pending: 12      │    │
+│  │ FX-2025-001234              │   │ Pending: 12      │    │
 │  │ Processing: AI Vision       │   │ Processing: 3    │    │
 │  │ Started: 2 min ago          │   │ Rate: 45/min     │    │
 │  ├─────────────────────────────┤   │ Avg Wait: 8s     │    │
-│  │ FX-2024-001235              │   └──────────────────┘    │
+│  │ FX-2025-001235              │   └──────────────────┘    │
 │  │ Processing: Agent           │                            │
 │  │ Started: 1 min ago          │   Error Rate (1h)         │
 │  ├─────────────────────────────┤   ┌──────────────────┐    │
-│  │ FX-2024-001236              │   │ 2 errors         │    │
+│  │ FX-2025-001236              │   │ 2 errors         │    │
 │  │ Processing: Response Gen    │   │ ↓ Decreasing     │    │
 │  │ Started: 30s ago            │   └──────────────────┘    │
 │  └─────────────────────────────┘                            │
@@ -759,10 +759,10 @@ const colors = {
 │  ┌───────────────────────────────────────────────────────┐  │
 │  │ Ref ID        │ User      │ Intent   │ Status │ Date  │  │
 │  ├───────────────────────────────────────────────────────┤  │
-│  │ FX-2024-001234│ +81...123 │ Email    │ ✓ Done │ 2h ago│  │
-│  │ FX-2024-001235│ +81...456 │ Shopping │ ⟳ Proc │ 1h ago│  │
-│  │ FX-2024-001236│ +81...789 │ AI Chat  │ ✗ Fail │ 30m   │  │
-│  │ FX-2024-001237│ +81...234 │ Payment  │ ✓ Done │ 15m   │  │
+│  │ FX-2025-001234│ +81...123 │ Email    │ ✓ Done │ 2h ago│  │
+│  │ FX-2025-001235│ +81...456 │ Shopping │ ⟳ Proc │ 1h ago│  │
+│  │ FX-2025-001236│ +81...789 │ AI Chat  │ ✗ Fail │ 30m   │  │
+│  │ FX-2025-001237│ +81...234 │ Payment  │ ✓ Done │ 15m   │  │
 │  └───────────────────────────────────────────────────────┘  │
 │                                                               │
 │  [< Previous]  Page 1 of 45  [Next >]                        │
@@ -772,7 +772,7 @@ const colors = {
 **Job Details Modal:**
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│ Job Details: FX-2024-001236                          [Close] │
+│ Job Details: FX-2025-001236                          [Close] │
 ├─────────────────────────────────────────────────────────────┤
 │                                                               │
 │  [Overview] [Interpretation] [Actions] [Response] [History]  │
@@ -782,8 +782,8 @@ const colors = {
 │  │ Status: Failed                                      │    │
 │  │ User: +81-90-1234-5678 (user@me.faxi.jp)          │    │
 │  │ Direction: Inbound                                  │    │
-│  │ Created: 2024-11-18 14:30:00                       │    │
-│  │ Updated: 2024-11-18 14:32:15                       │    │
+│  │ Created: 2025-11-18 14:30:00                       │    │
+│  │ Updated: 2025-11-18 14:32:15                       │    │
 │  │                                                     │    │
 │  │ Original Fax:                                       │    │
 │  │ [Fax image with zoom controls]                     │    │
@@ -831,8 +831,8 @@ const colors = {
 │  │ Phone: +81-90-1234-5678                            │    │
 │  │ Email: 8190123@me.faxi.jp                          │    │
 │  │ Name: Tanaka Taro                                  │    │
-│  │ Registered: 2024-08-15                             │    │
-│  │ Last Fax: 2024-11-18 (3 hours ago)                │    │
+│  │ Registered: 2025-08-15                             │    │
+│  │ Last Fax: 2025-11-18 (3 hours ago)                │    │
 │  │                                                     │    │
 │  │ Statistics:                                         │    │
 │  │ • Total Faxes: 45 (32 in, 13 out)                 │    │
@@ -846,8 +846,8 @@ const colors = {
 │  │ ☐ Beta Features                                    │    │
 │  │                                                     │    │
 │  │ Active Contexts: 2                                  │    │
-│  │ • FX-2024-001234 (Shopping, expires in 5 days)    │    │
-│  │ • FX-2024-001189 (Email, expires in 3 days)       │    │
+│  │ • FX-2025-001234 (Shopping, expires in 5 days)    │    │
+│  │ • FX-2025-001189 (Email, expires in 3 days)       │    │
 │  │                                                     │    │
 │  │ [Edit Feature Flags] [Clear Contexts]              │    │
 │  └─────────────────────────────────────────────────────┘    │
@@ -902,10 +902,10 @@ const colors = {
 │  ┌───────────────────────────────────────────────────────┐  │
 │  │ Ref ID        │ Intent   │ Confidence │ Annotations │  │  │
 │  ├───────────────────────────────────────────────────────┤  │
-│  │ FX-2024-001234│ Email    │ 95%        │ 3 circles   │✓│  │
-│  │ FX-2024-001235│ Shopping │ 87%        │ 5 checks    │✓│  │
-│  │ FX-2024-001236│ AI Chat  │ 62% ⚠     │ 1 arrow     │?│  │
-│  │ FX-2024-001237│ Payment  │ 91%        │ 2 circles   │✓│  │
+│  │ FX-2025-001234│ Email    │ 95%        │ 3 circles   │✓│  │
+│  │ FX-2025-001235│ Shopping │ 87%        │ 5 checks    │✓│  │
+│  │ FX-2025-001236│ AI Chat  │ 62% ⚠     │ 1 arrow     │?│  │
+│  │ FX-2025-001237│ Payment  │ 91%        │ 2 circles   │✓│  │
 │  └───────────────────────────────────────────────────────┘  │
 │                                                               │
 │  Accuracy Metrics                                             │

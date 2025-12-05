@@ -457,8 +457,8 @@ export default function DeploymentMcpGuidePage() {
   "sources": ["service", "docker"],
   "environment": "production",
   "timeRange": {
-    "start": "2024-01-01T00:00:00Z",
-    "end": "2024-01-01T23:59:59Z"
+    "start": "2025-01-01T00:00:00Z",
+    "end": "2025-01-01T23:59:59Z"
   }
 }`}
               </pre>

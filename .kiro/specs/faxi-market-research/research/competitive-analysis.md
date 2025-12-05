@@ -53,7 +53,7 @@ This competitive analysis examines the landscape of solutions available to elder
 - **Rationale**: eFax requires internet access, which our target users don't have. It's a tool for digitally-literate users, not a bridge for offline users.
 - **Mitigation Strategy**: Emphasize that Faxi works with existing fax machines and requires no internet or computer skills from the end user.
 
-**Source**: eFax Japan website, "Digital Fax Services Market Report 2023", IT Media Business Online, June 2023, https://www.itmedia.co.jp/business/articles/2306/15/news045.html, accessed November 2024
+**Source**: eFax Japan website, "Digital Fax Services Market Report 2023", IT Media Business Online, June 2023, https://www.itmedia.co.jp/business/articles/2306/15/news045.html, accessed November 2025
 
 ---
 
@@ -95,7 +95,7 @@ This competitive analysis examines the landscape of solutions available to elder
 - **Rationale**: FaxDM is a B2B marketing tool, not a consumer service. However, these providers could pivot to offer consumer services.
 - **Mitigation Strategy**: Build strong B2B partnerships with these providers as distribution channels rather than competing with them.
 
-**Source**: Japan Direct Marketing Association, "Fax Marketing Industry Overview 2023", September 2023, https://www.jdma.or.jp/research/fax-marketing-2023/, accessed November 2024
+**Source**: Japan Direct Marketing Association, "Fax Marketing Industry Overview 2023", September 2023, https://www.jdma.or.jp/research/fax-marketing-2023/, accessed November 2025
 
 ---
 
@@ -141,7 +141,7 @@ This competitive analysis examines the landscape of solutions available to elder
 - **Rationale**: Convenience stores are a real alternative for occasional fax needs. However, they don't solve the core problem of accessing online services.
 - **Mitigation Strategy**: Position Faxi as a comprehensive solution for regular online service access, not just fax transmission. Emphasize convenience of using home fax machine vs. traveling to store.
 
-**Source**: Japan Franchise Association, "Convenience Store Services Report 2023", July 2023, https://www.jfa-fc.or.jp/particle/320.html, accessed November 2024
+**Source**: Japan Franchise Association, "Convenience Store Services Report 2023", July 2023, https://www.jfa-fc.or.jp/particle/320.html, accessed November 2025
 
 ---
 
@@ -190,7 +190,7 @@ This competitive analysis examines the landscape of solutions available to elder
 - **Rationale**: Digital literacy programs serve a different segment (motivated learners) and have limited capacity. Many elderly people are unwilling or unable to learn new technology.
 - **Mitigation Strategy**: Position Faxi as complementary - for those who can't or don't want to learn new technology. Partner with digital literacy programs to serve different segments.
 
-**Source**: Ministry of Internal Affairs and Communications, "Digital Inclusion Initiative Progress Report 2023", October 2023, https://www.soumu.go.jp/menu_news/s-news/01ryutsu02_02000295.html, accessed November 2024
+**Source**: Ministry of Internal Affairs and Communications, "Digital Inclusion Initiative Progress Report 2023", October 2023, https://www.soumu.go.jp/menu_news/s-news/01ryutsu02_02000295.html, accessed November 2025
 
 ---
 
@@ -238,7 +238,7 @@ This competitive analysis examines the landscape of solutions available to elder
 - **Rationale**: This is the current default solution for most elderly people. Overcoming the "free" and "trusted family" factors is challenging.
 - **Mitigation Strategy**: Position Faxi as reducing burden on family while maintaining independence. Market to both elderly (independence) and adult children (reduced burden). Emphasize privacy and dignity.
 
-**Source**: Cabinet Office, "Survey on Attitudes of the Elderly 2023", August 2023, https://www8.cao.go.jp/kourei/ishiki/r05/zentai/index.html, accessed November 2024
+**Source**: Cabinet Office, "Survey on Attitudes of the Elderly 2023", August 2023, https://www8.cao.go.jp/kourei/ishiki/r05/zentai/index.html, accessed November 2025
 
 ---
 
@@ -286,7 +286,7 @@ This competitive analysis examines the landscape of solutions available to elder
 - **Rationale**: Simplified smartphones are gaining traction and offer direct internet access. However, they still require learning and ongoing costs.
 - **Mitigation Strategy**: Position Faxi as requiring zero learning (uses familiar fax machine). Target users who have tried and rejected smartphones. Emphasize lower monthly cost and no device purchase needed.
 
-**Source**: MM Research Institute, "Senior Smartphone Market Analysis 2023", May 2023, https://www.m2ri.jp/release/detail.html?id=524, accessed November 2024
+**Source**: MM Research Institute, "Senior Smartphone Market Analysis 2023", May 2023, https://www.m2ri.jp/release/detail.html?id=524, accessed November 2025
 
 ---
 
@@ -335,7 +335,7 @@ This competitive analysis examines the landscape of solutions available to elder
 - **Rationale**: Assisted living is for a different segment (those needing comprehensive care). It's not a solution for healthy, independent elderly who just need digital access.
 - **Mitigation Strategy**: Position Faxi as enabling continued independence and aging in place. Emphasize that Faxi helps elderly avoid or delay need for assisted living.
 
-**Source**: Ministry of Health, Labour and Welfare, "Long-term Care Insurance System Report 2023", September 2023, https://www.mhlw.go.jp/stf/seisakunitsuite/bunya/hukushi_kaigo/kaigo_koureisha/gaiyo/index.html, accessed November 2024
+**Source**: Ministry of Health, Labour and Welfare, "Long-term Care Insurance System Report 2023", September 2023, https://www.mhlw.go.jp/stf/seisakunitsuite/bunya/hukushi_kaigo/kaigo_koureisha/gaiyo/index.html, accessed November 2025
 
 ---
 
@@ -382,7 +382,7 @@ This competitive analysis examines the landscape of solutions available to elder
 - **Rationale**: Inertia and acceptance of the status quo is a major barrier. Many elderly have resigned themselves to digital exclusion.
 - **Mitigation Strategy**: Demonstrate concrete, immediate value. Show what they're missing out on. Use emotional appeals about independence and dignity. Offer free trial to overcome inertia.
 
-**Source**: Cabinet Office, "Survey on Attitudes of the Elderly 2023", August 2023, https://www8.cao.go.jp/kourei/ishiki/r05/zentai/index.html, accessed November 2024
+**Source**: Cabinet Office, "Survey on Attitudes of the Elderly 2023", August 2023, https://www8.cao.go.jp/kourei/ishiki/r05/zentai/index.html, accessed November 2025
 
 ---
 
@@ -430,7 +430,7 @@ This competitive analysis examines the landscape of solutions available to elder
 - **Rationale**: This workaround is common but unsatisfying for both parties. It works but creates privacy and autonomy issues.
 - **Mitigation Strategy**: Emphasize privacy, independence, and dignity. Position Faxi as giving elderly their own accounts and identity online. Appeal to both elderly (autonomy) and family (reduced burden and liability).
 
-**Source**: NTT Data Institute of Management Consulting, "Digital Divide and Family Support Patterns Study", April 2023, https://www.nttdata-strategy.com/knowledge/reports/2023/0425.html, accessed November 2024
+**Source**: NTT Data Institute of Management Consulting, "Digital Divide and Family Support Patterns Study", April 2023, https://www.nttdata-strategy.com/knowledge/reports/2023/0425.html, accessed November 2025
 
 ---
 

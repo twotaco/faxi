@@ -14,7 +14,7 @@ The strategy includes:
 - Conversion optimization strategies for each ICP
 - Information architecture and navigation recommendations
 
-**Research Date**: November 27, 2024
+**Research Date**: November 27, 2025
 **Task**: Task 17 - Develop website content strategy for core audiences
 **Requirements Addressed**: 7.5
 **Based On**: 
@@ -1740,7 +1740,7 @@ Homepage
 - アクセシビリティ
 
 **Bottom Bar**:
-- © 2024 Faxi. All rights reserved.
+- © 2025 Faxi. All rights reserved.
 - Social media icons (Twitter, Facebook, LinkedIn)
 - Language selector
 - Site map link
@@ -2571,7 +2571,7 @@ Website visit → Lead capture → Demo request → Sales conversation → Contr
 
 ## Document Metadata
 
-**Research Completed**: November 27, 2024
+**Research Completed**: November 27, 2025
 **Task**: Task 17 - Develop website content strategy for core audiences
 **Requirements Addressed**: 7.5
 **Based On**:

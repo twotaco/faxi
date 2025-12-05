@@ -1,411 +1,25 @@
 import { Request, Response, Router } from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import { db } from '../database/connection';
-import { aiVisionInterpreter } from '../services/aiVisionInterpreter';
-import { geminiAgentService, ToolCallResult } from '../services/geminiAgentService';
-import { mcpControllerAgent } from '../services/mcpControllerAgent';
-import { ResponseGenerator } from '../services/responseGenerator';
+import { FaxProcessingPipeline } from '../services/faxProcessingPipeline';
 import { loggingService } from '../services/loggingService';
-import { productCacheService } from '../services/productCacheService';
-import { GeneralInquiryFaxGenerator } from '../services/generalInquiryFaxGenerator';
-import { conversationContextRepository } from '../repositories/conversationContextRepository';
-import { GoogleGenAI } from '@google/genai';
 import { config } from '../config';
 import * as path from 'path';
 import * as fs from 'fs/promises';
-import type { InterpretationResult } from '../types/vision';
-
-// Initialize Gemini for fallback responses
-const ai = new GoogleGenAI({ apiKey: config.gemini.apiKey });
+import type { FaxJobData } from '../queue/faxQueue';
 
 // Demo user UUID from migration 014_add_demo_user.sql
 const DEMO_USER_ID = '00000000-0000-0000-0000-000000000001';
 
-/**
- * Handle product selection replies directly
- * This bypasses the Gemini planner when we detect product_selection intent
- */
-async function handleProductSelectionReply(
-  interpretation: InterpretationResult
-): Promise<{
-  responseText: string;
-  actionTaken: string;
-  toolCalls?: ToolCallResult[];
-} | null> {
-  const params = interpretation.parameters;
-
-  // Only handle product_selection sub-intent
-  if (interpretation.intent !== 'shopping' ||
-      params.shoppingSubIntent !== 'product_selection' ||
-      !params.selectedProductIds || params.selectedProductIds.length === 0) {
-    return null;
-  }
-
-  console.log('\n=== HANDLING PRODUCT SELECTION DIRECTLY ===');
-  console.log('Selected products:', params.selectedProductIds);
-  console.log('Is reply to form:', params.isReplyToForm);
-
-  // Extract reference ID from the interpretation or text
-  const referenceIdMatch = interpretation.extractedText?.match(/(?:ref|reference|参照番号)[:\s]*([a-f0-9-]{36})/i);
-  const referenceId = interpretation.referenceId || referenceIdMatch?.[1];
-
-  console.log('Reference ID:', referenceId);
-
-  if (!referenceId) {
-    loggingService.warn('Product selection without reference ID');
-    return {
-      responseText: `ご注文ありがとうございます。商品 ${params.selectedProductIds.join(', ')} を選択されました。\n\n申し訳ございませんが、元の商品リストを特定できませんでした。再度商品を検索してお選びください。`,
-      actionTaken: 'Product selection without reference ID'
-    };
-  }
-
-  try {
-    // Look up the shopping context using reference ID
-    const shoppingContext = await conversationContextRepository.findByReferenceId(referenceId);
-
-    console.log('Shopping context found:', !!shoppingContext);
-    console.log('Context data:', shoppingContext?.contextData ? Object.keys(shoppingContext.contextData) : 'none');
-
-    if (!shoppingContext?.contextData?.searchResults) {
-      loggingService.warn('No shopping context found for reference ID', { referenceId });
-      return {
-        responseText: `ご注文ありがとうございます。商品 ${params.selectedProductIds.join(', ')} を選択されました。\n\n申し訳ございませんが、商品リストの有効期限が切れているようです。再度商品を検索してお選びください。`,
-        actionTaken: 'Shopping context expired or not found'
-      };
-    }
-
-    const searchResults = shoppingContext.contextData.searchResults;
-    const toolCalls: ToolCallResult[] = [];
-    const orderedProducts: string[] = [];
-
-    // Map selection markers (A, B, C, D, E) to ASINs and create orders
-    for (const marker of params.selectedProductIds) {
-      const product = searchResults.find((p: any) => p.selectionMarker === marker);
-
-      console.log(`Looking for product ${marker}:`, product ? `Found: ${product.productName}` : 'Not found');
-
-      if (product?.asin) {
-        // Call the create_order MCP tool
-        try {
-          const orderResult = await mcpControllerAgent.executeTool('shopping', 'create_order', {
-            userId: DEMO_USER_ID,
-            productAsin: product.asin,
-            quantity: 1,
-            referenceId
-          });
-
-          console.log(`Order result for ${marker}:`, orderResult);
-
-          toolCalls.push({
-            toolName: 'shopping_create_order',
-            serverName: 'shopping',
-            parameters: { productId: product.asin, quantity: 1 },
-            result: orderResult,
-            success: orderResult?.success !== false,
-            stepId: `create_order_${marker}`
-          });
-
-          if (orderResult?.success !== false) {
-            orderedProducts.push(`${marker}. ${product.productName || product.brand || 'Product'}`);
-          }
-        } catch (orderError) {
-          loggingService.error('Failed to create order', orderError as Error, undefined, {
-            marker,
-            asin: product.asin
-          });
-          toolCalls.push({
-            toolName: 'shopping_create_order',
-            serverName: 'shopping',
-            parameters: { productId: product.asin, quantity: 1 },
-            result: null,
-            success: false,
-            error: (orderError as Error).message,
-            stepId: `create_order_${marker}`
-          });
-        }
-      }
-    }
-
-    if (orderedProducts.length > 0) {
-      const responseText = `ご注文ありがとうございます！\nThank you for your order!\n\n以下の商品をご注文いただきました：\nYou have ordered:\n\n${orderedProducts.join('\n')}\n\nご注文を処理中です。配送準備ができ次第、ご連絡いたします。\nWe are processing your order. We will notify you when it's ready for delivery.`;
-
-      return {
-        responseText,
-        actionTaken: `Created orders for products: ${params.selectedProductIds.join(', ')}`,
-        toolCalls
-      };
-    } else {
-      return {
-        responseText: `申し訳ございませんが、選択された商品 (${params.selectedProductIds.join(', ')}) が見つかりませんでした。再度お試しください。`,
-        actionTaken: 'Product selection failed - products not found in context'
-      };
-    }
-
-  } catch (error) {
-    loggingService.error('Error handling product selection', error as Error);
-    return {
-      responseText: `ご注文の処理中にエラーが発生しました。お手数ですが、再度お試しください。`,
-      actionTaken: 'Error processing product selection'
-    };
-  }
-}
-
-/**
- * Generate response using Gemini Agent Service
- *
- * This uses Gemini's native function calling to:
- * 1. Intelligently interpret the OCR text
- * 2. Extract proper parameters (e.g., "shampoo" from "I need shampoo")
- * 3. Call the appropriate MCP tool
- * 4. Return clarification if confidence is low
- */
-async function generateDemoResponse(
-  extractedText: string,
-  visualAnnotations: any[] = [],
-  interpretation?: InterpretationResult
-): Promise<{
-  responseText: string;
-  actionTaken: string;
-  toolCalls?: ToolCallResult[];
-}> {
-  try {
-    console.log('\n\n=== DEMO PROCESSING START ===');
-    console.log('Extracted text:', extractedText.substring(0, 200));
-    console.log('Demo User ID:', DEMO_USER_ID);
-    console.log('Intent:', interpretation?.intent);
-    console.log('Sub-intent:', interpretation?.parameters?.shoppingSubIntent);
-    console.log('Selected products:', interpretation?.parameters?.selectedProductIds);
-
-    // Check if this is a product selection reply - handle directly
-    if (interpretation) {
-      const productSelectionResult = await handleProductSelectionReply(interpretation);
-      if (productSelectionResult) {
-        return productSelectionResult;
-      }
-    }
-
-    loggingService.info('Processing with Gemini Agent', {
-      textLength: extractedText.length,
-      annotationCount: visualAnnotations.length,
-      extractedTextPreview: extractedText.substring(0, 200),
-      demoUserId: DEMO_USER_ID
-    });
-
-    // Use Gemini Agent Service for intelligent tool calling
-    const agentResult = await geminiAgentService.processRequest(
-      extractedText,
-      visualAnnotations,
-      DEMO_USER_ID
-    );
-
-    loggingService.info('Gemini Agent result', {
-      success: agentResult.success,
-      needsClarification: agentResult.needsClarification,
-      toolCallCount: agentResult.toolCalls?.length || 0,
-      hasAggregatedResponse: !!agentResult.aggregatedResponse,
-      error: agentResult.error
-    });
-
-    // Handle clarification needed
-    if (agentResult.needsClarification) {
-      return {
-        responseText: agentResult.clarificationFax || generateDefaultClarification(),
-        actionTaken: 'Requested clarification - intent unclear'
-      };
-    }
-
-    // Handle errors
-    if (!agentResult.success) {
-      loggingService.warn('Gemini Agent failed, using fallback', undefined, {
-        error: agentResult.error
-      });
-      return await generateFallbackResponse(extractedText);
-    }
-
-    // Aggregate successful tool call results
-    if (agentResult.aggregatedResponse) {
-      const toolNames = agentResult.toolCalls
-        .filter(t => t.success)
-        .map(t => t.toolName)
-        .join(', ');
-
-      return {
-        responseText: agentResult.aggregatedResponse,
-        actionTaken: `Executed tools: ${toolNames}`,
-        toolCalls: agentResult.toolCalls
-      };
-    }
-
-    // No response generated - fallback
-    return await generateFallbackResponse(extractedText);
-
-  } catch (error) {
-    console.log('\n=== DEMO ERROR ===');
-    console.log('Error:', (error as Error).message);
-    console.log('Stack:', (error as Error).stack?.substring(0, 500));
-
-    loggingService.error('Failed to generate demo response', error as Error, undefined, {
-      errorMessage: (error as Error).message,
-      errorStack: (error as Error).stack?.substring(0, 500)
-    });
-    return await generateFallbackResponse(extractedText);
-  }
-}
-
-/**
- * Generate default clarification fax
- */
-function generateDefaultClarification(): string {
-  return `
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-ご確認のお願い / Clarification Needed
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-ご依頼の内容を確認させてください。
-Please clarify your request.
-
-何をご希望ですか？
-What would you like to do?
-
-1. 商品を探す (Shopping)
-2. メールを送る (Send Email)
-3. 質問する (Ask a Question)
-4. その他 (Other)
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-番号に○をつけてFAXでご返信ください。
-Circle your choice and fax back.
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-`.trim();
-}
-
-/**
- * Fallback response when Gemini Agent fails
- */
-async function generateFallbackResponse(extractedText: string): Promise<{
-  responseText: string;
-  actionTaken: string;
-}> {
-  try {
-    const prompt = `You are Faxi, a helpful AI assistant that responds to fax messages.
-The user sent a fax with this content: "${extractedText}"
-
-Please provide a helpful response that would be suitable to fax back to an elderly person in Japan.
-If you can identify what they want (shopping, email, question), help them with that.
-If unclear, politely ask for clarification.
-Keep the response concise but informative. Use simple language.
-Format the response nicely for a fax (no markdown, use plain text).
-Include both Japanese and English where appropriate.`;
-
-    const response = await ai.models.generateContent({
-      model: config.gemini.model,
-      contents: prompt,
-      config: {
-        tools: [{ googleSearch: {} }]
-      }
-    });
-
-    return {
-      responseText: response.text ?? generateDefaultClarification(),
-      actionTaken: 'Generated fallback response'
-    };
-  } catch (error) {
-    loggingService.error('Fallback response generation failed', error as Error);
-    return {
-      responseText: generateDefaultClarification(),
-      actionTaken: 'Error - sent clarification request'
-    };
-  }
-}
-
-/**
- * Transforms MCP tool results to template-expected data formats
- */
-function transformToolResultForTemplate(
-  serverName: string,
-  toolName: string,
-  toolResult: any,
-  originalQuestion: string,
-  responseText: string
-): any {
-  switch (serverName) {
-    case 'shopping':
-      // ProductSelectionData format
-      console.log('[Demo] Transforming shopping tool result:', {
-        hasProducts: !!toolResult.products,
-        productCount: toolResult.products?.length,
-        hasQuery: !!toolResult.query,
-        queryValue: toolResult.query,
-        hasGroupedResults: !!toolResult.groupedResults
-      });
-      
-      // Handle grouped results (multi-product search)
-      if (toolResult.groupedResults) {
-        return {
-          groupedResults: toolResult.groupedResults
-        };
-      }
-      
-      // Handle single product search
-      return {
-        products: toolResult.products || [],
-        searchQuery: toolResult.query || originalQuestion,
-        complementaryItems: toolResult.complementaryItems || [],
-        hasPaymentMethod: false,
-        deliveryAddress: undefined
-      };
-
-    case 'email':
-      // EmailReplyData format
-      return {
-        from: toolResult.from || toolResult.recipient || 'Unknown',
-        subject: toolResult.subject || 'Email Response',
-        body: toolResult.body || responseText,
-        hasQuickReplies: false
-      };
-
-    case 'appointment':
-      // AppointmentSelectionTemplateData format
-      return {
-        serviceName: toolResult.serviceName || 'Appointment',
-        provider: toolResult.provider || 'Service Provider',
-        location: toolResult.location,
-        slots: (toolResult.slots || []).map((slot: any, index: number) => ({
-          ...slot,
-          selectionMarker: String.fromCharCode(65 + index) // A, B, C...
-        }))
-      };
-
-    case 'payment':
-      // PaymentBarcodeData format
-      return {
-        products: toolResult.products || [],
-        barcodes: toolResult.barcodes || [],
-        expirationDate: toolResult.expirationDate || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-        instructions: toolResult.instructions || 'Please pay at any convenience store.'
-      };
-
-    case 'ai_chat':
-    case 'chat':
-    default:
-      // GeneralInquiryTemplateData format (fallback)
-      return {
-        question: originalQuestion,
-        answer: responseText,
-        relatedTopics: []
-      };
-  }
-}
+// Create a single pipeline instance for demo processing
+const demoProcessingPipeline = new FaxProcessingPipeline();
 
 const router = Router();
 
 // Rate limiting map (simple in-memory implementation)
-// Uses path-based keys so fixture images don't count against process limit
 const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
 
 // Rate limit middleware
-// - Fixture/image endpoints: no rate limit (static assets)
-// - Process endpoint: 30 requests per 15 minutes (the expensive AI calls)
 function rateLimitMiddleware(req: Request, res: Response, next: Function) {
   // Skip rate limiting for static fixture assets
   if (req.path.includes('/fixtures') || req.path.includes('/fixture-image')) {
@@ -415,20 +29,17 @@ function rateLimitMiddleware(req: Request, res: Response, next: Function) {
   const ip = req.ip || req.socket.remoteAddress || 'unknown';
   const now = Date.now();
   const windowMs = 15 * 60 * 1000; // 15 minutes
-  const maxRequests = 30; // Reasonable limit for AI processing requests
+  const maxRequests = 30;
 
   const clientData = rateLimitMap.get(ip);
 
   if (!clientData || now > clientData.resetTime) {
-    // New window
     rateLimitMap.set(ip, { count: 1, resetTime: now + windowMs });
     next();
   } else if (clientData.count < maxRequests) {
-    // Within limit
     clientData.count++;
     next();
   } else {
-    // Rate limit exceeded
     res.status(429).json({
       error: 'Too many requests. Please try again later.',
       retryAfter: Math.ceil((clientData.resetTime - now) / 1000)
@@ -436,7 +47,6 @@ function rateLimitMiddleware(req: Request, res: Response, next: Function) {
   }
 }
 
-// Apply rate limiting to all demo routes
 router.use(rateLimitMiddleware);
 
 /**
@@ -446,12 +56,10 @@ router.use(rateLimitMiddleware);
 router.get('/fixtures', async (req: Request, res: Response) => {
   try {
     const fixturesPath = path.join(__dirname, '../../src/test/fixtures/fax-images');
-    
-    // Check if fixtures directory exists
+
     try {
       await fs.access(fixturesPath);
     } catch {
-      // Return empty list if fixtures don't exist
       return res.json({ fixtures: [] });
     }
 
@@ -461,8 +69,7 @@ router.get('/fixtures', async (req: Request, res: Response) => {
     const fixtures = imageFiles.map(filename => {
       const id = filename.replace(/\.(png|jpg|jpeg)$/i, '');
       const name = id.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-      
-      // Categorize based on filename
+
       let category = 'general';
       if (filename.includes('email')) category = 'email';
       else if (filename.includes('shopping') || filename.includes('product')) category = 'shopping';
@@ -494,8 +101,7 @@ router.get('/fixture-image/:id', async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const fixturesPath = path.join(__dirname, '../../src/test/fixtures/fax-images');
-    
-    // Try different extensions
+
     const extensions = ['png', 'jpg', 'jpeg'];
     let imagePath: string | null = null;
 
@@ -526,7 +132,8 @@ router.get('/fixture-image/:id', async (req: Request, res: Response) => {
 
 /**
  * POST /api/demo/process
- * Process a fax image (fixture or upload)
+ * Process a fax image using the REAL fax processing pipeline.
+ * Only bypasses Telnyx receive/send - uses same code path as production.
  */
 router.post('/process', async (req: Request, res: Response) => {
   try {
@@ -535,14 +142,11 @@ router.post('/process', async (req: Request, res: Response) => {
     const visitorIp = req.ip || req.socket.remoteAddress || 'unknown';
     const userAgent = req.headers['user-agent'] || 'unknown';
 
-    // Debug logging for request validation
     loggingService.info('Demo process request received', {
       sessionId,
       hasFixtureId: !!fixtureId,
       hasImageData: !!imageData,
-      imageDataLength: imageData?.length || 0,
-      imageDataPrefix: imageData?.substring(0, 50) || 'none',
-      bodyKeys: Object.keys(req.body || {})
+      imageDataLength: imageData?.length || 0
     });
 
     let imageBuffer: Buffer;
@@ -565,33 +169,24 @@ router.post('/process', async (req: Request, res: Response) => {
       }
 
       if (!imagePath) {
-        loggingService.warn('Demo process: Invalid fixture ID', { fixtureId, sessionId });
         return res.status(400).json({ error: 'Invalid fixture ID' });
       }
 
       imageBuffer = await fs.readFile(imagePath);
     } else if (imageData) {
-      // Process uploaded image (base64) - support both images and PDFs
+      // Process uploaded image (base64)
       const isValidFormat = imageData.startsWith('data:image/') || imageData.startsWith('data:application/pdf');
       if (!isValidFormat) {
-        loggingService.warn('Demo process: Invalid image format', {
-          sessionId,
-          imageDataPrefix: imageData.substring(0, 100),
-          imageDataLength: imageData.length
-        });
         return res.status(400).json({ error: 'Invalid format. Must be an image or PDF.' });
       }
 
       const base64Data = imageData.split(',')[1];
       imageBuffer = Buffer.from(base64Data, 'base64');
 
-      // Validate image size (max 10MB)
       if (imageBuffer.length > 10 * 1024 * 1024) {
-        loggingService.warn('Demo process: Image too large', { sessionId, size: imageBuffer.length });
         return res.status(400).json({ error: 'Image too large. Maximum size is 10MB.' });
       }
     } else {
-      loggingService.warn('Demo process: No image provided', { sessionId, bodyKeys: Object.keys(req.body || {}) });
       return res.status(400).json({ error: 'Either fixtureId or imageData must be provided' });
     }
 
@@ -601,81 +196,47 @@ router.post('/process', async (req: Request, res: Response) => {
       VALUES ($1, $2, $3, $4)
     `, [sessionId, fixtureId || null, visitorIp, userAgent]);
 
-    // Process the fax
-    const interpretation = await aiVisionInterpreter.interpretFax({
-      imageData: imageBuffer,
-      userId: `demo-${sessionId}`
+    // Create fake FaxJobData for the pipeline
+    const faxData: FaxJobData = {
+      faxId: `demo-${sessionId}`,
+      faxJobId: sessionId,
+      fromNumber: '+15551234567', // Demo phone number
+      toNumber: config.telnyx.faxNumber || '+15559876543',
+      mediaUrl: 'demo://local-image', // Placeholder - we pass buffer directly
+      pageCount: 1,
+      receivedAt: new Date().toISOString(),
+      webhookPayload: { isDemo: true, sessionId }
+    };
+
+    // Process using the REAL fax processing pipeline
+    // Only difference: we pass imageBuffer directly and skipFaxSend=true
+    const pipelineResult = await demoProcessingPipeline.processFax(faxData, {
+      imageBuffer,
+      skipFaxSend: true, // Don't send via Telnyx
+      userId: DEMO_USER_ID // Use demo user
     });
-
-    // Generate the actual response using Gemini Agent (intelligent tool calling)
-    // Pass the full interpretation so we can handle product_selection directly
-    const demoResponse = await generateDemoResponse(
-      interpretation.extractedText || '',
-      interpretation.visualAnnotations || [],
-      interpretation
-    );
-
-    // Generate PDF from the response using appropriate template
-    let responsePdfUrl: string | undefined;
-    try {
-      let pdfBuffer: Buffer;
-
-      // Find first successful tool call for template routing
-      const successfulToolCall = demoResponse.toolCalls?.find(t => t.success);
-
-      if (successfulToolCall) {
-        // Route through ResponseGenerator for proper template selection
-        const result = await ResponseGenerator.generateFromMcp(
-          successfulToolCall.serverName,
-          successfulToolCall.toolName,
-          transformToolResultForTemplate(
-            successfulToolCall.serverName,
-            successfulToolCall.toolName,
-            successfulToolCall.result,
-            interpretation.extractedText || 'Demo Request',
-            demoResponse.responseText
-          ),
-          sessionId
-        );
-        pdfBuffer = result.pdfBuffer;
-      } else {
-        // Fallback to GeneralInquiryFaxGenerator for clarifications/errors
-        pdfBuffer = await GeneralInquiryFaxGenerator.generateInquiryFax({
-          question: interpretation.extractedText || 'Demo Request',
-          answer: demoResponse.responseText,
-          relatedTopics: []
-        }, sessionId);
-      }
-
-      // Convert to base64 data URL
-      responsePdfUrl = `data:application/pdf;base64,${pdfBuffer.toString('base64')}`;
-      loggingService.info('Generated demo response PDF', {
-        sessionId,
-        pdfSize: pdfBuffer.length,
-        template: successfulToolCall?.serverName || 'general_inquiry'
-      });
-    } catch (pdfError) {
-      loggingService.warn('Failed to generate demo response PDF', undefined, {
-        error: (pdfError as Error).message,
-        sessionId
-      });
-    }
 
     // Update demo session with result
     await db.query(`
       UPDATE demo_sessions
       SET processing_result = $1, completed_at = NOW()
       WHERE session_id = $2
-    `, [JSON.stringify({ ...interpretation, demoResponse }), sessionId]);
+    `, [JSON.stringify(pipelineResult), sessionId]);
+
+    // Convert response PDF to base64 if available
+    let responsePdfUrl: string | undefined;
+    if (pipelineResult.responsePdfBuffer) {
+      responsePdfUrl = `data:application/pdf;base64,${pipelineResult.responsePdfBuffer.toString('base64')}`;
+    }
 
     // Return processing result
     res.json({
       sessionId,
-      status: 'completed',
+      status: pipelineResult.success ? 'completed' : 'failed',
       result: {
         faxId: sessionId,
-        extractedText: interpretation.extractedText,
-        annotations: interpretation.visualAnnotations?.map(ann => ({
+        extractedText: pipelineResult.interpretation?.extractedText,
+        annotations: pipelineResult.interpretation?.visualAnnotations?.map(ann => ({
           type: ann.type,
           boundingBox: ann.boundingBox,
           associatedText: ann.associatedText,
@@ -683,31 +244,29 @@ router.post('/process', async (req: Request, res: Response) => {
           color: ann.color
         })) || [],
         intent: {
-          primary: interpretation.intent,
-          parameters: interpretation.parameters,
-          confidence: interpretation.confidence
+          primary: pipelineResult.interpretation?.intent,
+          parameters: pipelineResult.interpretation?.parameters,
+          confidence: pipelineResult.interpretation?.confidence
         },
-        confidence: interpretation.confidence,
-        processingTime: interpretation.processingTime,
-        visualizationData: interpretation.visualizationData,
-        textRegions: interpretation.textRegions,
-        // The actual response that would be faxed back
+        confidence: pipelineResult.interpretation?.confidence,
+        processingTime: pipelineResult.interpretation?.processingTime,
+        visualizationData: pipelineResult.interpretation?.visualizationData,
+        textRegions: pipelineResult.interpretation?.textRegions,
         generatedResponse: {
-          faxContent: demoResponse.responseText,
-          actionTaken: demoResponse.actionTaken,
+          faxContent: pipelineResult.agentResponse?.userMessage || 'Processing complete',
+          actionTaken: pipelineResult.agentResponse?.responseType || 'processed',
           responsePdfUrl,
-          // ADK Coordinator Digest - tool execution details for debugging/demo
-          toolCalls: demoResponse.toolCalls?.map(tc => ({
-            toolName: tc.toolName,
-            serverName: tc.serverName,
-            success: tc.success,
-            skipped: tc.skipped,
-            parameters: tc.parameters,
-            result: tc.result,
-            error: tc.error
+          // Include agent steps for debugging
+          steps: pipelineResult.agentResponse?.steps?.map(step => ({
+            toolName: step.toolName,
+            toolServer: step.toolServer,
+            success: step.success,
+            output: step.output,
+            error: step.error
           }))
         }
-      }
+      },
+      error: pipelineResult.errorMessage
     });
   } catch (error) {
     loggingService.error('Demo processing failed', error as Error);
@@ -720,7 +279,7 @@ router.post('/process', async (req: Request, res: Response) => {
 
 /**
  * GET /api/demo/result/:sessionId
- * Poll for processing result (for async processing if needed)
+ * Poll for processing result
  */
 router.get('/result/:sessionId', async (req: Request, res: Response) => {
   try {
@@ -742,10 +301,7 @@ router.get('/result/:sessionId', async (req: Request, res: Response) => {
       return res.json({
         sessionId,
         status: 'processing',
-        progress: {
-          stage: 'analyzing',
-          percentage: 50
-        }
+        progress: { stage: 'analyzing', percentage: 50 }
       });
     }
 
@@ -757,24 +313,6 @@ router.get('/result/:sessionId', async (req: Request, res: Response) => {
   } catch (error) {
     loggingService.error('Failed to fetch demo result', error as Error);
     res.status(500).json({ error: 'Failed to fetch result' });
-  }
-});
-
-/**
- * Clear product cache (for testing)
- * POST /api/demo/clear-cache
- */
-router.post('/clear-cache', async (req: Request, res: Response) => {
-  try {
-    const result = await productCacheService.clearAllCache();
-    loggingService.info('Product cache cleared via API', result);
-    res.json({
-      success: true,
-      cleared: result
-    });
-  } catch (error) {
-    loggingService.error('Failed to clear cache', error as Error);
-    res.status(500).json({ error: 'Failed to clear cache' });
   }
 });
 

@@ -45,21 +45,21 @@ This document provides comprehensive research on potential business partners for
   - Long-term care facilities with medical services: 4,382 facilities
   - Home healthcare providers: 42,000+ agencies
 - **Geographic distribution**: Concentrated in urban areas but present nationwide
-- Source: Ministry of Health, Labour and Welfare, "Survey of Medical Institutions 2023", September 2023, https://www.mhlw.go.jp/english/database/db-hss/smi.html, accessed November 27, 2024
+- Source: Ministry of Health, Labour and Welfare, "Survey of Medical Institutions 2023", September 2023, https://www.mhlw.go.jp/english/database/db-hss/smi.html, accessed November 27, 2025
 
 **Elderly Patient Volume**:
 - 65+ patients account for 62.3% of hospital admissions
 - 65+ patients account for 54.7% of outpatient visits
 - Average elderly patient visits: 14.2 times per year (vs 5.8 for under-65)
 - Chronic disease management: 78.3% of elderly have 2+ chronic conditions
-- Source: Ministry of Health, Labour and Welfare, "Patient Survey 2023", August 2023, https://www.mhlw.go.jp/english/database/db-hss/ps.html, accessed November 27, 2024
+- Source: Ministry of Health, Labour and Welfare, "Patient Survey 2023", August 2023, https://www.mhlw.go.jp/english/database/db-hss/ps.html, accessed November 27, 2025
 
 **Digital Accessibility Challenges**:
 - Online appointment systems: 34.2% of hospitals, 18.7% of clinics
 - Elderly usage of online appointments: 12.3% (vs 48.7% for under-65)
 - Barriers cited: Complexity (67.3%), Lack of trust (42.8%), No internet access (38.4%)
 - Missed appointments due to communication barriers: 8.7% of elderly appointments
-- Source: Japan Medical Association, "Survey on Healthcare Digitalization 2023", June 2023, https://www.med.or.jp/english/, accessed November 27, 2024
+- Source: Japan Medical Association, "Survey on Healthcare Digitalization 2023", June 2023, https://www.med.or.jp/english/, accessed November 27, 2025
 
 ### Organization Types and Characteristics
 
@@ -300,7 +300,7 @@ This document provides comprehensive research on potential business partners for
   - Digital content: ¥3.4 trillion
 - **Growth rate**: 9.9% year-over-year
 - **E-commerce ratio**: 9.13% of total retail (increasing)
-- Source: Ministry of Economy, Trade and Industry, "E-Commerce Market Survey 2023", August 2023, https://www.meti.go.jp/english/press/index.html, accessed November 27, 2024
+- Source: Ministry of Economy, Trade and Industry, "E-Commerce Market Survey 2023", August 2023, https://www.meti.go.jp/english/press/index.html, accessed November 27, 2025
 
 **Elderly E-Commerce Participation**:
 - **Online shopping usage (65+)**: 32.7%
@@ -310,7 +310,7 @@ This document provides comprehensive research on potential business partners for
 - **Non-users (65+)**: 67.3% (24.7 million people)
 - **Barriers**: No internet (40.5%), Don't know how (34.2%), Security concerns (28.7%), Prefer physical stores (42.3%)
 - **Potential market**: ¥9.2 trillion if elderly participated at same rate as general population
-- Source: Ministry of Internal Affairs and Communications, "Communications Usage Trend Survey 2023", August 2023, https://www.soumu.go.jp/johotsusintokei/statistics/statistics05.html, accessed November 27, 2024
+- Source: Ministry of Internal Affairs and Communications, "Communications Usage Trend Survey 2023", August 2023, https://www.soumu.go.jp/johotsusintokei/statistics/statistics05.html, accessed November 27, 2025
 
 **Product Categories with High Elderly Demand**:
 1. **Food and beverages**: ¥2.7 trillion market, 18.2% elderly buyers
@@ -318,7 +318,7 @@ This document provides comprehensive research on potential business partners for
 3. **Household goods**: ¥1.4 trillion market, 22.3% elderly buyers
 4. **Apparel**: ¥2.2 trillion market, 15.8% elderly buyers
 5. **Books and media**: ¥890 billion market, 12.4% elderly buyers
-- Source: Ministry of Economy, Trade and Industry, "E-Commerce Market Survey 2023", August 2023, https://www.meti.go.jp/english/press/index.html, accessed November 27, 2024
+- Source: Ministry of Economy, Trade and Industry, "E-Commerce Market Survey 2023", August 2023, https://www.meti.go.jp/english/press/index.html, accessed November 27, 2025
 
 ### Organization Types and Characteristics
 
@@ -556,7 +556,7 @@ This document provides comprehensive research on potential business partners for
 - **Target**: All government services online by 2025
 - **Challenge**: 40.5% of elderly (14.9 million) have low/no internet access
 - **Mandate**: Ensure no citizen left behind in digital transformation
-- Source: Digital Agency, "Digital Society Realization Strategy 2023", June 2023, https://www.digital.go.jp/en/, accessed November 27, 2024
+- Source: Digital Agency, "Digital Society Realization Strategy 2023", June 2023, https://www.digital.go.jp/en/, accessed November 27, 2025
 
 **Government Service Usage by Elderly**:
 - **Services used annually by 65+**:
@@ -568,7 +568,7 @@ This document provides comprehensive research on potential business partners for
   - Public facility reservations: 24.3%
 - **Online usage rate (65+)**: 18.7% (vs 67.3% for under-65)
 - **Barriers**: No internet (40.5%), Complexity (52.3%), Security concerns (38.7%), Prefer in-person (47.8%)
-- Source: Ministry of Internal Affairs and Communications, "Survey on Administrative Services Usage 2023", July 2023, https://www.soumu.go.jp/english/index.html, accessed November 27, 2024
+- Source: Ministry of Internal Affairs and Communications, "Survey on Administrative Services Usage 2023", July 2023, https://www.soumu.go.jp/english/index.html, accessed November 27, 2025
 
 **Government Organizations**:
 - **National government**: 1 central government, 23 ministries and agencies
@@ -576,7 +576,7 @@ This document provides comprehensive research on potential business partners for
 - **Municipalities**: 1,741 cities, towns, and villages
 - **Total government employees**: 3.3 million (national, prefectural, municipal)
 - **IT budget**: ¥1.2 trillion annually (national government)
-- Source: Ministry of Internal Affairs and Communications, "Local Government Statistics 2023", August 2023, https://www.soumu.go.jp/english/index.html, accessed November 27, 2024
+- Source: Ministry of Internal Affairs and Communications, "Local Government Statistics 2023", August 2023, https://www.soumu.go.jp/english/index.html, accessed November 27, 2025
 
 ### Organization Types and Characteristics
 
@@ -831,7 +831,7 @@ This document provides comprehensive research on potential business partners for
   - Out-of-home: ¥280 billion (4.1%)
   - Direct mail: ¥950 billion (13.8%)
 - **Growth**: Internet advertising growing 10%+ annually, traditional media declining
-- Source: Dentsu, "Advertising Expenditure in Japan 2023", February 2024, https://www.dentsu.co.jp/en/, accessed November 27, 2024
+- Source: Dentsu, "Advertising Expenditure in Japan 2023", February 2024, https://www.dentsu.co.jp/en/, accessed November 27, 2025
 
 **Elderly as Advertising Target**:
 - **Purchasing power**: 65+ control 60% of household financial assets (¥1,200 trillion)
@@ -839,7 +839,7 @@ This document provides comprehensive research on potential business partners for
 - **Hard to reach**: 40.5% not online, declining traditional media consumption
 - **High-value categories**: Healthcare, financial services, travel, home services, food
 - **Challenge**: Fragmented media consumption, low digital ad reach
-- Source: Cabinet Office, "Annual Report on the Ageing Society 2023", June 2023, https://www8.cao.go.jp/kourei/english/index.html, accessed November 27, 2024
+- Source: Cabinet Office, "Annual Report on the Ageing Society 2023", June 2023, https://www8.cao.go.jp/kourei/english/index.html, accessed November 27, 2025
 
 **Advertiser Interest in Elderly Market**:
 - **Healthcare/pharmaceutical**: ¥450 billion annual ad spend, 60% targeting elderly
@@ -847,7 +847,7 @@ This document provides comprehensive research on potential business partners for
 - **Food/beverage**: ¥620 billion annual ad spend, 30% targeting elderly
 - **Travel/leisure**: ¥280 billion annual ad spend, 40% targeting elderly
 - **Home services**: ¥180 billion annual ad spend, 50% targeting elderly
-- Source: Dentsu, "Advertising Expenditure by Industry 2023", February 2024, https://www.dentsu.co.jp/en/, accessed November 27, 2024
+- Source: Dentsu, "Advertising Expenditure by Industry 2023", February 2024, https://www.dentsu.co.jp/en/, accessed November 27, 2025
 
 ### Organization Types and Characteristics
 
@@ -1246,7 +1246,7 @@ This document provides comprehensive research on potential business partners for
 - Report: "Survey of Medical Institutions 2023"
 - Publication Date: September 2023
 - URL: https://www.mhlw.go.jp/english/database/db-hss/smi.html
-- Access Date: November 27, 2024
+- Access Date: November 27, 2025
 - Data Used: Hospital and clinic counts, facility types, geographic distribution
 
 **S011: Ministry of Health, Labour and Welfare - Patient Survey**
@@ -1254,7 +1254,7 @@ This document provides comprehensive research on potential business partners for
 - Report: "Patient Survey 2023"
 - Publication Date: August 2023
 - URL: https://www.mhlw.go.jp/english/database/db-hss/ps.html
-- Access Date: November 27, 2024
+- Access Date: November 27, 2025
 - Data Used: Elderly patient volumes, visit frequencies, chronic disease prevalence
 
 **S012: Japan Medical Association - Healthcare Digitalization**
@@ -1262,7 +1262,7 @@ This document provides comprehensive research on potential business partners for
 - Report: "Survey on Healthcare Digitalization 2023"
 - Publication Date: June 2023
 - URL: https://www.med.or.jp/english/
-- Access Date: November 27, 2024
+- Access Date: November 27, 2025
 - Data Used: Online appointment system adoption, elderly usage rates, barriers
 
 **S013: Ministry of Economy, Trade and Industry - E-Commerce Market**
@@ -1270,7 +1270,7 @@ This document provides comprehensive research on potential business partners for
 - Report: "E-Commerce Market Survey 2023"
 - Publication Date: August 2023
 - URL: https://www.meti.go.jp/english/press/index.html
-- Access Date: November 27, 2024
+- Access Date: November 27, 2025
 - Data Used: E-commerce market size, growth rates, product categories, elderly participation
 
 **S014: Digital Agency - Digital Society Strategy**
@@ -1278,7 +1278,7 @@ This document provides comprehensive research on potential business partners for
 - Report: "Digital Society Realization Strategy 2023"
 - Publication Date: June 2023
 - URL: https://www.digital.go.jp/en/
-- Access Date: November 27, 2024
+- Access Date: November 27, 2025
 - Data Used: Digital transformation initiatives, government service digitalization goals
 
 **S015: Ministry of Internal Affairs and Communications - Administrative Services**
@@ -1286,7 +1286,7 @@ This document provides comprehensive research on potential business partners for
 - Report: "Survey on Administrative Services Usage 2023"
 - Publication Date: July 2023
 - URL: https://www.soumu.go.jp/english/index.html
-- Access Date: November 27, 2024
+- Access Date: November 27, 2025
 - Data Used: Government service usage by elderly, online adoption rates, barriers
 
 **S016: Ministry of Internal Affairs and Communications - Local Government Statistics**
@@ -1294,7 +1294,7 @@ This document provides comprehensive research on potential business partners for
 - Report: "Local Government Statistics 2023"
 - Publication Date: August 2023
 - URL: https://www.soumu.go.jp/english/index.html
-- Access Date: November 27, 2024
+- Access Date: November 27, 2025
 - Data Used: Number of municipalities, government employees, IT budgets
 
 **S017: Dentsu - Advertising Expenditure**
@@ -1302,7 +1302,7 @@ This document provides comprehensive research on potential business partners for
 - Report: "Advertising Expenditure in Japan 2023"
 - Publication Date: February 2024
 - URL: https://www.dentsu.co.jp/en/
-- Access Date: November 27, 2024
+- Access Date: November 27, 2025
 - Data Used: Total advertising market size, channel breakdown, growth trends
 
 **S018: Dentsu - Advertising by Industry**
@@ -1310,7 +1310,7 @@ This document provides comprehensive research on potential business partners for
 - Report: "Advertising Expenditure by Industry 2023"
 - Publication Date: February 2024
 - URL: https://www.dentsu.co.jp/en/
-- Access Date: November 27, 2024
+- Access Date: November 27, 2025
 - Data Used: Industry-specific ad spend, elderly targeting percentages
 
 ### Data Quality Assessment
@@ -1336,8 +1336,8 @@ This document provides comprehensive research on potential business partners for
 ## Document Metadata
 
 **Version**: 1.0
-**Completion Date**: November 27, 2024
-**Research Period**: November 2024
+**Completion Date**: November 27, 2025
+**Research Period**: November 2025
 **Prepared For**: Faxi Market Research - Task 4
 **Requirements Addressed**: 1.3, 4.1, 9.3
 **Status**: Complete

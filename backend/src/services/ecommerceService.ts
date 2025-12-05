@@ -96,8 +96,8 @@ export class EcommerceService {
         brand: 'Energizer'
       },
       reviews: [
-        { rating: 5, comment: 'Great batteries, last long', reviewer: 'Tanaka', date: '2024-01-15' },
-        { rating: 4, comment: 'Good value for money', reviewer: 'Sato', date: '2024-01-10' }
+        { rating: 5, comment: 'Great batteries, last long', reviewer: 'Tanaka', date: '2025-01-15' },
+        { rating: 4, comment: 'Good value for money', reviewer: 'Sato', date: '2025-01-10' }
       ],
       complementaryProducts: ['flash-led-001', 'bat-tester-001'],
       bundleDeals: [
@@ -172,7 +172,7 @@ export class EcommerceService {
         material: 'Aluminum alloy'
       },
       reviews: [
-        { rating: 5, comment: 'Very bright and durable', reviewer: 'Yamada', date: '2024-01-20' }
+        { rating: 5, comment: 'Very bright and durable', reviewer: 'Yamada', date: '2025-01-20' }
       ],
       complementaryProducts: ['bat-aa-001', 'flash-case-001'],
       bundleDeals: [

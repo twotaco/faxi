@@ -17,9 +17,9 @@ describe('AccuracyMetrics', () => {
       { useCase: 'AI Chat', accuracy: 0.90, sampleCount: 30 },
     ],
     trend: [
-      { date: '2024-01-01', accuracy: 0.88 },
-      { date: '2024-01-02', accuracy: 0.90 },
-      { date: '2024-01-03', accuracy: 0.92 },
+      { date: '2025-01-01', accuracy: 0.88 },
+      { date: '2025-01-02', accuracy: 0.90 },
+      { date: '2025-01-03', accuracy: 0.92 },
     ],
   };
 

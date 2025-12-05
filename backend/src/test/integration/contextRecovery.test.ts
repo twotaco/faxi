@@ -429,7 +429,7 @@ describe('Context Recovery Integration Tests', () => {
       // Create an old conversation context manually
       const oldContext = await conversationContextRepository.create({
         userId: testUserId,
-        referenceId: 'FX-2024-000001',
+        referenceId: 'FX-2025-000001',
         contextType: 'email',
         contextData: {
           threadId: 'old_thread',

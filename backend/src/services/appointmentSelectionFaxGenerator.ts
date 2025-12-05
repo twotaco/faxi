@@ -261,7 +261,7 @@ export class AppointmentSelectionFaxGenerator {
   /**
    * Format a date for display
    * @param date Date object
-   * @returns Formatted date string (e.g., "Monday, January 15, 2024")
+   * @returns Formatted date string (e.g., "Monday, January 15, 2025")
    */
   private static formatDate(date: Date): string {
     const options: Intl.DateTimeFormatOptions = {

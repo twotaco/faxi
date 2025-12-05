@@ -1,7 +1,7 @@
 # Market Sizing Analysis - Faxi
 
 **Document Version**: 1.0  
-**Last Updated**: November 27, 2024  
+**Last Updated**: November 27, 2025  
 **Research Completed By**: Market Research Team  
 **Review Status**: Complete - Ready for validation
 
@@ -56,7 +56,7 @@ The total market demand for Faxi if the service achieved 100% market share with 
 
 ### Data Source
 
-Statistics Bureau of Japan, "Population Estimates Monthly Report", October 2023, https://www.stat.go.jp/english/data/jinsui/index.html, accessed November 27, 2024
+Statistics Bureau of Japan, "Population Estimates Monthly Report", October 2023, https://www.stat.go.jp/english/data/jinsui/index.html, accessed November 27, 2025
 
 ### TAM Value Calculation
 
@@ -76,7 +76,7 @@ Statistics Bureau of Japan, "Population Estimates Monthly Report", October 2023,
 - **2042**: 38.9 million (peak)
 - **2050**: 37.2 million (gradual decline)
 
-**Source**: Statistics Bureau of Japan, "Population Projections for Japan 2023", April 2023, https://www.stat.go.jp/english/data/jinsui/index.html, accessed November 27, 2024
+**Source**: Statistics Bureau of Japan, "Population Projections for Japan 2023", April 2023, https://www.stat.go.jp/english/data/jinsui/index.html, accessed November 27, 2025
 
 ### TAM Assumptions
 
@@ -111,7 +111,7 @@ Starting with TAM of 36.7 million, we apply realistic constraints:
 
 **Fax-owning households (65+)**: 38.7% of elderly households = 14.2 million households
 
-**Source**: Ministry of Internal Affairs and Communications, "Communications Usage Trend Survey 2023", August 2023, https://www.soumu.go.jp/johotsusintokei/statistics/statistics05.html, accessed November 27, 2024
+**Source**: Ministry of Internal Affairs and Communications, "Communications Usage Trend Survey 2023", August 2023, https://www.soumu.go.jp/johotsusintokei/statistics/statistics05.html, accessed November 27, 2025
 
 **Rationale**: Faxi requires existing fax machine; users without fax machines would need to purchase one (significant barrier)
 
@@ -119,7 +119,7 @@ Starting with TAM of 36.7 million, we apply realistic constraints:
 
 **Regular fax users (weekly or more)**: 23.4% of elderly = 8.6 million people
 
-**Source**: Ministry of Internal Affairs and Communications, "Communications Usage Trend Survey 2023", August 2023, https://www.soumu.go.jp/johotsusintokei/statistics/statistics05.html, accessed November 27, 2024
+**Source**: Ministry of Internal Affairs and Communications, "Communications Usage Trend Survey 2023", August 2023, https://www.soumu.go.jp/johotsusintokei/statistics/statistics05.html, accessed November 27, 2025
 
 **Rationale**: Users must be comfortable with fax machines; occasional users (monthly or less) unlikely to adopt fax-based service
 
@@ -127,7 +127,7 @@ Starting with TAM of 36.7 million, we apply realistic constraints:
 
 **Elderly with low/no internet usage**: 40.5% of elderly = 14.9 million people
 
-**Source**: Ministry of Internal Affairs and Communications, "Communications Usage Trend Survey 2023", August 2023, https://www.soumu.go.jp/johotsusintokei/statistics/statistics05.html, accessed November 27, 2024
+**Source**: Ministry of Internal Affairs and Communications, "Communications Usage Trend Survey 2023", August 2023, https://www.soumu.go.jp/johotsusintokei/statistics/statistics05.html, accessed November 27, 2025
 
 **Rationale**: Elderly who already use internet regularly (59.5%) have less need for fax-based internet bridge
 
@@ -160,7 +160,7 @@ Starting with TAM of 36.7 million, we apply realistic constraints:
 
 **Elderly with income ≥ ¥2 million/year**: 71.7% of elderly
 
-**Source**: Ministry of Health, Labour and Welfare, "Comprehensive Survey of Living Conditions 2022", July 2023, https://www.mhlw.go.jp/english/database/db-hss/cslc-index.html, accessed November 27, 2024
+**Source**: Ministry of Health, Labour and Welfare, "Comprehensive Survey of Living Conditions 2022", July 2023, https://www.mhlw.go.jp/english/database/db-hss/cslc-index.html, accessed November 27, 2025
 
 **Rationale**: ¥980-1,980/month subscription requires discretionary income; those with income under ¥2M/year may struggle to afford
 
@@ -585,7 +585,7 @@ All market sizing data sourced from credible Japanese government agencies:
 - Competitors may enter market if opportunity becomes obvious
 - First-mover advantage critical in elderly market (trust and familiarity)
 
-**Optimal launch**: 2024-2025 (current market conditions favorable)
+**Optimal launch**: 2025-2026 (current market conditions favorable)
 
 ---
 
@@ -641,4 +641,4 @@ All market sizing data sourced from credible Japanese government agencies:
 
 **Document Status**: Complete - Ready for stakeholder review
 **Validation Required**: Finance team review of projections, Marketing team review of penetration assumptions
-**Next Review Date**: December 15, 2024
+**Next Review Date**: December 15, 2025

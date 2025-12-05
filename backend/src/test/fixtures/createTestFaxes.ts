@@ -306,7 +306,7 @@ export class TestFaxFixtureGenerator {
 
     ctx.fillStyle = 'black';
     ctx.font = '32px Arial';
-    ctx.fillText('Ref: FX-2024-001234', 100, 100);
+    ctx.fillText('Ref: FX-2025-001234', 100, 100);
     
     ctx.font = '36px Arial';
     ctx.fillText('Quick Reply Options:', 100, 200);
@@ -354,7 +354,7 @@ export class TestFaxFixtureGenerator {
 
     ctx.fillStyle = 'black';
     ctx.font = '32px Arial';
-    ctx.fillText('Ref: FX-2024-001235', 100, 100);
+    ctx.fillText('Ref: FX-2025-001235', 100, 100);
     
     ctx.font = '36px Arial';
     ctx.fillText('Product Selection:', 100, 200);
@@ -515,7 +515,7 @@ export class TestFaxFixtureGenerator {
 
     ctx.fillStyle = 'black';
     ctx.font = '32px Arial';
-    ctx.fillText('Ref: FX-2024-001240', 100, 150);
+    ctx.fillText('Ref: FX-2025-001240', 100, 150);
     
     // Simulate handwritten response
     ctx.font = '28px cursive';

@@ -24,20 +24,20 @@
   - 65-74 years: 17.9 million people (14.2% of population)
   - 75+ years: 18.8 million people (14.9% of population)
   - Total 65+ population: 36.7 million (29.1% of total population)
-  - Source: Statistics Bureau of Japan, "Population Estimates Monthly Report", October 2023, https://www.stat.go.jp/english/data/jinsui/index.html, accessed November 27, 2024
+  - Source: Statistics Bureau of Japan, "Population Estimates Monthly Report", October 2023, https://www.stat.go.jp/english/data/jinsui/index.html, accessed November 27, 2025
 
 - **Gender Distribution**: 
   - Female: 56.3% (20.7 million)
   - Male: 43.7% (16.0 million)
   - Women have longer life expectancy (87.57 years vs 81.47 years for men)
-  - Source: Ministry of Health, Labour and Welfare, "Life Expectancy and Healthy Life Expectancy 2023", July 2023, https://www.mhlw.go.jp/english/database/db-hw/index.html, accessed November 27, 2024
+  - Source: Ministry of Health, Labour and Welfare, "Life Expectancy and Healthy Life Expectancy 2023", July 2023, https://www.mhlw.go.jp/english/database/db-hw/index.html, accessed November 27, 2025
 
 - **Geographic Distribution**: 
   - Urban areas (cities with 100,000+ population): 68.4% (25.1 million)
   - Rural areas: 31.6% (11.6 million)
   - Highest concentration in: Tokyo (3.2M), Osaka (2.1M), Kanagawa (2.0M), Aichi (1.7M)
   - Rural aging rate significantly higher: 35-40% in rural prefectures vs 20-25% in major cities
-  - Source: Statistics Bureau of Japan, "Population Census 2020 - Age Distribution by Prefecture", June 2021, https://www.stat.go.jp/english/data/kokusei/index.html, accessed November 27, 2024
+  - Source: Statistics Bureau of Japan, "Population Census 2020 - Age Distribution by Prefecture", June 2021, https://www.stat.go.jp/english/data/kokusei/index.html, accessed November 27, 2025
 
 - **Income Level**: 
   - Average annual household income (65+ households): ¥3.18 million ($21,200 USD)
@@ -47,7 +47,7 @@
     - ¥4-6 million: 20.1%
     - ¥6+ million: 15.9%
   - Primary income sources: Public pension (89.2%), savings/investments (45.3%), part-time work (18.7%)
-  - Source: Ministry of Health, Labour and Welfare, "Comprehensive Survey of Living Conditions 2022", July 2023, https://www.mhlw.go.jp/english/database/db-hss/cslc-index.html, accessed November 27, 2024
+  - Source: Ministry of Health, Labour and Welfare, "Comprehensive Survey of Living Conditions 2022", July 2023, https://www.mhlw.go.jp/english/database/db-hss/cslc-index.html, accessed November 27, 2025
 
 - **Education Level**: 
   - Junior high school or less: 42.1%
@@ -55,7 +55,7 @@
   - Junior college/vocational: 10.2%
   - University or higher: 9.1%
   - Note: Education levels vary significantly by age cohort (75+ have lower formal education rates)
-  - Source: Statistics Bureau of Japan, "Employment Status Survey 2022", July 2023, https://www.stat.go.jp/english/data/shugyou/index.html, accessed November 27, 2024
+  - Source: Statistics Bureau of Japan, "Employment Status Survey 2022", July 2023, https://www.stat.go.jp/english/data/shugyou/index.html, accessed November 27, 2025
 
 - **Living Situation**: 
   - Living alone: 27.4% (10.0 million)
@@ -63,7 +63,7 @@
   - Living with children/family: 31.8% (11.7 million)
   - Care facilities: 8.7% (3.2 million)
   - Living alone rate increasing: projected to reach 40% by 2040
-  - Source: National Institute of Population and Social Security Research, "Household Projections for Japan 2023", April 2023, https://www.ipss.go.jp/pp-ajsetai/e/index.html, accessed November 27, 2024
+  - Source: National Institute of Population and Social Security Research, "Household Projections for Japan 2023", April 2023, https://www.ipss.go.jp/pp-ajsetai/e/index.html, accessed November 27, 2025
 
 - **Technology Adoption**: 
   - Internet usage rate (65+): 59.5% overall
@@ -74,13 +74,13 @@
   - PC ownership (65+): 42.1%
   - Fax machine ownership (65+ households): 38.7% (14.2 million households)
   - Regular fax users (weekly or more): 23.4% (8.6 million people)
-  - Source: Ministry of Internal Affairs and Communications, "Communications Usage Trend Survey 2023", August 2023, https://www.soumu.go.jp/johotsusintokei/statistics/statistics05.html, accessed November 27, 2024
+  - Source: Ministry of Internal Affairs and Communications, "Communications Usage Trend Survey 2023", August 2023, https://www.soumu.go.jp/johotsusintokei/statistics/statistics05.html, accessed November 27, 2025
   
   - Technology anxiety levels:
     - "Very anxious about using new technology": 34.2%
     - "Somewhat anxious": 41.8%
     - "Not anxious": 24.0%
-  - Source: Cabinet Office, "Survey on Attitudes of the Elderly 2023", March 2023, https://www8.cao.go.jp/kourei/english/index.html, accessed November 27, 2024
+  - Source: Cabinet Office, "Survey on Attitudes of the Elderly 2023", March 2023, https://www8.cao.go.jp/kourei/english/index.html, accessed November 27, 2025
 
 - **Market Size**: 
   - **Total elderly population (65+)**: 36.7 million people
@@ -89,7 +89,7 @@
   - **Low internet adoption elderly (65+)**: 14.9 million people (40.5% of 65+ population)
   - **Target market (fax users with low/no internet usage)**: Estimated 6.2-7.5 million people
   - **Market growth trend**: Elderly population projected to peak at 38.9 million by 2042, then gradually decline
-  - Source: Statistics Bureau of Japan, "Population Projections for Japan 2023", April 2023, https://www.stat.go.jp/english/data/jinsui/index.html, accessed November 27, 2024
+  - Source: Statistics Bureau of Japan, "Population Projections for Japan 2023", April 2023, https://www.stat.go.jp/english/data/jinsui/index.html, accessed November 27, 2025
 
 ### Psychographic Profile
 
@@ -101,7 +101,7 @@
   - **Family connection**: Value relationships with children and grandchildren; 82.4% receive emotional support from family
   - **Self-sufficiency**: Pride in managing own affairs; 58.3% manage finances independently
   - **Simplicity**: Preference for straightforward, uncomplicated solutions
-  - Source: Cabinet Office, "Survey on Attitudes of the Elderly 2023", March 2023, https://www8.cao.go.jp/kourei/english/index.html, accessed November 27, 2024
+  - Source: Cabinet Office, "Survey on Attitudes of the Elderly 2023", March 2023, https://www8.cao.go.jp/kourei/english/index.html, accessed November 27, 2025
 
 - **Fears**: 
   - **Technology anxiety**: 76% report anxiety about using new technology (34.2% very anxious, 41.8% somewhat anxious)
@@ -112,7 +112,7 @@
   - **Security and privacy**: Concerns about online fraud, scams, and personal information safety
   - **Cognitive decline**: Worry about not being able to learn new things or remember how to use technology
   - **Exclusion from services**: Fear of not being able to access essential services as they move online
-  - Source: Cabinet Office, "Survey on Attitudes of the Elderly 2023", March 2023, https://www8.cao.go.jp/kourei/english/index.html, accessed November 27, 2024
+  - Source: Cabinet Office, "Survey on Attitudes of the Elderly 2023", March 2023, https://www8.cao.go.jp/kourei/english/index.html, accessed November 27, 2025
 
 - **Aspirations**: 
   - **Maintain independent living**: Continue living in own home without moving to care facilities or with children
@@ -131,7 +131,7 @@
   - **Frequency**: Regular but not overwhelming; appreciate consistent check-ins
   - **Style**: Direct and straightforward, avoiding technical jargon, concrete examples over abstract concepts
   - **Trust signals**: Personal recommendations, testimonials from peers, institutional backing, human support available
-  - Source: Ministry of Internal Affairs and Communications, "Survey on Family Communication Patterns 2023", August 2023, https://www.soumu.go.jp/johotsusintokei/statistics/statistics05.html, accessed November 27, 2024
+  - Source: Ministry of Internal Affairs and Communications, "Survey on Family Communication Patterns 2023", August 2023, https://www.soumu.go.jp/johotsusintokei/statistics/statistics05.html, accessed November 27, 2025
 
 - **Trust Factors**: 
   - **Peer recommendations**: Testimonials and recommendations from other elderly users (same age group)
@@ -154,7 +154,7 @@
   - **Practical**: Focus on solving specific problems rather than features; "Will this help me?" vs "What can it do?"
   - **Threshold-based**: Under ¥10,000/month decisions made independently (72.3%); higher amounts require family consultation
   - **Trust-dependent**: Need to establish trust before making purchase decision
-  - Source: Cabinet Office, "Survey on Family Caregiving Decision-Making 2022", December 2022, https://www8.cao.go.jp/kourei/english/index.html, accessed November 27, 2024
+  - Source: Cabinet Office, "Survey on Family Caregiving Decision-Making 2022", December 2022, https://www8.cao.go.jp/kourei/english/index.html, accessed November 27, 2025
 
 - **Information Consumption**: 
   - **Traditional media**: Television (primary source), newspapers, radio
@@ -166,7 +166,7 @@
   - **Repetition needed**: May need to see/hear information multiple times to feel comfortable
   - **Visual learning**: Prefer visual demonstrations over written instructions
   - **Peer learning**: Learn well from others in same age group who have adopted solution
-  - Source: Ministry of Internal Affairs and Communications, "Communications Usage Trend Survey 2023", August 2023, https://www.soumu.go.jp/johotsusintokei/statistics/statistics05.html, accessed November 27, 2024
+  - Source: Ministry of Internal Affairs and Communications, "Communications Usage Trend Survey 2023", August 2023, https://www.soumu.go.jp/johotsusintokei/statistics/statistics05.html, accessed November 27, 2025
 
 ### Pain Points & Unmet Needs
 
@@ -530,13 +530,13 @@
   - Age 50-59: 42.7% of adult children with elderly parents
   - Age 60-69: 19.1% of adult children with elderly parents
   - Note: These are adult children of elderly (65+) parents
-  - Source: Statistics Bureau of Japan, "Population Estimates by Age 2023", October 2023, https://www.stat.go.jp/english/data/jinsui/index.html, accessed November 27, 2024
+  - Source: Statistics Bureau of Japan, "Population Estimates by Age 2023", October 2023, https://www.stat.go.jp/english/data/jinsui/index.html, accessed November 27, 2025
 
 - **Gender Distribution**: 
   - Female: 68.4% (primary family caregivers)
   - Male: 31.6%
   - Women more likely to provide hands-on care and coordinate services
-  - Source: Ministry of Health, Labour and Welfare, "Comprehensive Survey of Living Conditions 2022", July 2023, https://www.mhlw.go.jp/english/database/db-hss/cslc-index.html, accessed November 27, 2024
+  - Source: Ministry of Health, Labour and Welfare, "Comprehensive Survey of Living Conditions 2022", July 2023, https://www.mhlw.go.jp/english/database/db-hss/cslc-index.html, accessed November 27, 2025
 
 - **Geographic Distribution**: 
   - Same household as parents: 31.8%
@@ -545,7 +545,7 @@
   - Different prefecture (1+ hours): 27.6%
   - Urban concentration: 72.3% live in cities with 100,000+ population
   - Migration pattern: moved to cities for work, parents remain in hometown
-  - Source: Cabinet Office, "Survey on Attitudes of the Elderly 2023", March 2023, https://www8.cao.go.jp/kourei/english/index.html, accessed November 27, 2024
+  - Source: Cabinet Office, "Survey on Attitudes of the Elderly 2023", March 2023, https://www8.cao.go.jp/kourei/english/index.html, accessed November 27, 2025
 
 - **Income Level**: 
   - Average annual household income (40-59 age group): ¥6.2 million ($41,300 USD)
@@ -556,7 +556,7 @@
     - ¥8+ million: 28.6%
   - Employment status: 76.3% employed (full-time or part-time)
   - Financial support to parents: 34.7% provide regular support (avg ¥32,000/month)
-  - Source: Ministry of Health, Labour and Welfare, "Comprehensive Survey of Living Conditions 2022", July 2023, https://www.mhlw.go.jp/english/database/db-hss/cslc-index.html, accessed November 27, 2024
+  - Source: Ministry of Health, Labour and Welfare, "Comprehensive Survey of Living Conditions 2022", July 2023, https://www.mhlw.go.jp/english/database/db-hss/cslc-index.html, accessed November 27, 2025
 
 - **Education Level**: 
   - University or higher: 52.3%
@@ -564,7 +564,7 @@
   - High school: 17.4%
   - Junior high or less: 1.6%
   - Note: Significantly higher education levels than parent generation
-  - Source: Statistics Bureau of Japan, "Employment Status Survey 2022", July 2023, https://www.stat.go.jp/english/data/shugyou/index.html, accessed November 27, 2024
+  - Source: Statistics Bureau of Japan, "Employment Status Survey 2022", July 2023, https://www.stat.go.jp/english/data/shugyou/index.html, accessed November 27, 2025
 
 - **Living Situation**: 
   - Married with children: 58.7%
@@ -572,7 +572,7 @@
   - Single: 12.4%
   - Divorced/widowed: 4.6%
   - Sandwich generation (caring for children and parents): 42.8%
-  - Source: National Institute of Population and Social Security Research, "National Survey on Family and Households 2023", March 2023, https://www.ipss.go.jp/index-e.asp, accessed November 27, 2024
+  - Source: National Institute of Population and Social Security Research, "National Survey on Family and Households 2023", March 2023, https://www.ipss.go.jp/index-e.asp, accessed November 27, 2025
 
 - **Technology Adoption**: 
   - Internet usage rate: 94.6% overall
@@ -588,7 +588,7 @@
     - Advanced/Proficient: 61.0%
     - Intermediate: 31.4%
     - Basic/Minimal: 7.6%
-  - Source: Ministry of Internal Affairs and Communications, "Communications Usage Trend Survey 2023", August 2023, https://www.soumu.go.jp/johotsusintokei/statistics/statistics05.html, accessed November 27, 2024
+  - Source: Ministry of Internal Affairs and Communications, "Communications Usage Trend Survey 2023", August 2023, https://www.soumu.go.jp/johotsusintokei/statistics/statistics05.html, accessed November 27, 2025
 
 - **Market Size**: 
   - **Total adult children of elderly (65+)**: Approximately 28-32 million people
@@ -597,7 +597,7 @@
   - **Adult children with parents using fax**: Estimated 5.2-6.4 million people
   - **Target market (children of fax-using, low-internet parents)**: Estimated 4.8-5.8 million people
   - Note: Market size based on elderly population of 36.7M with average 1.5-2 adult children per elderly person
-  - Source: Statistics Bureau of Japan, "Population Estimates 2023", October 2023, https://www.stat.go.jp/english/data/jinsui/index.html, accessed November 27, 2024
+  - Source: Statistics Bureau of Japan, "Population Estimates 2023", October 2023, https://www.stat.go.jp/english/data/jinsui/index.html, accessed November 27, 2025
 
 ### Psychographic Profile
 
@@ -608,7 +608,7 @@
   - Independence for parents while ensuring safety
   - Practical problem-solving orientation
   - Quality of life for both generations
-  - Source: Cabinet Office, "International Survey on Attitudes Toward Aging 2023", May 2023, https://www8.cao.go.jp/kourei/english/index.html, accessed November 27, 2024
+  - Source: Cabinet Office, "International Survey on Attitudes Toward Aging 2023", May 2023, https://www8.cao.go.jp/kourei/english/index.html, accessed November 27, 2025
 
 - **Fears**: 
   - Parents' declining health and safety: 82.7%
@@ -618,7 +618,7 @@
   - Financial burden of caregiving: 42.8%
   - Conflict with siblings over care responsibilities: 31.7%
   - Parents losing independence and dignity: 48.9%
-  - Source: Japan Institute for Labour Policy and Training, "Survey on Work-Life Balance and Caregiving 2022", November 2022, https://www.jil.go.jp/english/index.html, accessed November 27, 2024
+  - Source: Japan Institute for Labour Policy and Training, "Survey on Work-Life Balance and Caregiving 2022", November 2022, https://www.jil.go.jp/english/index.html, accessed November 27, 2025
 
 - **Aspirations**: 
   - Enable parents to age with dignity and independence
@@ -635,7 +635,7 @@
   - Information consumption: Digital-first (online search, social media, reviews)
   - Decision-making: Research-oriented, compare multiple options
   - Content preferences: Practical solutions, data-driven, testimonials from similar families
-  - Source: Ministry of Internal Affairs and Communications, "Survey on Family Communication Patterns 2023", August 2023, https://www.soumu.go.jp/johotsusintokei/statistics/statistics05.html, accessed November 27, 2024
+  - Source: Ministry of Internal Affairs and Communications, "Survey on Family Communication Patterns 2023", August 2023, https://www.soumu.go.jp/johotsusintokei/statistics/statistics05.html, accessed November 27, 2025
 
 - **Trust Factors**: 
   - Recommendations from other families in similar situations
@@ -653,7 +653,7 @@
   - Practical: Focus on solving specific problems efficiently
   - Risk-averse: Prefer proven solutions over cutting-edge technology
   - Value-conscious: Balance cost with quality and convenience
-  - Source: Cabinet Office, "Survey on Family Caregiving Decision-Making 2022", December 2022, https://www8.cao.go.jp/kourei/english/index.html, accessed November 27, 2024
+  - Source: Cabinet Office, "Survey on Family Caregiving Decision-Making 2022", December 2022, https://www8.cao.go.jp/kourei/english/index.html, accessed November 27, 2025
 
 - **Information Consumption**: 
   - Online search engines: 82.7%
@@ -663,7 +663,7 @@
   - Word-of-mouth from friends/family: 54.8%
   - Online reviews and testimonials: 63.2%
   - Comparison websites: 38.4%
-  - Source: Ministry of Economy, Trade and Industry, "Survey on Digital Information Consumption 2023", May 2023, https://www.meti.go.jp/english/index.html, accessed November 27, 2024
+  - Source: Ministry of Economy, Trade and Industry, "Survey on Digital Information Consumption 2023", May 2023, https://www.meti.go.jp/english/index.html, accessed November 27, 2025
 
 ### Pain Points & Unmet Needs
 
@@ -2581,7 +2581,7 @@ For market sizing spreadsheet with calculations, see: `.kiro/specs/faxi-market-r
 - Calculation: 36.7M users × ¥1,480/month × 12 months
 - Average price: ¥1,480/month (weighted: 70% Basic ¥980 + 30% Premium ¥1,980)
 
-**Data Source**: Statistics Bureau of Japan, "Population Estimates Monthly Report", October 2023, https://www.stat.go.jp/english/data/jinsui/index.html, accessed November 27, 2024
+**Data Source**: Statistics Bureau of Japan, "Population Estimates Monthly Report", October 2023, https://www.stat.go.jp/english/data/jinsui/index.html, accessed November 27, 2025
 
 **Market Growth**: Elderly population will peak at 38.9 million by 2042, providing 15-20 year stable market window
 
@@ -2613,7 +2613,7 @@ For market sizing spreadsheet with calculations, see: `.kiro/specs/faxi-market-r
 
 **SAM as % of TAM**: 23.4%
 
-**Data Source**: Ministry of Internal Affairs and Communications, "Communications Usage Trend Survey 2023", August 2023, https://www.soumu.go.jp/johotsusintokei/statistics/statistics05.html, accessed November 27, 2024
+**Data Source**: Ministry of Internal Affairs and Communications, "Communications Usage Trend Survey 2023", August 2023, https://www.soumu.go.jp/johotsusintokei/statistics/statistics05.html, accessed November 27, 2025
 
 **Validation**: ✓ SAM ≤ TAM (8.6M ≤ 36.7M)
 
@@ -2750,21 +2750,21 @@ For market sizing spreadsheet with calculations, see: `.kiro/specs/faxi-market-r
 - Nuclear families now predominant (60.4% of households)
 - Elderly living alone or with spouse only: 59.5% (2023) vs 28.1% (1980)
 - Geographic separation common: children in urban areas, parents in rural/suburban areas
-- Source: National Institute of Population and Social Security Research, "Household Projections for Japan 2023", April 2023, https://www.ipss.go.jp/pp-ajsetai/e/index.html, accessed November 27, 2024
+- Source: National Institute of Population and Social Security Research, "Household Projections for Japan 2023", April 2023, https://www.ipss.go.jp/pp-ajsetai/e/index.html, accessed November 27, 2025
 
 *Contact Patterns*:
 - In-person contact (daily or almost daily): 38.7%
 - Phone calls (weekly or more): 67.2%
 - Remote communication inversely correlated with geographic proximity
 - 50% of adult children live more than 15 minutes from parents
-- Source: Ministry of Internal Affairs and Communications, "Survey on Information and Communications 2023", August 2023, https://www.soumu.go.jp/johotsusintokei/statistics/statistics05.html, accessed November 27, 2024
+- Source: Ministry of Internal Affairs and Communications, "Survey on Information and Communications 2023", August 2023, https://www.soumu.go.jp/johotsusintokei/statistics/statistics05.html, accessed November 27, 2025
 
 *Relationship Quality*:
 - Strong cultural value of filial piety (孝行, kōkō) persists
 - 78.3% of adults agree children should care for elderly parents
 - However, 62.1% also believe professional care services are acceptable
 - Shift from direct physical care to "ensuring parents are cared for"
-- Source: Cabinet Office, "International Survey on Attitudes Toward Aging 2023", May 2023, https://www8.cao.go.jp/kourei/english/index.html, accessed November 27, 2024
+- Source: Cabinet Office, "International Survey on Attitudes Toward Aging 2023", May 2023, https://www8.cao.go.jp/kourei/english/index.html, accessed November 27, 2025
 
 **Decision-Making**:
 
@@ -2774,21 +2774,21 @@ For market sizing spreadsheet with calculations, see: `.kiro/specs/faxi-market-r
 - Adult children primarily decide: 15.2%
 - Family meeting (家族会議, kazoku kaigi) common for major decisions
 - Consensus-building remains important cultural value
-- Source: Cabinet Office, "Survey on Family Caregiving Decision-Making 2022", December 2022, https://www8.cao.go.jp/kourei/english/index.html, accessed November 27, 2024
+- Source: Cabinet Office, "Survey on Family Caregiving Decision-Making 2022", December 2022, https://www8.cao.go.jp/kourei/english/index.html, accessed November 27, 2025
 
 *Technology Adoption Decisions*:
 - Adult children recommend, elderly decides: 47.3%
 - Elderly person independently decides: 28.4%
 - Adult children decide and implement: 18.7%
 - Key factors: Ease of use (82.7%), Cost (67.3%), Safety (58.9%), Family recommendation (54.2%)
-- Source: Ministry of Internal Affairs and Communications, "Survey on ICT Usage Among Elderly 2023", August 2023, https://www.soumu.go.jp/johotsusintokei/statistics/statistics05.html, accessed November 27, 2024
+- Source: Ministry of Internal Affairs and Communications, "Survey on ICT Usage Among Elderly 2023", August 2023, https://www.soumu.go.jp/johotsusintokei/statistics/statistics05.html, accessed November 27, 2025
 
 *Financial Decisions*:
 - Under ¥10,000/month: elderly decide independently (72.3%)
 - ¥10,000-30,000/month: consultation with family (58.7%)
 - Over ¥30,000/month: family meeting and consensus (67.4%)
 - Adult children providing regular financial support: 34.7% (avg ¥32,000/month)
-- Source: Bank of Japan, "Survey on Household Financial Behavior 2023", June 2023, https://www.boj.or.jp/en/statistics/index.htm, accessed November 27, 2024
+- Source: Bank of Japan, "Survey on Household Financial Behavior 2023", June 2023, https://www.boj.or.jp/en/statistics/index.htm, accessed November 27, 2025
 
 **Caregiving Expectations**:
 
@@ -2806,7 +2806,7 @@ For market sizing spreadsheet with calculations, see: `.kiro/specs/faxi-market-r
 - Daughter-in-law: 15.2% (declining from 28.5% in 2000)
 - Women provide 68.4% of family-based elderly care
 - Average age of family caregivers: 59.7 years (elderly caring for elderly)
-- Source: Ministry of Health, Labour and Welfare, "Comprehensive Survey of Living Conditions 2022", July 2023, https://www.mhlw.go.jp/english/database/db-hss/cslc-index.html, accessed November 27, 2024
+- Source: Ministry of Health, Labour and Welfare, "Comprehensive Survey of Living Conditions 2022", July 2023, https://www.mhlw.go.jp/english/database/db-hss/cslc-index.html, accessed November 27, 2025
 
 *Types of Support Provided*:
 - Emotional support and regular contact: 82.4%
@@ -2817,7 +2817,7 @@ For market sizing spreadsheet with calculations, see: `.kiro/specs/faxi-market-r
 - Financial support: 34.7%
 - Technology assistance: 29.4%
 - Personal care (bathing, dressing): 18.6%
-- Source: Japan Institute for Labour Policy and Training, "Survey on Work-Life Balance and Caregiving 2022", November 2022, https://www.jil.go.jp/english/index.html, accessed November 27, 2024
+- Source: Japan Institute for Labour Policy and Training, "Survey on Work-Life Balance and Caregiving 2022", November 2022, https://www.jil.go.jp/english/index.html, accessed November 27, 2025
 
 *Caregiving Challenges*:
 - Emotional stress: 67.3%
@@ -2829,13 +2829,13 @@ For market sizing spreadsheet with calculations, see: `.kiro/specs/faxi-market-r
 - Difficulty coordinating professional services: 38.9%
 - Conflict with siblings: 31.7%
 - Kaigo rishi (介護離職): ~99,000 people leave jobs annually for caregiving (75% women aged 40-59)
-- Source: Ministry of Health, Labour and Welfare, "Employment and Caregiving Survey 2022", September 2022, https://www.mhlw.go.jp/english/policy/care-welfare/index.html, accessed November 27, 2024
+- Source: Ministry of Health, Labour and Welfare, "Employment and Caregiving Survey 2022", September 2022, https://www.mhlw.go.jp/english/policy/care-welfare/index.html, accessed November 27, 2025
 
 *Professional Care Services*:
 - Long-Term Care Insurance (介護保険) established 2000
 - 18.7% of elderly 65+ use some form of covered service
 - Barriers: Stigma about "burdening others" (34.2%), Preference for family care (28.7%), Cost concerns (23.4%)
-- Source: Ministry of Health, Labour and Welfare, "Survey on Long-Term Care Insurance 2023", July 2023, https://www.mhlw.go.jp/english/policy/care-welfare/care-welfare-elderly/index.html, accessed November 27, 2024
+- Source: Ministry of Health, Labour and Welfare, "Survey on Long-Term Care Insurance 2023", July 2023, https://www.mhlw.go.jp/english/policy/care-welfare/care-welfare-elderly/index.html, accessed November 27, 2025
 
 ### Business Culture
 
@@ -3002,7 +3002,7 @@ Source: [Organization Name], "[Report Title]", [Publication Date], [URL], access
 - Report: "Population Estimates Monthly Report"
 - Publication Date: October 2023
 - URL: https://www.stat.go.jp/english/data/jinsui/index.html
-- Access Date: November 27, 2024
+- Access Date: November 27, 2025
 - Data Used: Age distribution, total elderly population, market size projections
 - Sections: ICP 1 - Age Range, Market Size
 
@@ -3011,7 +3011,7 @@ Source: [Organization Name], "[Report Title]", [Publication Date], [URL], access
 - Report: "Life Expectancy and Healthy Life Expectancy 2023"
 - Publication Date: July 2023
 - URL: https://www.mhlw.go.jp/english/database/db-hw/index.html
-- Access Date: November 27, 2024
+- Access Date: November 27, 2025
 - Data Used: Gender distribution, life expectancy by gender
 - Sections: ICP 1 - Gender Distribution
 
@@ -3020,7 +3020,7 @@ Source: [Organization Name], "[Report Title]", [Publication Date], [URL], access
 - Report: "Population Census 2020 - Age Distribution by Prefecture"
 - Publication Date: June 2021
 - URL: https://www.stat.go.jp/english/data/kokusei/index.html
-- Access Date: November 27, 2024
+- Access Date: November 27, 2025
 - Data Used: Geographic distribution, urban vs rural aging rates
 - Sections: ICP 1 - Geographic Distribution
 
@@ -3029,7 +3029,7 @@ Source: [Organization Name], "[Report Title]", [Publication Date], [URL], access
 - Report: "Comprehensive Survey of Living Conditions 2022"
 - Publication Date: July 2023
 - URL: https://www.mhlw.go.jp/english/database/db-hss/cslc-index.html
-- Access Date: November 27, 2024
+- Access Date: November 27, 2025
 - Data Used: Income levels, income distribution, income sources
 - Sections: ICP 1 - Income Level
 
@@ -3038,7 +3038,7 @@ Source: [Organization Name], "[Report Title]", [Publication Date], [URL], access
 - Report: "Employment Status Survey 2022"
 - Publication Date: July 2023
 - URL: https://www.stat.go.jp/english/data/shugyou/index.html
-- Access Date: November 27, 2024
+- Access Date: November 27, 2025
 - Data Used: Education levels by age cohort
 - Sections: ICP 1 - Education Level
 
@@ -3047,7 +3047,7 @@ Source: [Organization Name], "[Report Title]", [Publication Date], [URL], access
 - Report: "Household Projections for Japan 2023"
 - Publication Date: April 2023
 - URL: https://www.ipss.go.jp/pp-ajsetai/e/index.html
-- Access Date: November 27, 2024
+- Access Date: November 27, 2025
 - Data Used: Living situations, household composition, future projections
 - Sections: ICP 1 - Living Situation
 
@@ -3058,7 +3058,7 @@ Source: [Organization Name], "[Report Title]", [Publication Date], [URL], access
 - Report: "Communications Usage Trend Survey 2023"
 - Publication Date: August 2023
 - URL: https://www.soumu.go.jp/johotsusintokei/statistics/statistics05.html
-- Access Date: November 27, 2024
+- Access Date: November 27, 2025
 - Data Used: Internet usage rates, device ownership, fax machine ownership, fax usage patterns
 - Sections: ICP 1 - Technology Adoption, Market Size
 
@@ -3067,7 +3067,7 @@ Source: [Organization Name], "[Report Title]", [Publication Date], [URL], access
 - Report: "Survey on Attitudes of the Elderly 2023"
 - Publication Date: March 2023
 - URL: https://www8.cao.go.jp/kourei/english/index.html
-- Access Date: November 27, 2024
+- Access Date: November 27, 2025
 - Data Used: Technology anxiety levels, attitudes toward new technology
 - Sections: ICP 1 - Technology Adoption (Psychographic)
 
@@ -3076,7 +3076,7 @@ Source: [Organization Name], "[Report Title]", [Publication Date], [URL], access
 - Report: "Population Projections for Japan 2023"
 - Publication Date: April 2023
 - URL: https://www.stat.go.jp/english/data/jinsui/index.html
-- Access Date: November 27, 2024
+- Access Date: November 27, 2025
 - Data Used: Future population trends, market growth projections
 - Sections: ICP 1 - Market Size, Market Sizing & Opportunity
 

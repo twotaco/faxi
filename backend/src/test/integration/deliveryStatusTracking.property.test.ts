@@ -60,7 +60,7 @@ describe('**Feature: email-system-architecture, Property 25: Delivery status tra
           messageId: fc.uuid().map(id => `msg-del-${id}`),
           subject: fc.string({ minLength: 1, maxLength: 100 }),
           body: fc.string({ minLength: 1, maxLength: 500 }),
-          deliveryTimestamp: fc.date({ min: new Date('2024-01-01'), max: new Date('2025-12-31') }),
+          deliveryTimestamp: fc.date({ min: new Date('2025-01-01'), max: new Date('2025-12-31') }),
         }),
         async (data) => {
           // Create a test email message with pending status
@@ -223,7 +223,7 @@ describe('**Feature: email-system-architecture, Property 25: Delivery status tra
           messageId: fc.uuid().map(id => `msg-idem-${id}`),
           subject: fc.string({ minLength: 1, maxLength: 100 }),
           body: fc.string({ minLength: 1, maxLength: 500 }),
-          deliveryTimestamp: fc.date({ min: new Date('2024-01-01'), max: new Date('2025-12-31') }),
+          deliveryTimestamp: fc.date({ min: new Date('2025-01-01'), max: new Date('2025-12-31') }),
           repeatCount: fc.integer({ min: 2, max: 5 }),
         }),
         async (data) => {

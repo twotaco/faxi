@@ -537,7 +537,7 @@ curl https://api.faxi.jp/health
 # Expected response:
 # {
 #   "status": "healthy",
-#   "timestamp": "2024-11-18T14:30:00.000Z",
+#   "timestamp": "2025-11-18T14:30:00.000Z",
 #   "services": {
 #     "database": "connected",
 #     "redis": "connected",

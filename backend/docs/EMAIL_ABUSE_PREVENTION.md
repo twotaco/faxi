@@ -287,7 +287,7 @@ CREATE INDEX idx_email_metrics_user_id ON email_metrics(user_id);
         "diagnosticCode": "smtp; 550 5.1.1 user unknown"
       }
     ],
-    "timestamp": "2024-01-15T10:30:00.000Z"
+    "timestamp": "2025-01-15T10:30:00.000Z"
   },
   "mail": {
     "messageId": "0000000000000000-00000000-0000-0000-0000-000000000000-000000"
@@ -305,7 +305,7 @@ CREATE INDEX idx_email_metrics_user_id ON email_metrics(user_id);
         "emailAddress": "recipient@example.com"
       }
     ],
-    "timestamp": "2024-01-15T10:30:00.000Z",
+    "timestamp": "2025-01-15T10:30:00.000Z",
     "feedbackType": "abuse"
   },
   "mail": {

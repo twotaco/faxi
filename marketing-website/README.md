@@ -251,4 +251,4 @@ For issues or questions:
 
 ## License
 
-Copyright © 2024 Faxi. All rights reserved.
+Copyright © 2025 Faxi. All rights reserved.

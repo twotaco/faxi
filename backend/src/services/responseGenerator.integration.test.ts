@@ -48,7 +48,7 @@ describe('ResponseGenerator - Template Registry Integration', () => {
         slots: [
           {
             id: '1',
-            date: new Date('2024-02-01'),
+            date: new Date('2025-02-01'),
             startTime: '09:00',
             endTime: '09:30',
             duration: 30,
@@ -57,7 +57,7 @@ describe('ResponseGenerator - Template Registry Integration', () => {
           },
           {
             id: '2',
-            date: new Date('2024-02-01'),
+            date: new Date('2025-02-01'),
             startTime: '10:00',
             endTime: '10:30',
             duration: 30,

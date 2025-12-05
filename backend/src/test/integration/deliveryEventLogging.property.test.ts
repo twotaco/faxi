@@ -62,7 +62,7 @@ describe('**Feature: email-system-architecture, Property 26: Delivery event logg
           messageId: fc.uuid().map(id => `msg-log-del-${id}`),
           subject: fc.string({ minLength: 1, maxLength: 100 }),
           body: fc.string({ minLength: 1, maxLength: 500 }),
-          deliveryTimestamp: fc.date({ min: new Date('2024-01-01'), max: new Date('2025-12-31') }),
+          deliveryTimestamp: fc.date({ min: new Date('2025-01-01'), max: new Date('2025-12-31') }),
         }),
         async (data) => {
           // Create a test email message

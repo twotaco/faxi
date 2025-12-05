@@ -774,7 +774,7 @@ Source: [Organization Name], "[Report Title]", [Publication Date], [URL], access
 ```
 10 million active fax users in Japan
 Source: Ministry of Internal Affairs and Communications, "Communications Usage Trend Survey 2023", 
-August 2023, https://www.soumu.go.jp/johotsusintokei/statistics/statistics05.html, accessed November 2024
+August 2023, https://www.soumu.go.jp/johotsusintokei/statistics/statistics05.html, accessed November 2025
 ```
 
 **Data Freshness Requirements**:

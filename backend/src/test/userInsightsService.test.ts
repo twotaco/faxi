@@ -196,7 +196,7 @@ describe('UserInsightsService', () => {
         profileData: {
           lifeEvents: {
             movingDetected: true,
-            movingDetectedAt: '2024-01-01T00:00:00.000Z'
+            movingDetectedAt: '2025-01-01T00:00:00.000Z'
           }
         },
         lastUpdated: new Date(),
@@ -221,7 +221,7 @@ describe('UserInsightsService', () => {
       const merged = upsertCall[1];
       
       expect(merged.lifeEvents.movingDetected).toBe(true);
-      expect(merged.lifeEvents.movingDetectedAt).toBe('2024-01-01T00:00:00.000Z');
+      expect(merged.lifeEvents.movingDetectedAt).toBe('2025-01-01T00:00:00.000Z');
       expect(merged.lifeEvents.retirementDetected).toBe(true);
       expect(merged.lifeEvents.retirementDetectedAt).toBeDefined();
       expect(merged.lifeEvents.hospitalizationDetected).toBe(true);
@@ -241,7 +241,7 @@ describe('UserInsightsService', () => {
                 category: 'electronics',
                 product: 'laptop',
                 urgency: 'near-term',
-                detectedAt: '2024-01-01T00:00:00.000Z'
+                detectedAt: '2025-01-01T00:00:00.000Z'
               }
             ]
           }

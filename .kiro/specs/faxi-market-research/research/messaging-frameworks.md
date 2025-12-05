@@ -16,7 +16,7 @@ Each messaging framework includes:
 - Visual preferences and design guidance
 - Calls-to-action (primary, secondary, tertiary)
 
-**Research Date**: November 27, 2024
+**Research Date**: November 27, 2025
 **Task**: Task 14 - Create messaging frameworks for core ICPs
 **Requirements Addressed**: 6.5, 7.1, 7.2, 7.3
 **Based On**: Value propositions (Task 13), ICP research (Tasks 6-8), Cultural analysis (Tasks 2-3)
@@ -1217,7 +1217,7 @@ Access [number] [customer segment] through their familiar [interface]
 
 ## Document Metadata
 
-**Research Completed**: November 27, 2024
+**Research Completed**: November 27, 2025
 **Task**: Task 14 - Create messaging frameworks for core ICPs
 **Requirements Addressed**: 6.5, 7.1, 7.2, 7.3
 **Based On**: 

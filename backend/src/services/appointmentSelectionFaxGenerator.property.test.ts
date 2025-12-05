@@ -20,7 +20,7 @@ describe('AppointmentSelectionFaxGenerator - Property Tests', () => {
       // Arbitrary for generating appointment slots
       const slotArbitrary = fc.record({
         id: fc.uuid(),
-        date: fc.date({ min: new Date('2024-01-01'), max: new Date('2025-12-31') }),
+        date: fc.date({ min: new Date('2025-01-01'), max: new Date('2025-12-31') }),
         startTime: timeArbitrary,
         endTime: timeArbitrary,
         duration: fc.integer({ min: 15, max: 240 }), // 15 min to 4 hours
@@ -118,9 +118,9 @@ describe('AppointmentSelectionFaxGenerator - Property Tests', () => {
     it('should group slots by date when multiple days are present', () => {
       // Create slots across multiple dates
       const multiDateSlotsArbitrary = fc.tuple(
-        fc.date({ min: new Date('2024-01-01'), max: new Date('2024-01-31') }),
-        fc.date({ min: new Date('2024-02-01'), max: new Date('2024-02-28') }),
-        fc.date({ min: new Date('2024-03-01'), max: new Date('2024-03-31') })
+        fc.date({ min: new Date('2025-01-01'), max: new Date('2025-01-31') }),
+        fc.date({ min: new Date('2025-02-01'), max: new Date('2025-02-28') }),
+        fc.date({ min: new Date('2025-03-01'), max: new Date('2025-03-31') })
       ).chain(([date1, date2, date3]) => {
         const timeArb = fc.tuple(
           fc.integer({ min: 1, max: 12 }),
@@ -212,7 +212,7 @@ describe('AppointmentSelectionFaxGenerator - Property Tests', () => {
           // Available slot
           fc.record({
             id: fc.uuid(),
-            date: fc.date({ min: new Date('2024-01-01'), max: new Date('2024-12-31') }),
+            date: fc.date({ min: new Date('2025-01-01'), max: new Date('2025-12-31') }),
             startTime: fc.constant('9:00 AM'),
             endTime: fc.constant('10:00 AM'),
             duration: fc.constant(60),
@@ -222,7 +222,7 @@ describe('AppointmentSelectionFaxGenerator - Property Tests', () => {
           // Unavailable slot
           fc.record({
             id: fc.uuid(),
-            date: fc.date({ min: new Date('2024-01-01'), max: new Date('2024-12-31') }),
+            date: fc.date({ min: new Date('2025-01-01'), max: new Date('2025-12-31') }),
             startTime: fc.constant('10:00 AM'),
             endTime: fc.constant('11:00 AM'),
             duration: fc.constant(60),

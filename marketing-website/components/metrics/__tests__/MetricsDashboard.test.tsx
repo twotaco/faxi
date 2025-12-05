@@ -95,7 +95,7 @@ describe('MetricsDashboard', () => {
   });
 
   it('displays last updated timestamp', () => {
-    const lastUpdated = new Date('2024-01-01T12:00:00');
+    const lastUpdated = new Date('2025-01-01T12:00:00');
     mockUseMetrics.mockReturnValue({
       accuracyMetrics: null,
       processingStats: null,

@@ -11,7 +11,7 @@ describe('AppointmentSelectionFaxGenerator - Integration Tests', () => {
       slots: [
         {
           id: 'slot-1',
-          date: new Date('2024-06-15'),
+          date: new Date('2025-06-15'),
           startTime: '9:00 AM',
           endTime: '10:00 AM',
           duration: 60,
@@ -20,7 +20,7 @@ describe('AppointmentSelectionFaxGenerator - Integration Tests', () => {
         },
         {
           id: 'slot-2',
-          date: new Date('2024-06-15'),
+          date: new Date('2025-06-15'),
           startTime: '2:00 PM',
           endTime: '3:00 PM',
           duration: 60,
@@ -29,7 +29,7 @@ describe('AppointmentSelectionFaxGenerator - Integration Tests', () => {
         },
         {
           id: 'slot-3',
-          date: new Date('2024-06-16'),
+          date: new Date('2025-06-16'),
           startTime: '10:00 AM',
           endTime: '11:00 AM',
           duration: 60,
@@ -38,7 +38,7 @@ describe('AppointmentSelectionFaxGenerator - Integration Tests', () => {
         },
         {
           id: 'slot-4',
-          date: new Date('2024-06-16'),
+          date: new Date('2025-06-16'),
           startTime: '3:00 PM',
           endTime: '4:00 PM',
           duration: 60,
@@ -67,7 +67,7 @@ describe('AppointmentSelectionFaxGenerator - Integration Tests', () => {
       slots: [
         {
           id: 'slot-1',
-          date: new Date('2024-06-20'),
+          date: new Date('2025-06-20'),
           startTime: '9:00 AM',
           endTime: '10:00 AM',
           duration: 60,
@@ -76,7 +76,7 @@ describe('AppointmentSelectionFaxGenerator - Integration Tests', () => {
         },
         {
           id: 'slot-2',
-          date: new Date('2024-06-20'),
+          date: new Date('2025-06-20'),
           startTime: '11:00 AM',
           endTime: '12:00 PM',
           duration: 60,
@@ -105,7 +105,7 @@ describe('AppointmentSelectionFaxGenerator - Integration Tests', () => {
       slots: [
         {
           id: 'slot-1',
-          date: new Date('2024-07-01'),
+          date: new Date('2025-07-01'),
           startTime: '1:00 PM',
           endTime: '2:00 PM',
           duration: 60,
@@ -115,7 +115,7 @@ describe('AppointmentSelectionFaxGenerator - Integration Tests', () => {
       ]
     };
 
-    const customRefId = 'FX-2024-TEST01';
+    const customRefId = 'FX-2025-TEST01';
     const pdfBuffer = await AppointmentSelectionFaxGenerator.generateAppointmentSelectionFax(data, customRefId);
 
     // Verify PDF was generated
