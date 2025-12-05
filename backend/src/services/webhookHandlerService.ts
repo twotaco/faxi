@@ -129,6 +129,7 @@ export class WebhookHandlerService {
     try {
       await enqueueFaxProcessing({
         faxId: fax_id,
+        faxJobId: faxJob.id, // Internal database UUID for audit logs
         fromNumber: from,
         toNumber: to,
         mediaUrl: media_url,

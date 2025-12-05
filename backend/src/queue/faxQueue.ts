@@ -3,6 +3,7 @@ import { redis } from './connection';
 
 export interface FaxJobData {
   faxId: string;
+  faxJobId: string; // Internal database UUID
   fromNumber: string;
   toNumber: string;
   mediaUrl: string;

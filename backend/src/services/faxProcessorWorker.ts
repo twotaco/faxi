@@ -61,16 +61,17 @@ export class FaxProcessorWorker {
       // Update job progress
       await job.updateProgress(0);
       
-      // Log job start
-      await auditLogService.logOperation({
-        entityType: 'fax_job',
-        entityId: data.faxId,
-        operation: 'processing_start',
-        details: {
+      // Log job start using the correct internal faxJobId
+      await auditLogService.log({
+        faxJobId: data.faxJobId,
+        eventType: 'fax_job.processing_start',
+        eventData: {
+          faxId: data.faxId,
           fromNumber: data.fromNumber,
           toNumber: data.toNumber,
           pageCount: data.pageCount,
           jobId: job.id,
+          timestamp: new Date().toISOString(),
         },
       });
 
@@ -105,18 +106,19 @@ export class FaxProcessorWorker {
         });
       }
 
-      // Log job completion
-      await auditLogService.logOperation({
-        entityType: 'fax_job',
-        entityId: data.faxId,
-        operation: 'processing_complete',
-        details: {
+      // Log job completion using the correct internal faxJobId
+      await auditLogService.log({
+        faxJobId: data.faxJobId,
+        eventType: 'fax_job.processing_complete',
+        eventData: {
+          faxId: data.faxId,
           success: result.success,
           responseReferenceId: result.responseReferenceId,
           responseFaxId: result.responseFaxId,
           errorMessage: result.errorMessage,
           agentResponse: result.agentResponse,
           interpretation: result.interpretation,
+          timestamp: new Date().toISOString(),
         },
       });
 
@@ -135,14 +137,15 @@ export class FaxProcessorWorker {
         errorMessage,
       });
 
-      // Log job failure
-      await auditLogService.logOperation({
-        entityType: 'fax_job',
-        entityId: data.faxId,
-        operation: 'processing_failed',
-        details: {
+      // Log job failure using the correct internal faxJobId
+      await auditLogService.log({
+        faxJobId: data.faxJobId,
+        eventType: 'fax_job.processing_failed',
+        eventData: {
+          faxId: data.faxId,
           error: errorMessage,
           jobId: job.id,
+          timestamp: new Date().toISOString(),
         },
       });
 
@@ -169,23 +172,27 @@ export class FaxProcessorWorker {
         console.error('Job failed:', {
           jobId: job.id,
           faxId: job.data.faxId,
+          faxJobId: job.data.faxJobId,
           error: error.message,
           attemptsMade: job.attemptsMade,
           attemptsTotal: job.opts.attempts,
         });
 
-        // Log failed job
-        await auditLogService.logOperation({
-          entityType: 'fax_job',
-          entityId: job.data.faxId,
-          operation: 'job_failed',
-          details: {
-            jobId: job.id,
-            error: error.message,
-            attemptsMade: job.attemptsMade,
-            attemptsTotal: job.opts.attempts,
-          },
-        });
+        // Log failed job using the correct internal faxJobId
+        if (job.data.faxJobId) {
+          await auditLogService.log({
+            faxJobId: job.data.faxJobId,
+            eventType: 'fax_job.job_failed',
+            eventData: {
+              faxId: job.data.faxId,
+              jobId: job.id,
+              error: error.message,
+              attemptsMade: job.attemptsMade,
+              attemptsTotal: job.opts.attempts,
+              timestamp: new Date().toISOString(),
+            },
+          });
+        }
       }
     });
 
@@ -199,14 +206,8 @@ export class FaxProcessorWorker {
 
     this.worker.on('stalled', async (jobId) => {
       console.warn('Job stalled:', { jobId });
-      
-      // Log stalled job
-      await auditLogService.logOperation({
-        entityType: 'fax_job',
-        entityId: jobId,
-        operation: 'job_stalled',
-        details: { jobId },
-      });
+      // Note: We can't log to audit_logs here as we only have the jobId (Telnyx fax ID)
+      // and not the internal faxJobId. The stalled event is logged to console/CloudWatch.
     });
 
     // Queue events

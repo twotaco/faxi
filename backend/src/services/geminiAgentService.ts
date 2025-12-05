@@ -663,6 +663,14 @@ ${userRequest}`;
           }
         };
 
+      case 'shopping_create_order':
+        return {
+          userId,
+          productAsin: rest.productId,
+          quantity: rest.quantity || 1,
+          referenceId: rest.referenceId
+        };
+
       case 'email_send_email':
         return {
           userId,
@@ -820,7 +828,7 @@ Based on the above, compose a friendly fax response to send back to the user. Te
       return response;
 
     } catch (error) {
-      loggingService.error('Response synthesis failed, falling back to aggregation', error);
+      loggingService.error('Response synthesis failed, falling back to aggregation', error as Error);
       // Fall back to simple aggregation on error
       return this.aggregateResponses(toolCalls, plan);
     }

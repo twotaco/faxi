@@ -929,6 +929,7 @@ app.post('/admin/jobs/:id/retry', requireAdminAuth, requirePermission('jobs:retr
     const { enqueueFaxProcessing } = await import('./queue/faxQueue');
     await enqueueFaxProcessing({
       faxId: job.faxId,
+      faxJobId: job.id, // Internal database UUID for audit logs
       fromNumber: job.fromNumber,
       toNumber: job.toNumber,
       mediaUrl: job.mediaUrl || '',

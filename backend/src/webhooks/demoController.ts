@@ -3,20 +3,152 @@ import { v4 as uuidv4 } from 'uuid';
 import { db } from '../database/connection';
 import { aiVisionInterpreter } from '../services/aiVisionInterpreter';
 import { geminiAgentService, ToolCallResult } from '../services/geminiAgentService';
+import { mcpControllerAgent } from '../services/mcpControllerAgent';
 import { ResponseGenerator } from '../services/responseGenerator';
 import { loggingService } from '../services/loggingService';
 import { productCacheService } from '../services/productCacheService';
 import { GeneralInquiryFaxGenerator } from '../services/generalInquiryFaxGenerator';
+import { conversationContextRepository } from '../repositories/conversationContextRepository';
 import { GoogleGenAI } from '@google/genai';
 import { config } from '../config';
 import * as path from 'path';
 import * as fs from 'fs/promises';
+import type { InterpretationResult } from '../types/vision';
 
 // Initialize Gemini for fallback responses
 const ai = new GoogleGenAI({ apiKey: config.gemini.apiKey });
 
 // Demo user UUID from migration 014_add_demo_user.sql
 const DEMO_USER_ID = '00000000-0000-0000-0000-000000000001';
+
+/**
+ * Handle product selection replies directly
+ * This bypasses the Gemini planner when we detect product_selection intent
+ */
+async function handleProductSelectionReply(
+  interpretation: InterpretationResult
+): Promise<{
+  responseText: string;
+  actionTaken: string;
+  toolCalls?: ToolCallResult[];
+} | null> {
+  const params = interpretation.parameters;
+
+  // Only handle product_selection sub-intent
+  if (interpretation.intent !== 'shopping' ||
+      params.shoppingSubIntent !== 'product_selection' ||
+      !params.selectedProductIds || params.selectedProductIds.length === 0) {
+    return null;
+  }
+
+  console.log('\n=== HANDLING PRODUCT SELECTION DIRECTLY ===');
+  console.log('Selected products:', params.selectedProductIds);
+  console.log('Is reply to form:', params.isReplyToForm);
+
+  // Extract reference ID from the interpretation or text
+  const referenceIdMatch = interpretation.extractedText?.match(/(?:ref|reference|参照番号)[:\s]*([a-f0-9-]{36})/i);
+  const referenceId = interpretation.referenceId || referenceIdMatch?.[1];
+
+  console.log('Reference ID:', referenceId);
+
+  if (!referenceId) {
+    loggingService.warn('Product selection without reference ID');
+    return {
+      responseText: `ご注文ありがとうございます。商品 ${params.selectedProductIds.join(', ')} を選択されました。\n\n申し訳ございませんが、元の商品リストを特定できませんでした。再度商品を検索してお選びください。`,
+      actionTaken: 'Product selection without reference ID'
+    };
+  }
+
+  try {
+    // Look up the shopping context using reference ID
+    const shoppingContext = await conversationContextRepository.findByReferenceId(referenceId);
+
+    console.log('Shopping context found:', !!shoppingContext);
+    console.log('Context data:', shoppingContext?.contextData ? Object.keys(shoppingContext.contextData) : 'none');
+
+    if (!shoppingContext?.contextData?.searchResults) {
+      loggingService.warn('No shopping context found for reference ID', { referenceId });
+      return {
+        responseText: `ご注文ありがとうございます。商品 ${params.selectedProductIds.join(', ')} を選択されました。\n\n申し訳ございませんが、商品リストの有効期限が切れているようです。再度商品を検索してお選びください。`,
+        actionTaken: 'Shopping context expired or not found'
+      };
+    }
+
+    const searchResults = shoppingContext.contextData.searchResults;
+    const toolCalls: ToolCallResult[] = [];
+    const orderedProducts: string[] = [];
+
+    // Map selection markers (A, B, C, D, E) to ASINs and create orders
+    for (const marker of params.selectedProductIds) {
+      const product = searchResults.find((p: any) => p.selectionMarker === marker);
+
+      console.log(`Looking for product ${marker}:`, product ? `Found: ${product.productName}` : 'Not found');
+
+      if (product?.asin) {
+        // Call the create_order MCP tool
+        try {
+          const orderResult = await mcpControllerAgent.executeTool('shopping', 'create_order', {
+            userId: DEMO_USER_ID,
+            productAsin: product.asin,
+            quantity: 1,
+            referenceId
+          });
+
+          console.log(`Order result for ${marker}:`, orderResult);
+
+          toolCalls.push({
+            toolName: 'shopping_create_order',
+            serverName: 'shopping',
+            parameters: { productId: product.asin, quantity: 1 },
+            result: orderResult,
+            success: orderResult?.success !== false,
+            stepId: `create_order_${marker}`
+          });
+
+          if (orderResult?.success !== false) {
+            orderedProducts.push(`${marker}. ${product.productName || product.brand || 'Product'}`);
+          }
+        } catch (orderError) {
+          loggingService.error('Failed to create order', orderError as Error, undefined, {
+            marker,
+            asin: product.asin
+          });
+          toolCalls.push({
+            toolName: 'shopping_create_order',
+            serverName: 'shopping',
+            parameters: { productId: product.asin, quantity: 1 },
+            result: null,
+            success: false,
+            error: (orderError as Error).message,
+            stepId: `create_order_${marker}`
+          });
+        }
+      }
+    }
+
+    if (orderedProducts.length > 0) {
+      const responseText = `ご注文ありがとうございます！\nThank you for your order!\n\n以下の商品をご注文いただきました：\nYou have ordered:\n\n${orderedProducts.join('\n')}\n\nご注文を処理中です。配送準備ができ次第、ご連絡いたします。\nWe are processing your order. We will notify you when it's ready for delivery.`;
+
+      return {
+        responseText,
+        actionTaken: `Created orders for products: ${params.selectedProductIds.join(', ')}`,
+        toolCalls
+      };
+    } else {
+      return {
+        responseText: `申し訳ございませんが、選択された商品 (${params.selectedProductIds.join(', ')}) が見つかりませんでした。再度お試しください。`,
+        actionTaken: 'Product selection failed - products not found in context'
+      };
+    }
+
+  } catch (error) {
+    loggingService.error('Error handling product selection', error as Error);
+    return {
+      responseText: `ご注文の処理中にエラーが発生しました。お手数ですが、再度お試しください。`,
+      actionTaken: 'Error processing product selection'
+    };
+  }
+}
 
 /**
  * Generate response using Gemini Agent Service
@@ -29,7 +161,8 @@ const DEMO_USER_ID = '00000000-0000-0000-0000-000000000001';
  */
 async function generateDemoResponse(
   extractedText: string,
-  visualAnnotations: any[] = []
+  visualAnnotations: any[] = [],
+  interpretation?: InterpretationResult
 ): Promise<{
   responseText: string;
   actionTaken: string;
@@ -39,6 +172,17 @@ async function generateDemoResponse(
     console.log('\n\n=== DEMO PROCESSING START ===');
     console.log('Extracted text:', extractedText.substring(0, 200));
     console.log('Demo User ID:', DEMO_USER_ID);
+    console.log('Intent:', interpretation?.intent);
+    console.log('Sub-intent:', interpretation?.parameters?.shoppingSubIntent);
+    console.log('Selected products:', interpretation?.parameters?.selectedProductIds);
+
+    // Check if this is a product selection reply - handle directly
+    if (interpretation) {
+      const productSelectionResult = await handleProductSelectionReply(interpretation);
+      if (productSelectionResult) {
+        return productSelectionResult;
+      }
+    }
 
     loggingService.info('Processing with Gemini Agent', {
       textLength: extractedText.length,
@@ -464,9 +608,11 @@ router.post('/process', async (req: Request, res: Response) => {
     });
 
     // Generate the actual response using Gemini Agent (intelligent tool calling)
+    // Pass the full interpretation so we can handle product_selection directly
     const demoResponse = await generateDemoResponse(
       interpretation.extractedText || '',
-      interpretation.visualAnnotations || []
+      interpretation.visualAnnotations || [],
+      interpretation
     );
 
     // Generate PDF from the response using appropriate template
