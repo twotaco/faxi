@@ -391,6 +391,16 @@ router.post('/process', async (req: Request, res: Response) => {
     const visitorIp = req.ip || req.socket.remoteAddress || 'unknown';
     const userAgent = req.headers['user-agent'] || 'unknown';
 
+    // Debug logging for request validation
+    loggingService.info('Demo process request received', {
+      sessionId,
+      hasFixtureId: !!fixtureId,
+      hasImageData: !!imageData,
+      imageDataLength: imageData?.length || 0,
+      imageDataPrefix: imageData?.substring(0, 50) || 'none',
+      bodyKeys: Object.keys(req.body || {})
+    });
+
     let imageBuffer: Buffer;
 
     if (fixtureId) {
@@ -411,14 +421,21 @@ router.post('/process', async (req: Request, res: Response) => {
       }
 
       if (!imagePath) {
+        loggingService.warn('Demo process: Invalid fixture ID', { fixtureId, sessionId });
         return res.status(400).json({ error: 'Invalid fixture ID' });
       }
 
       imageBuffer = await fs.readFile(imagePath);
     } else if (imageData) {
-      // Process uploaded image (base64)
-      if (!imageData.startsWith('data:image/')) {
-        return res.status(400).json({ error: 'Invalid image format. Must be base64 data URL.' });
+      // Process uploaded image (base64) - support both images and PDFs
+      const isValidFormat = imageData.startsWith('data:image/') || imageData.startsWith('data:application/pdf');
+      if (!isValidFormat) {
+        loggingService.warn('Demo process: Invalid image format', {
+          sessionId,
+          imageDataPrefix: imageData.substring(0, 100),
+          imageDataLength: imageData.length
+        });
+        return res.status(400).json({ error: 'Invalid format. Must be an image or PDF.' });
       }
 
       const base64Data = imageData.split(',')[1];
@@ -426,9 +443,11 @@ router.post('/process', async (req: Request, res: Response) => {
 
       // Validate image size (max 10MB)
       if (imageBuffer.length > 10 * 1024 * 1024) {
+        loggingService.warn('Demo process: Image too large', { sessionId, size: imageBuffer.length });
         return res.status(400).json({ error: 'Image too large. Maximum size is 10MB.' });
       }
     } else {
+      loggingService.warn('Demo process: No image provided', { sessionId, bodyKeys: Object.keys(req.body || {}) });
       return res.status(400).json({ error: 'Either fixtureId or imageData must be provided' });
     }
 

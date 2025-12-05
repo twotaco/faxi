@@ -14,7 +14,7 @@ export interface EmailThread {
 
 export interface EmailMessage {
   id: string;
-  threadId: string;
+  threadId: string | null;
   messageId: string;
   fromAddress: string;
   toAddresses: string[];
@@ -23,6 +23,7 @@ export interface EmailMessage {
   body: string;
   htmlBody?: string;
   direction: 'inbound' | 'outbound';
+  rejectionReason?: string | null;
   sentAt: Date;
   createdAt: Date;
 }
@@ -46,6 +47,19 @@ export interface CreateEmailMessageData {
   htmlBody?: string;
   direction: 'inbound' | 'outbound';
   sentAt: Date;
+  rejectionReason?: string;
+}
+
+export interface CreateOrphanEmailMessageData {
+  messageId: string;
+  fromAddress: string;
+  toAddresses: string[];
+  subject: string;
+  body: string;
+  htmlBody?: string;
+  direction: 'inbound' | 'outbound';
+  sentAt: Date;
+  rejectionReason: string;
 }
 
 export class EmailThreadRepository {
@@ -215,13 +229,13 @@ export class EmailMessageRepository {
     const threadUuid = threadResult.rows[0].id;
 
     const result = await db.query<EmailMessage>(
-      `INSERT INTO email_messages (thread_id, message_id, from_address, to_addresses, 
-                                   cc_addresses, subject, body, html_body, direction, sent_at)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+      `INSERT INTO email_messages (thread_id, message_id, from_address, to_addresses,
+                                   cc_addresses, subject, body, html_body, direction, sent_at, rejection_reason)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
        RETURNING id, thread_id as "threadId", message_id as "messageId",
                  from_address as "fromAddress", to_addresses as "toAddresses",
                  cc_addresses as "ccAddresses", subject, body, html_body as "htmlBody",
-                 direction, sent_at as "sentAt", created_at as "createdAt"`,
+                 direction, rejection_reason as "rejectionReason", sent_at as "sentAt", created_at as "createdAt"`,
       [
         threadUuid,
         data.messageId,
@@ -233,6 +247,35 @@ export class EmailMessageRepository {
         data.htmlBody || null,
         data.direction,
         data.sentAt,
+        data.rejectionReason || null,
+      ]
+    );
+
+    return result.rows[0];
+  }
+
+  /**
+   * Create orphan email message (no thread - for rejected emails to unregistered recipients)
+   */
+  async createOrphan(data: CreateOrphanEmailMessageData): Promise<EmailMessage> {
+    const result = await db.query<EmailMessage>(
+      `INSERT INTO email_messages (thread_id, message_id, from_address, to_addresses,
+                                   subject, body, html_body, direction, sent_at, rejection_reason)
+       VALUES (NULL, $1, $2, $3, $4, $5, $6, $7, $8, $9)
+       RETURNING id, thread_id as "threadId", message_id as "messageId",
+                 from_address as "fromAddress", to_addresses as "toAddresses",
+                 subject, body, html_body as "htmlBody",
+                 direction, rejection_reason as "rejectionReason", sent_at as "sentAt", created_at as "createdAt"`,
+      [
+        data.messageId,
+        data.fromAddress,
+        JSON.stringify(data.toAddresses),
+        data.subject,
+        data.body,
+        data.htmlBody || null,
+        data.direction,
+        data.sentAt,
+        data.rejectionReason,
       ]
     );
 

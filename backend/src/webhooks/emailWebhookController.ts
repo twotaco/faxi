@@ -3,6 +3,7 @@ import { EmailWebhookPayload, ParsedEmailData } from './types';
 import { extractPhoneFromEmail, isFaxiUserEmail } from '../config/email';
 import { userRepository } from '../repositories/userRepository';
 import { addressBookRepository } from '../repositories/addressBookRepository';
+import { emailThreadRepository, emailMessageRepository } from '../repositories/emailThreadRepository';
 import { blocklistService } from '../services/blocklistService';
 import { enqueueEmailToFax } from '../queue/faxQueue';
 import { auditLogService } from '../services/auditLogService';
@@ -235,7 +236,8 @@ export class EmailWebhookController {
           html: undefined,
           attachments: [], // AWS SES attachments need special handling
           receivedAt: mail.timestamp,
-          provider: 'ses'
+          provider: 'ses',
+          messageId: mail.messageId,
         };
       }
 
@@ -320,6 +322,8 @@ export class EmailWebhookController {
           from: emailData.from,
           phoneNumber
         });
+        // Store rejected email for debugging
+        await this.storeRejectedEmail(emailData, null, 'unregistered_recipient');
         await auditLogService.log({
           eventType: 'email.unregistered_recipient_rejected',
           eventData: {
@@ -334,8 +338,33 @@ export class EmailWebhookController {
 
       console.log('Found user:', {
         userId: user.id,
-        phoneNumber: user.phoneNumber
+        phoneNumber: user.phoneNumber,
+        faxNumberVerified: user.faxNumberVerified
       });
+
+      // Check if fax number is verified (user must have sent a real fax TO Faxi)
+      // This prevents test emails from triggering real faxes to fake/unverified numbers
+      if (!user.faxNumberVerified) {
+        console.log('Email rejected - recipient fax number not verified:', {
+          to: emailData.to,
+          from: emailData.from,
+          phoneNumber,
+          userId: user.id
+        });
+        // Store rejected email for debugging
+        await this.storeRejectedEmail(emailData, user.id, 'unverified_recipient');
+        await auditLogService.log({
+          userId: user.id,
+          eventType: 'email.unverified_recipient_rejected',
+          eventData: {
+            recipientEmail: emailData.to,
+            senderEmail: emailData.from,
+            phoneNumber,
+            subject: emailData.subject
+          }
+        });
+        return; // Silently reject - don't send fax to unverified numbers
+      }
 
       // Check if sender is blocked (Requirements 15.2, 15.3)
       const isBlocked = await blocklistService.isBlocked(user.id, emailData.from);
@@ -344,6 +373,8 @@ export class EmailWebhookController {
           userId: user.id,
           senderEmail: emailData.from
         });
+        // Store rejected email for debugging
+        await this.storeRejectedEmail(emailData, user.id, 'blocked_sender');
         await auditLogService.log({
           userId: user.id,
           eventType: 'email.blocked_sender_rejected',
@@ -372,6 +403,9 @@ export class EmailWebhookController {
         console.error('Failed to register contact:', error);
         // Don't fail the whole process if contact registration fails
       }
+
+      // Store accepted inbound email in database
+      await this.storeInboundEmail(user.id, emailData);
 
       // Log email receipt
       await auditLogService.logEmailReceived({
@@ -442,7 +476,7 @@ export class EmailWebhookController {
    */
   private stripHtml(html: string): string {
     if (!html) return '';
-    
+
     return html
       .replace(/<[^>]*>/g, '') // Remove HTML tags
       .replace(/&nbsp;/g, ' ') // Replace &nbsp; with space
@@ -453,6 +487,139 @@ export class EmailWebhookController {
       .replace(/&#39;/g, "'") // Replace &#39; with '
       .replace(/\s+/g, ' ') // Collapse multiple whitespace
       .trim();
+  }
+
+  /**
+   * Generate a thread ID from subject and participants
+   * Uses same algorithm for inbound and outbound to enable thread matching
+   */
+  private generateThreadId(subject: string, participants: string[]): string {
+    const normalized = `${(subject || '').toLowerCase().replace(/^re:\s*/i, '').trim()}|${participants.sort().join(',')}`;
+    return crypto.createHash('sha256').update(normalized).digest('hex').substring(0, 32);
+  }
+
+  /**
+   * Store an accepted inbound email in the database
+   */
+  private async storeInboundEmail(userId: string, emailData: ParsedEmailData): Promise<void> {
+    try {
+      // Generate thread ID (same logic as outbound for thread matching)
+      const participants = [emailData.from, emailData.to].sort();
+      const threadId = this.generateThreadId(emailData.subject, participants);
+
+      // Find or create thread
+      const thread = await emailThreadRepository.findOrCreate({
+        threadId,
+        userId,
+        subject: emailData.subject || '(No Subject)',
+        participants,
+        lastMessageAt: new Date(emailData.receivedAt),
+      });
+
+      // Generate unique message ID if not provided
+      const messageId = emailData.messageId || `inbound-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
+      // Store message
+      await emailMessageRepository.create({
+        threadId: thread.threadId,
+        messageId,
+        fromAddress: emailData.from,
+        toAddresses: [emailData.to],
+        subject: emailData.subject || '(No Subject)',
+        body: emailData.body,
+        htmlBody: emailData.html || undefined,
+        direction: 'inbound',
+        sentAt: new Date(emailData.receivedAt),
+      });
+
+      // Update thread message count
+      await emailThreadRepository.updateWithNewMessage(thread.threadId, new Date(emailData.receivedAt));
+
+      console.log('Stored inbound email:', {
+        threadId: thread.threadId,
+        messageId,
+        from: emailData.from,
+        to: emailData.to,
+      });
+    } catch (error) {
+      console.error('Failed to store inbound email (non-fatal):', error);
+      // Don't throw - email processing should continue even if storage fails
+    }
+  }
+
+  /**
+   * Store a rejected inbound email in the database for debugging
+   */
+  private async storeRejectedEmail(
+    emailData: ParsedEmailData,
+    userId: string | null,
+    rejectionReason: 'unregistered_recipient' | 'unverified_recipient' | 'blocked_sender'
+  ): Promise<void> {
+    try {
+      // Generate unique message ID if not provided
+      const messageId = emailData.messageId || `rejected-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
+      if (!userId) {
+        // For rejected emails without a user (unregistered recipient), store as orphan
+        await emailMessageRepository.createOrphan({
+          messageId,
+          fromAddress: emailData.from,
+          toAddresses: [emailData.to],
+          subject: emailData.subject || '(No Subject)',
+          body: emailData.body,
+          htmlBody: emailData.html || undefined,
+          direction: 'inbound',
+          sentAt: new Date(emailData.receivedAt),
+          rejectionReason,
+        });
+
+        console.log('Stored rejected orphan email:', {
+          messageId,
+          from: emailData.from,
+          to: emailData.to,
+          rejectionReason,
+        });
+        return;
+      }
+
+      // For rejected emails with a user, store with thread
+      const participants = [emailData.from, emailData.to].sort();
+      const threadId = this.generateThreadId(emailData.subject, participants);
+
+      const thread = await emailThreadRepository.findOrCreate({
+        threadId,
+        userId,
+        subject: emailData.subject || '(No Subject)',
+        participants,
+        lastMessageAt: new Date(emailData.receivedAt),
+      });
+
+      await emailMessageRepository.create({
+        threadId: thread.threadId,
+        messageId,
+        fromAddress: emailData.from,
+        toAddresses: [emailData.to],
+        subject: emailData.subject || '(No Subject)',
+        body: emailData.body,
+        htmlBody: emailData.html || undefined,
+        direction: 'inbound',
+        sentAt: new Date(emailData.receivedAt),
+        rejectionReason,
+      });
+
+      await emailThreadRepository.updateWithNewMessage(thread.threadId, new Date(emailData.receivedAt));
+
+      console.log('Stored rejected email with thread:', {
+        threadId: thread.threadId,
+        messageId,
+        from: emailData.from,
+        to: emailData.to,
+        rejectionReason,
+      });
+    } catch (error) {
+      console.error('Failed to store rejected email (non-fatal):', error);
+      // Don't throw - already logging to audit_logs
+    }
   }
 }
 

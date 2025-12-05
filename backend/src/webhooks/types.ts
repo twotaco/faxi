@@ -73,4 +73,5 @@ export interface ParsedEmailData {
   }>;
   receivedAt: string;
   provider: 'sendgrid' | 'ses' | 'postfix';
+  messageId?: string; // Unique message ID from email provider (e.g., SES mail.messageId)
 }

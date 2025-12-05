@@ -42,6 +42,7 @@ interface EmailMetricsData {
     totalReceived: number;
     rejectedUnregistered: number;
     rejectedBlocked: number;
+    rejectedUnverified: number;
   };
   pipeline: {
     stats: {
@@ -518,7 +519,7 @@ export default function EmailMetricsPage() {
           {/* Inbound Email Stats */}
           <div className="mb-8">
             <h3 className="text-lg font-semibold text-gray-800 mb-4">Inbound Email (Raw)</h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
               <div className="bg-white p-6 rounded-lg shadow">
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-gray-500">Emails Received</span>
@@ -538,6 +539,17 @@ export default function EmailMetricsPage() {
                   {data?.inbound.rejectedUnregistered.toLocaleString() || 0}
                 </p>
                 <p className="text-xs text-gray-500 mt-1">Unknown recipients</p>
+              </div>
+
+              <div className="bg-white p-6 rounded-lg shadow">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-500">Rejected (Unverified)</span>
+                  <AlertTriangle className="w-4 h-4 text-yellow-400" />
+                </div>
+                <p className="text-2xl font-bold text-gray-800 mt-2">
+                  {data?.inbound.rejectedUnverified.toLocaleString() || 0}
+                </p>
+                <p className="text-xs text-gray-500 mt-1">Fax number not verified</p>
               </div>
 
               <div className="bg-white p-6 rounded-lg shadow">

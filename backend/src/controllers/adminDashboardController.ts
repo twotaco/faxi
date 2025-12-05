@@ -500,8 +500,8 @@ export async function getEmailMetrics(req: Request, res: Response) {
          event_data->>'status' as status,
          event_data->>'fromDomain' as from_domain,
          event_data->>'toDomain' as to_domain,
-         event_data->>'senderEmail' as sender_email,
-         event_data->>'recipientEmail' as recipient_email,
+         COALESCE(event_data->>'senderEmail', event_data->>'fromEmail', event_data->>'from') as sender_email,
+         COALESCE(event_data->>'recipientEmail', event_data->>'toEmail', event_data->>'to') as recipient_email,
          event_data->>'phoneNumber' as phone_number,
          event_data->>'subject' as subject,
          created_at
@@ -518,7 +518,8 @@ export async function getEmailMetrics(req: Request, res: Response) {
       `SELECT
          COUNT(*) FILTER (WHERE event_type = 'email.received') as total_received,
          COUNT(*) FILTER (WHERE event_type = 'email.unregistered_recipient_rejected') as rejected_unregistered,
-         COUNT(*) FILTER (WHERE event_type = 'email.blocked_sender_rejected') as rejected_blocked
+         COUNT(*) FILTER (WHERE event_type = 'email.blocked_sender_rejected') as rejected_blocked,
+         COUNT(*) FILTER (WHERE event_type = 'email.unverified_recipient_rejected') as rejected_unverified
        FROM audit_logs
        WHERE created_at >= $1 AND created_at <= $2
        AND event_type LIKE 'email.%'`,
@@ -528,7 +529,8 @@ export async function getEmailMetrics(req: Request, res: Response) {
     const inboundStats = inboundStatsResult.rows[0] || {
       total_received: 0,
       rejected_unregistered: 0,
-      rejected_blocked: 0
+      rejected_blocked: 0,
+      rejected_unverified: 0
     };
 
     // Get email-to-fax pipeline jobs (inbound flow)
@@ -585,6 +587,7 @@ export async function getEmailMetrics(req: Request, res: Response) {
         totalReceived: parseInt(inboundStats.total_received, 10) || 0,
         rejectedUnregistered: parseInt(inboundStats.rejected_unregistered, 10) || 0,
         rejectedBlocked: parseInt(inboundStats.rejected_blocked, 10) || 0,
+        rejectedUnverified: parseInt(inboundStats.rejected_unverified, 10) || 0,
       },
       pipeline: {
         stats: pipelineStats,
