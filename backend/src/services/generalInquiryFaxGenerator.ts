@@ -521,13 +521,14 @@ export class GeneralInquiryFaxGenerator {
   }
 
   /**
-   * Create standard footer content using FaxTemplateEngine format with prominent reference ID
+   * Create standard footer content
+   * Format: [Template Label] | Ref: FX-YYYY-NNNNNN
    */
   private static createFooter(referenceId: string): FaxContent {
     return {
       type: 'footer',
-      text: `Reply via fax. Ref: ${referenceId}`,
-      fontSize: 45, // Match body text size (45 pixels at 204 DPI ≈ 16pt)
+      text: `AI Response | Ref: ${referenceId}`,
+      fontSize: 45, // 16pt - consistent across all templates
       bold: true,
       alignment: 'center',
       marginTop: 16
@@ -535,13 +536,14 @@ export class GeneralInquiryFaxGenerator {
   }
 
   /**
-   * Create footer with page numbers for multi-page faxes with prominent reference ID
+   * Create footer with page numbers for multi-page faxes
+   * Format: [Template Label] | Ref: FX-YYYY-NNNNNN | Page X of Y
    */
   private static createFooterWithPageNumber(referenceId: string, pageNumber: number, totalPages: number): FaxContent {
     return {
       type: 'footer',
-      text: `Reply via fax. Ref: ${referenceId} | Page ${pageNumber} of ${totalPages}`,
-      fontSize: 45, // Match body text size (45 pixels at 204 DPI ≈ 16pt)
+      text: `AI Response | Ref: ${referenceId} | Page ${pageNumber} of ${totalPages}`,
+      fontSize: 45, // 16pt - consistent across all templates
       bold: true,
       alignment: 'center',
       marginTop: 16

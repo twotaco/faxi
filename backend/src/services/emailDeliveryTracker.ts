@@ -1,6 +1,7 @@
 import { db } from '../database/connection';
 import { auditLogService } from './auditLogService';
 import { FaxGenerator } from './faxGenerator';
+import { FaxTemplateEngine } from './faxTemplateEngine';
 import { faxSenderService } from './faxSenderService';
 import { userRepository } from '../repositories/userRepository';
 import { s3Storage } from '../storage/s3';
@@ -248,10 +249,13 @@ export class EmailDeliveryTracker {
         : recipientAddresses;
       const recipientList = Array.isArray(recipients) ? recipients.join(', ') : recipients;
 
+      // Generate standard reference ID
+      const referenceId = FaxTemplateEngine.generateReferenceId();
+
       // Create error notification fax template
       const template: FaxTemplate = {
         type: 'confirmation', // Use confirmation type for error notifications
-        referenceId: `ERR-${Date.now()}`,
+        referenceId,
         pages: [
           {
             content: [
@@ -304,8 +308,9 @@ export class EmailDeliveryTracker {
               },
               {
                 type: 'footer',
-                text: 'For assistance, please send a fax with your question.',
-                fontSize: 40,
+                text: `Email Delivery Error | Ref: ${referenceId}`,
+                fontSize: 45, // 16pt - consistent across all templates
+                bold: true,
                 alignment: 'center',
                 marginTop: 40,
               },

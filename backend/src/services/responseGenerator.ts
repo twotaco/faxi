@@ -1,6 +1,5 @@
 import { EmailFaxGenerator } from './emailFaxGenerator.js';
 import { ProductSelectionFaxGenerator } from './productSelectionFaxGenerator.js';
-import { PaymentBarcodeFaxGenerator } from './paymentBarcodeFaxGenerator.js';
 import { ConfirmationFaxGenerator } from './confirmationFaxGenerator.js';
 import { ClarificationFaxGenerator } from './clarificationFaxGenerator.js';
 import { WelcomeFaxGenerator } from './welcomeFaxGenerator.js';
@@ -15,7 +14,6 @@ import {
   FaxTemplate,
   EmailReplyData,
   ProductSelectionData,
-  PaymentBarcodeData,
   ConfirmationData,
   ClarificationData,
   ProductOption,
@@ -24,12 +22,12 @@ import {
 } from '../types/fax.js';
 
 export interface ResponseGeneratorRequest {
-  type: 'email_reply' | 'product_selection' | 'payment_barcodes' | 'confirmation' | 'clarification' | 'welcome' | 'multi_action' | 'appointment_selection' | 'general_inquiry';
+  type: 'email_reply' | 'product_selection' | 'confirmation' | 'clarification' | 'welcome' | 'multi_action' | 'appointment_selection' | 'general_inquiry';
   data: any;
   referenceId?: string;
   options?: any;
-  mcpServer?: string;  // NEW: For template selection via TemplateRegistry
-  intent?: string;     // NEW: For template selection via TemplateRegistry
+  mcpServer?: string;  // For template selection via TemplateRegistry
+  intent?: string;     // For template selection via TemplateRegistry
 }
 
 export interface ResponseGeneratorResult {
@@ -101,22 +99,6 @@ export class ResponseGenerator {
         }
         template = {
           type: 'product_selection',
-          referenceId,
-          pages: [],
-          contextData: request.data
-        };
-        break;
-
-      case 'payment_barcodes':
-        const barcodeData = request.data as PaymentBarcodeData;
-        pdfBuffer = await PaymentBarcodeFaxGenerator.generatePaymentBarcodeFax(
-          barcodeData.products,
-          barcodeData.barcodes,
-          request.options,
-          referenceId
-        );
-        template = {
-          type: 'payment_barcodes',
           referenceId,
           pages: [],
           contextData: request.data
@@ -308,26 +290,6 @@ export class ResponseGenerator {
   }
 
   /**
-   * Generate payment barcode fax
-   */
-  static async generatePaymentFax(
-    products: ProductOption[],
-    barcodes: any[],
-    referenceId?: string
-  ): Promise<ResponseGeneratorResult> {
-    return await this.generateResponse({
-      type: 'payment_barcodes',
-      data: {
-        products,
-        barcodes,
-        expirationDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
-        instructions: 'Pay at FamilyMart, 7-Eleven, or Lawson. Show barcode to cashier.'
-      } as PaymentBarcodeData,
-      referenceId
-    });
-  }
-
-  /**
    * Generate order confirmation fax
    */
   static async generateOrderConfirmationFax(
@@ -484,12 +446,7 @@ export class ResponseGenerator {
         const productData = request.data as ProductSelectionData;
         const productCount = (productData.products?.length || 0) + (productData.complementaryItems?.length || 0);
         return productCount > 8 ? 2 : 1;
-      
-      case 'payment_barcodes':
-        const barcodeData = request.data as PaymentBarcodeData;
-        const barcodeCount = barcodeData.barcodes?.length || 0;
-        return Math.ceil(barcodeCount / 3); // ~3 barcodes per page
-      
+
       case 'appointment_selection':
         const appointmentData = request.data as AppointmentSelectionTemplateData;
         const slotCount = appointmentData.slots?.length || 0;

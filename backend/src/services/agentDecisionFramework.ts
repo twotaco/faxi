@@ -61,13 +61,21 @@ export class AgentDecisionFramework {
   async createExecutionPlanWithPlanner(
     context: DecisionContext,
     extractedText: string,
-    userName?: string
+    userName?: string,
+    referenceId?: string
   ): Promise<ExecutionPlan | null> {
     console.log('[AgentDecision] Creating execution plan with Gemini planner');
     console.log('Extracted text:', extractedText.substring(0, 200));
+    console.log('Reference ID:', referenceId || 'none');
+
+    // Build context-aware request text that includes reference ID
+    let contextualRequest = extractedText;
+    if (referenceId) {
+      contextualRequest = `[CONTEXT: Reference ID: ${referenceId} - This may be a reply to a previous request. Include referenceId in tool params where relevant.]\n\n${extractedText}`;
+    }
 
     const plannerResult = await geminiPlannerService.createExecutionPlan(
-      extractedText,
+      contextualRequest,
       userName || 'User'
     );
 
@@ -78,7 +86,8 @@ export class AgentDecisionFramework {
 
     console.log('[AgentDecision] Plan created successfully:', {
       stepCount: plannerResult.plan.steps.length,
-      summary: plannerResult.plan.summary
+      summary: plannerResult.plan.summary,
+      referenceId: referenceId || 'none'
     });
 
     return plannerResult.plan;
@@ -399,30 +408,27 @@ export class AgentDecisionFramework {
   }
 
   /**
-   * Check payment methods and determine barcode generation strategy
+   * Check payment methods and determine payment strategy
    */
   async determinePaymentStrategy(context: DecisionContext): Promise<{
-    strategy: 'charge_on_file' | 'generate_barcodes' | 'mixed';
+    strategy: 'charge_on_file' | 'request_payment';
     hasPaymentMethod: boolean;
-    shouldGenerateBarcodes: boolean;
     recommendRegistration: boolean;
   }> {
     const hasPaymentMethod = !!(context.paymentMethods && context.paymentMethods.length > 0);
-    
+
     if (hasPaymentMethod) {
       return {
         strategy: 'charge_on_file',
         hasPaymentMethod: true,
-        shouldGenerateBarcodes: false,
         recommendRegistration: false
       };
     }
 
-    // No payment method - generate barcodes for convenience store payment
+    // No payment method - request payment registration
     return {
-      strategy: 'generate_barcodes',
+      strategy: 'request_payment',
       hasPaymentMethod: false,
-      shouldGenerateBarcodes: true,
       recommendRegistration: true
     };
   }

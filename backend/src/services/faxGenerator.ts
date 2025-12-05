@@ -1,5 +1,4 @@
 import { createCanvas, Canvas, CanvasRenderingContext2D, registerFont, loadImage } from 'canvas';
-import JsBarcode from 'jsbarcode';
 import sharp from 'sharp';
 import PDFDocument from 'pdfkit';
 import {
@@ -7,7 +6,6 @@ import {
   FaxPage,
   FaxContent,
   FaxGenerationOptions,
-  BarcodeData,
   CircleOption
 } from '../types/fax.js';
 import { ImageProcessingService } from './imageProcessingService.js';
@@ -227,10 +225,6 @@ export class FaxGenerator {
         }
         break;
 
-      case 'barcode':
-        height += (content.barcodeData?.height || 60) + 20;
-        break;
-
       case 'image':
         height += (content.imageData?.height || 300) + 30;
         break;
@@ -340,10 +334,6 @@ export class FaxGenerator {
 
       case 'checkbox':
         y = this.renderCheckboxOptions(ctx, content, y, contentWidth, margins, options);
-        break;
-
-      case 'barcode':
-        y = await this.renderBarcode(ctx, content, y, contentWidth, margins, options);
         break;
 
       case 'image':
@@ -506,69 +496,6 @@ export class FaxGenerator {
     });
 
     return y + (content.options.length * lineHeight);
-  }
-
-  /**
-   * Render barcode
-   */
-  private static async renderBarcode(
-    ctx: CanvasRenderingContext2D,
-    content: FaxContent,
-    y: number,
-    contentWidth: number,
-    margins: FaxGenerationOptions['margins'],
-    options: FaxGenerationOptions
-  ): Promise<number> {
-    if (!content.barcodeData) return y;
-
-    const barcodeData = content.barcodeData;
-    const barcodeWidth = barcodeData.width || 300;
-    const barcodeHeight = barcodeData.height || 60;
-
-    // Create a temporary canvas for the barcode
-    const barcodeCanvas = createCanvas(barcodeWidth, barcodeHeight);
-    
-    try {
-      // Generate barcode
-      JsBarcode(barcodeCanvas, barcodeData.data, {
-        format: barcodeData.format,
-        width: 2,
-        height: barcodeHeight - 20,
-        displayValue: barcodeData.displayValue !== false,
-        fontSize: 12,
-        textMargin: 5
-      });
-
-      // Draw barcode on main canvas
-      const x = margins.left + (contentWidth - barcodeWidth) / 2; // Center the barcode
-      ctx.drawImage(barcodeCanvas, x, y);
-
-      return y + barcodeHeight;
-    } catch (error: any) {
-      // Handle barcode generation errors with structured logging
-      const { TemplateErrorHandler } = require('./templateErrorHandler.js');
-      TemplateErrorHandler.handleBarcodeGenerationError(
-        error,
-        barcodeData.data,
-        {
-          contentType: 'barcode',
-          barcodeFormat: barcodeData.format,
-          barcodeWidth: barcodeWidth,
-          barcodeHeight: barcodeHeight
-        }
-      );
-      
-      // Fallback: render barcode data as text
-      const fallbackText = TemplateErrorHandler.getBarcodeFallbackText(barcodeData.data);
-      ctx.font = `normal ${options.defaultFontSize}px monospace`;
-      ctx.textAlign = 'center';
-      ctx.fillText(
-        fallbackText,
-        margins.left + contentWidth / 2,
-        y + barcodeHeight / 2
-      );
-      return y + barcodeHeight;
-    }
   }
 
   /**

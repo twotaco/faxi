@@ -7,11 +7,11 @@ import { config } from '../config';
 
 /**
  * Payment MCP Server - Provides payment processing tools to the MCP Controller Agent
- * 
+ *
  * This server handles:
- * - Payment method management (credit cards, convenience store payments)
+ * - Payment method management (credit cards)
  * - Payment processing via Stripe
- * - Konbini barcode generation for convenience store payments
+ * - Bank transfer payments
  * - Payment status checking and confirmation
  * - PCI-compliant payment handling
  */
@@ -36,7 +36,6 @@ export class PaymentMCPServer implements MCPServer {
       this.createRegisterPaymentMethodTool(),
       this.createProcessPaymentTool(),
       this.createInitiateBankTransferTool(),
-      // this.createGenerateKonbiniBarcodeToool(), // TEMPORARILY DISABLED
       this.createCheckPaymentStatusTool(),
     ];
   }
@@ -137,51 +136,6 @@ export class PaymentMCPServer implements MCPServer {
       description: 'Charge payment method using Stripe',
       inputSchema,
       handler: this.handleProcessPayment.bind(this)
-    };
-  }
-
-  /**
-   * Generate konbini barcode tool - TEMPORARILY DISABLED
-   */
-  private createGenerateKonbiniBarcodeToool(): MCPTool {
-    const inputSchema = {
-      type: 'object',
-      properties: {
-        userId: {
-          type: 'string',
-          description: 'User ID'
-        },
-        amount: {
-          type: 'number',
-          description: 'Payment amount in smallest currency unit (e.g., yen for JPY)'
-        },
-        currency: {
-          type: 'string',
-          description: 'Currency code (e.g., JPY)',
-          default: 'JPY'
-        },
-        description: {
-          type: 'string',
-          description: 'Payment description'
-        },
-        expiresInDays: {
-          type: 'number',
-          description: 'Number of days until barcode expires',
-          default: 7
-        },
-        metadata: {
-          type: 'object',
-          description: 'Additional metadata for the payment'
-        }
-      },
-      required: ['userId', 'amount', 'description']
-    };
-
-    return {
-      name: 'generate_konbini_barcode',
-      description: '[TEMPORARILY DISABLED] Create Stripe Konbini payment intent for convenience store payment',
-      inputSchema,
-      handler: this.handleGenerateKonbiniBarcode.bind(this)
     };
   }
 
@@ -571,16 +525,6 @@ export class PaymentMCPServer implements MCPServer {
         error: error instanceof Error ? error.message : 'Failed to initiate bank transfer'
       };
     }
-  }
-
-  /**
-   * Handle generate konbini barcode request - TEMPORARILY DISABLED
-   */
-  private async handleGenerateKonbiniBarcode(params: any): Promise<any> {
-    return {
-      success: false,
-      error: 'Konbini (convenience store) payments are temporarily disabled. Please use credit card or bank transfer instead.'
-    };
   }
 
   /**

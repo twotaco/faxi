@@ -17,7 +17,6 @@ export * from './faxTemplateEngine';
 export * from './faxGenerator';
 export * from './emailFaxGenerator';
 export * from './productSelectionFaxGenerator';
-export * from './paymentBarcodeFaxGenerator';
 export * from './confirmationFaxGenerator';
 export * from './clarificationFaxGenerator';
 export * from './welcomeFaxGenerator';

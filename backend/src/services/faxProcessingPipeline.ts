@@ -512,12 +512,16 @@ export class FaxProcessingPipeline {
     userName?: string
   ): Promise<AgentResponse> {
     try {
+      // Extract reference ID early - available universally for all intents
+      const referenceId = interpretation.referenceId || interpretation.context?.referenceId;
+
       console.log('Starting agent processing with Gemini planner', {
         faxJobId,
         userId,
         intent: interpretation.intent,
         confidence: interpretation.confidence,
         extractedTextLength: interpretation.extractedText?.length || 0,
+        referenceId: referenceId || 'none',
       });
 
       // Try Gemini planner first for intelligent multi-step orchestration
@@ -526,20 +530,23 @@ export class FaxProcessingPipeline {
         const executionPlan = await agentDecisionFramework.createExecutionPlanWithPlanner(
           { interpretation, userId },
           extractedText,
-          userName
+          userName,
+          referenceId // Pass reference ID to planner
         );
 
         if (executionPlan && executionPlan.steps.length > 0) {
           console.log('Executing Gemini-created plan', {
             stepCount: executionPlan.steps.length,
             summary: executionPlan.summary,
+            referenceId: referenceId || 'none',
           });
 
           // Execute the plan using the MCP Controller Agent
           const planResult = await mcpControllerAgent.executePlan(
             executionPlan,
             userId,
-            extractedText
+            extractedText,
+            referenceId // Pass reference ID to executor
           );
 
           // Convert plan result to AgentResponse format

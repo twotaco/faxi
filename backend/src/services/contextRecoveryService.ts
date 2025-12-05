@@ -8,6 +8,30 @@ import { conversationContextRepository } from '../repositories/conversationConte
 import { faxJobRepository } from '../repositories/faxJobRepository';
 import { auditLogService } from './auditLogService';
 
+/**
+ * Extract reference ID from text using various patterns.
+ * Exported for universal use early in the pipeline.
+ * Supports FX-YYYY-NNNNNN format and UUID format.
+ */
+export function extractReferenceIdFromText(text: string): string | null {
+  const patterns = [
+    /(?:ref|reference|ref#|ref:)\s*(FX-\d{4}-\d{6,})/i,
+    /(FX-\d{4}-\d{6,})/i, // Just the ID itself
+    /(?:order|ticket|case)#?\s*(FX-\d{4}-\d{6,})/i,
+    // Also support UUID format for other reference types
+    /(?:ref|reference|ref:)\s*([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})/i
+  ];
+
+  for (const pattern of patterns) {
+    const match = text.match(pattern);
+    if (match) {
+      return match[1] || match[0];
+    }
+  }
+
+  return null;
+}
+
 export class ContextRecoveryService {
 
   /**
@@ -279,23 +303,10 @@ export class ContextRecoveryService {
   }
 
   /**
-   * Extract reference ID from text using various patterns
+   * Extract reference ID from text - delegates to exported function
    */
   private extractReferenceIdFromText(text: string): string | null {
-    const patterns = [
-      /(?:ref|reference|ref#|ref:)\s*(FX-\d{4}-\d{6})/i,
-      /(FX-\d{4}-\d{6})/i, // Just the ID itself
-      /(?:order|ticket|case)#?\s*(FX-\d{4}-\d{6})/i
-    ];
-
-    for (const pattern of patterns) {
-      const match = text.match(pattern);
-      if (match) {
-        return match[1] || match[0];
-      }
-    }
-
-    return null;
+    return extractReferenceIdFromText(text);
   }
 
   /**

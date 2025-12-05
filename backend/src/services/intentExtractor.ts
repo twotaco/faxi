@@ -471,8 +471,7 @@ export class IntentExtractor {
   }> {
     const paymentKeywords = [
       'payment', 'credit card', 'card', 'pay', 'billing',
-      'register card', 'add card', 'payment method',
-      'convenience store', 'konbini', 'barcode'
+      'register card', 'add card', 'payment method'
     ];
 
     let confidence = 0;
@@ -482,12 +481,9 @@ export class IntentExtractor {
     const keywordMatches = paymentKeywords.filter(keyword => text.includes(keyword));
     confidence += keywordMatches.length * 0.2;
 
-    // Detect payment method type
+    // Detect payment method type (credit card only)
     if (text.includes('credit card') || text.includes('card')) {
       parameters.paymentMethod = 'credit_card';
-      confidence += 0.3;
-    } else if (text.includes('convenience store') || text.includes('konbini') || text.includes('barcode')) {
-      parameters.paymentMethod = 'convenience_store';
       confidence += 0.3;
     }
 

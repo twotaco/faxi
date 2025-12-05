@@ -389,7 +389,8 @@ export class MCPControllerAgent {
   async executePlan(
     plan: ExecutionPlan,
     userId: string,
-    originalRequest: string
+    originalRequest: string,
+    referenceId?: string
   ): Promise<{
     success: boolean;
     results: Array<{
@@ -419,6 +420,12 @@ export class MCPControllerAgent {
     const stepResults: Map<string, any> = new Map();
     // ADK-style shared state for outputKey data chaining
     const sharedState: Map<string, any> = new Map();
+
+    // Store reference ID universally in shared state for all steps to access
+    if (referenceId) {
+      sharedState.set('referenceId', { formatted: referenceId, id: referenceId });
+      console.log('Stored reference ID in shared state:', referenceId);
+    }
 
     // Topologically sort steps based on dependencies
     const sortedSteps = this.topologicalSort(plan.steps);
@@ -569,6 +576,20 @@ export class MCPControllerAgent {
     }
 
     try {
+      // For shopping_create_order, resolve selection markers (A, B, C, D, E) to actual ASINs
+      if (step.tool === 'shopping_create_order' && resolvedParams.productId?.match(/^[A-J]$/i)) {
+        const resolvedAsin = await this.resolveSelectionMarkerToAsin(
+          resolvedParams.productId,
+          resolvedParams.referenceId
+        );
+        if (resolvedAsin) {
+          console.log(`Resolved selection marker "${resolvedParams.productId}" to ASIN: ${resolvedAsin}`);
+          resolvedParams.productId = resolvedAsin;
+        } else {
+          console.warn(`Could not resolve selection marker "${resolvedParams.productId}" to ASIN`);
+        }
+      }
+
       // Map parameters to MCP format
       const mcpParams = this.mapParamsToMcp(serverName, mcpToolName, { ...resolvedParams, userId });
       console.log('MCP params:', JSON.stringify(mcpParams, null, 2));
@@ -864,6 +885,64 @@ export class MCPControllerAgent {
     }
 
     return null;
+  }
+
+  /**
+   * Resolve a selection marker (A, B, C, etc.) to the actual ASIN
+   * by looking up the conversation context from the reference ID
+   */
+  private async resolveSelectionMarkerToAsin(
+    selectionMarker: string,
+    referenceId?: string
+  ): Promise<string | null> {
+    if (!referenceId) {
+      console.log('[MCP Agent] No reference ID provided for selection marker resolution');
+      return null;
+    }
+
+    try {
+      const { conversationContextRepository } = await import('../repositories/conversationContextRepository');
+      const context = await conversationContextRepository.findByReferenceId(referenceId);
+
+      if (!context?.contextData) {
+        console.log('[MCP Agent] No conversation context found for reference:', referenceId);
+        return null;
+      }
+
+      // Handle both single product search and multi-product search formats
+      const searchResults = context.contextData.searchResults;
+      const groupedResults = context.contextData.groupedSearchResults;
+
+      // Normalize selection marker to uppercase
+      const marker = selectionMarker.toUpperCase();
+
+      // Try single product search results first
+      if (searchResults && Array.isArray(searchResults)) {
+        const product = searchResults.find((p: any) => p.selectionMarker === marker);
+        if (product?.asin) {
+          console.log(`[MCP Agent] Found ASIN ${product.asin} for marker ${marker} in single search results`);
+          return product.asin;
+        }
+      }
+
+      // Try grouped results (multi-product search)
+      if (groupedResults && Array.isArray(groupedResults)) {
+        for (const group of groupedResults) {
+          const product = group.products?.find((p: any) => p.selectionMarker === marker);
+          if (product?.asin) {
+            console.log(`[MCP Agent] Found ASIN ${product.asin} for marker ${marker} in grouped results`);
+            return product.asin;
+          }
+        }
+      }
+
+      console.log(`[MCP Agent] No product found for selection marker ${marker} in context`);
+      return null;
+
+    } catch (error) {
+      console.error('[MCP Agent] Error resolving selection marker to ASIN:', error);
+      return null;
+    }
   }
 
   /**
@@ -1659,7 +1738,7 @@ DECISION FRAMEWORK:
 AVAILABLE MCP TOOLS:
 - Email: send_email, get_email_thread, search_emails
 - Shopping: search_products, get_product_details, add_to_cart, get_cart, update_cart_item, remove_from_cart, checkout, get_complementary_products, get_bundle_deals
-- Payment: get_payment_methods, register_payment_method, process_payment, generate_konbini_barcode, check_payment_status
+- Payment: get_payment_methods, register_payment_method, process_payment, initiate_bank_transfer, check_payment_status
 - AI Chat: chat (has Google Search grounding for real-time info), get_conversation, summarize_conversation
 - User Profile: get_user_profile, update_delivery_address, get_address_book, add_contact, update_contact, delete_contact, lookup_contact, get_order_history, track_order
 

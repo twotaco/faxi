@@ -373,31 +373,6 @@ export class AuditLogService {
   }
 
   /**
-   * Log konbini barcode generated
-   */
-  async logKonbiniBarcodeGenerated(data: {
-    userId: string;
-    faxJobId?: string;
-    paymentIntentId: string;
-    amount: number;
-    currency: string;
-    expiresAt: Date;
-  }): Promise<void> {
-    await auditLogRepository.create({
-      userId: data.userId,
-      faxJobId: data.faxJobId,
-      eventType: 'payment.konbini_barcode_generated',
-      eventData: {
-        paymentIntentId: data.paymentIntentId,
-        amount: data.amount,
-        currency: data.currency,
-        expiresAt: data.expiresAt.toISOString(),
-        timestamp: new Date().toISOString(),
-      },
-    });
-  }
-
-  /**
    * Log user registration
    */
   async logUserRegistration(data: {

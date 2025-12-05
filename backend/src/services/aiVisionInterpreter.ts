@@ -11,7 +11,7 @@ import { FaxTemplate } from '../types/fax.js';
 import { auditLogService } from './auditLogService';
 import { intentExtractor } from './intentExtractor';
 import { visualAnnotationDetector } from './visualAnnotationDetector';
-import { contextRecoveryService } from './contextRecoveryService';
+import { contextRecoveryService, extractReferenceIdFromText } from './contextRecoveryService';
 
 export class AIVisionInterpreter {
   private genAI: GoogleGenerativeAI;
@@ -317,7 +317,6 @@ ${multiPageContext}
 FAXI TEMPLATE RECOGNITION:
 - Email reply forms: Have quick reply options (Circle A/B/C) and space for custom replies
 - Product selection forms: Have product options with circles/checkboxes and pricing
-- Payment barcode pages: Have barcodes with product info and payment instructions
 - Confirmation pages: Show completed actions with order numbers or message IDs
 
 VISUAL ANNOTATION DETECTION:
@@ -472,9 +471,17 @@ Analyze the image now:`;
         referenceId: parsed.referenceId
       };
 
+      // Ensure reference ID is extracted - backup extraction from text if Gemini didn't detect it
+      if (!result.referenceId && result.extractedText) {
+        const extractedRefId = extractReferenceIdFromText(result.extractedText);
+        if (extractedRefId) {
+          result.referenceId = extractedRefId;
+        }
+      }
+
       // Additional validation and processing
       result.requiresClarification = result.requiresClarification || result.confidence < 0.7;
-      
+
       if (result.requiresClarification && !result.clarificationQuestion) {
         result.clarificationQuestion = this.generateDefaultClarificationQuestion(result);
       }

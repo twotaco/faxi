@@ -4,7 +4,6 @@ import {
   FaxContent,
   EmailReplyData,
   ProductSelectionData,
-  PaymentBarcodeData,
   ConfirmationData,
   ClarificationData,
   CircleOption,
@@ -13,7 +12,6 @@ import {
 
 export class FaxTemplateEngine {
   private static readonly REFERENCE_ID_PREFIX = 'FX';
-  private static readonly SUPPORT_CONTACT = 'Support: help@faxi.jp | +81-3-1234-5678';
   private static readonly FAXI_BRANDING = 'Faxi - Your Fax to Internet Bridge';
 
   /**
@@ -119,7 +117,7 @@ export class FaxTemplateEngine {
       marginBottom: 0
     });
 
-    content.push(this.createFooter(refId));
+    content.push(this.createFooter(refId, 'Email Reply'));
 
     pages.push({
       content,
@@ -212,7 +210,7 @@ export class FaxTemplateEngine {
     // Add payment instructions
     const paymentText = data.hasPaymentMethod
       ? 'Circle your choices and fax back. We\'ll charge your card on file and deliver in 2-3 days.'
-      : 'Circle your choices and fax back. We\'ll send payment barcodes for convenience store payment.';
+      : 'Circle your choices and fax back. We\'ll contact you to arrange payment.';
 
     content.push({
       type: 'text',
@@ -230,7 +228,7 @@ export class FaxTemplateEngine {
       });
     }
 
-    content.push(this.createFooter(refId));
+    content.push(this.createFooter(refId, 'Shopping Order Form'));
 
     pages.push({
       content,
@@ -246,91 +244,6 @@ export class FaxTemplateEngine {
         products: data.products,
         complementaryItems: data.complementaryItems,
         hasPaymentMethod: data.hasPaymentMethod
-      }
-    };
-  }
-
-  /**
-   * Create payment barcode template
-   */
-  static createPaymentBarcodeTemplate(data: PaymentBarcodeData, referenceId?: string): FaxTemplate {
-    const refId = referenceId || this.generateReferenceId();
-    const pages: FaxPage[] = [];
-
-    const content: FaxContent[] = [
-      this.createHeader(),
-      {
-        type: 'text',
-        text: 'PAYMENT BARCODES',
-        fontSize: 24,
-        bold: true,
-        alignment: 'center',
-        marginBottom: 16
-      }
-    ];
-
-    // Add each product with its barcode
-    data.barcodes.forEach((barcode, index) => {
-      const product = data.products.find(p => p.id === barcode.productId);
-      if (product) {
-        content.push({
-          type: 'text',
-          text: `${String.fromCharCode(65 + index)}. ${product.name}`,
-          fontSize: 20,
-          bold: true,
-          marginBottom: 8
-        });
-        content.push({
-          type: 'text',
-          text: `¥${barcode.amount}`,
-          fontSize: 18,
-          marginBottom: 8
-        });
-        content.push({
-          type: 'barcode',
-          barcodeData: {
-            data: barcode.barcodeData,
-            format: 'CODE128',
-            width: 200,
-            height: 50,
-            displayValue: true
-          },
-          marginBottom: 16
-        });
-      }
-    });
-
-    // Add payment instructions
-    content.push({
-      type: 'text',
-      text: data.instructions,
-      fontSize: 18,
-      marginBottom: 12
-    });
-
-    content.push({
-      type: 'text',
-      text: `Barcodes expire: ${data.expirationDate.toLocaleDateString('ja-JP')}`,
-      fontSize: 18,
-      bold: true,
-      marginBottom: 16
-    });
-
-    content.push(this.createFooter(refId));
-
-    pages.push({
-      content,
-      pageNumber: 1,
-      totalPages: 1
-    });
-
-    return {
-      type: 'payment_barcodes',
-      referenceId: refId,
-      pages,
-      contextData: {
-        barcodes: data.barcodes,
-        expirationDate: data.expirationDate
       }
     };
   }
@@ -395,7 +308,7 @@ export class FaxTemplateEngine {
       });
     }
 
-    content.push(this.createFooter(refId));
+    content.push(this.createFooter(refId, 'Confirmation'));
 
     pages.push({
       content,
@@ -498,7 +411,7 @@ export class FaxTemplateEngine {
       marginBottom: 16
     });
 
-    content.push(this.createFooter(refId));
+    content.push(this.createFooter(refId, 'Clarification Needed'));
 
     pages.push({
       content,
@@ -542,13 +455,14 @@ export class FaxTemplateEngine {
   }
 
   /**
-   * Create standard footer content with prominent reference ID
+   * Create standard footer content with reference ID
+   * Format: [Template Label] | Ref: FX-YYYY-NNNNNN
    */
-  private static createFooter(referenceId: string): FaxContent {
+  private static createFooter(referenceId: string, label: string = 'Email Reply'): FaxContent {
     return {
       type: 'footer',
-      text: `Reply via fax. Ref: ${referenceId} | ${this.SUPPORT_CONTACT}`,
-      fontSize: 96, // 34pt minimum for reference ID prominence (96 pixels at 204 DPI ≈ 34pt)
+      text: `${label} | Ref: ${referenceId}`,
+      fontSize: 45, // 16pt - consistent across all templates
       bold: true,
       alignment: 'center',
       marginTop: 16

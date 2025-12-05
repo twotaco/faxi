@@ -1,5 +1,5 @@
 export interface FaxTemplate {
-  type: 'email_reply' | 'product_selection' | 'payment_barcodes' | 'confirmation' | 'multi_action' | 'clarification' | 'welcome' | 'appointment_selection' | 'general_inquiry';
+  type: 'email_reply' | 'product_selection' | 'confirmation' | 'multi_action' | 'clarification' | 'welcome' | 'appointment_selection' | 'general_inquiry';
   referenceId: string; // FX-YYYY-NNNNNN format
   pages: FaxPage[];
   contextData: any; // Data needed to process reply (thread IDs, product IDs, etc.)
@@ -21,7 +21,7 @@ export interface FaxPage {
 }
 
 export interface FaxContent {
-  type: 'text' | 'checkbox' | 'circle_option' | 'barcode' | 'blank_space' | 'header' | 'footer' | 'image'; // Added 'image'
+  type: 'text' | 'checkbox' | 'circle_option' | 'blank_space' | 'header' | 'footer' | 'image';
   text?: string;
   fontSize?: number;
   bold?: boolean;
@@ -29,9 +29,8 @@ export interface FaxContent {
   marginTop?: number;
   marginBottom?: number;
   options?: CircleOption[];
-  barcodeData?: BarcodeData;
   height?: number; // For blank spaces
-  imageData?: ImageContent; // NEW: Image support
+  imageData?: ImageContent;
 }
 
 export interface ImageContent {
@@ -51,14 +50,6 @@ export interface CircleOption {
   price?: number;
   currency?: string;
   optional?: boolean;
-}
-
-export interface BarcodeData {
-  data: string;
-  format: 'CODE128' | 'QR';
-  width?: number;
-  height?: number;
-  displayValue?: boolean;
 }
 
 export interface EmailReplyData {
@@ -86,20 +77,6 @@ export interface ProductOption {
   description: string;
   estimatedDelivery?: string;
   imageUrl?: string;
-}
-
-export interface PaymentBarcodeData {
-  products: ProductOption[];
-  barcodes: PaymentBarcode[];
-  expirationDate: Date;
-  instructions: string;
-}
-
-export interface PaymentBarcode {
-  productId: string;
-  barcodeData: string;
-  amount: number;
-  currency: string;
 }
 
 export interface ConfirmationData {

@@ -494,8 +494,8 @@ You can try resending by faxing us your message again, or contact us for help.`,
       });
       content.push({
         type: 'footer',
-        text: `Reply via fax. Ref: ${refId} | Page ${pageNumber} of ${totalPages}`,
-        fontSize: 45, // Match body text size (45 pixels at 204 DPI ≈ 16pt)
+        text: `Email Reply | Ref: ${refId} | Page ${pageNumber} of ${totalPages}`,
+        fontSize: 45, // 16pt - consistent across all templates
         bold: true,
         alignment: 'center',
         marginTop: 16

@@ -30,7 +30,7 @@
  * - Email MCP → email_reply template
  * - AI Chat MCP → general_inquiry template
  * - Appointment MCP → appointment_selection template
- * - Payment MCP → payment_barcodes template
+ * - Payment MCP → confirmation template
  * 
  * @see {@link TemplateType} for available template types
  * @see {@link TemplateMapping} for mapping structure
@@ -43,11 +43,10 @@
  * Each template type corresponds to a specific use case and has its own
  * generator class and data structure.
  */
-type TemplateType = 
-  | 'email_reply' 
-  | 'product_selection' 
-  | 'payment_barcodes' 
-  | 'confirmation' 
+type TemplateType =
+  | 'email_reply'
+  | 'product_selection'
+  | 'confirmation'
   | 'clarification'
   | 'welcome'
   | 'appointment_selection'
@@ -103,11 +102,10 @@ export class TemplateRegistry {
     this.register('appointment', 'search_appointments', 'appointment_selection', 10);
     this.register('appointment', 'book_appointment', 'appointment_selection', 10);
     this.register('appointment', undefined, 'appointment_selection', 5);
-    
-    // Payment MCP → Payment Barcode Template
-    this.register('payment', 'generate_barcode', 'payment_barcodes', 10);
-    this.register('payment', 'register_payment', 'payment_barcodes', 10);
-    this.register('payment', undefined, 'payment_barcodes', 5);
+
+    // Payment MCP → Confirmation Template (card payments only)
+    this.register('payment', 'register_payment', 'confirmation', 10);
+    this.register('payment', undefined, 'confirmation', 5);
   }
   
   /**

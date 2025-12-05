@@ -362,6 +362,13 @@ CONTACT LOOKUP RULES (CRITICAL):
 - Pattern: lookup_contact -> email_send (with {contact.email})
 - NEVER skip the contact lookup step when only a name is provided
 
+REFERENCE ID HANDLING:
+- If a reference ID (FX-YYYY-NNNNNN or UUID) is provided in [CONTEXT], this is a reply to a previous request
+- For shopping_create_order: Include referenceId in params to resolve product selections (e.g., "B" → actual ASIN)
+- For email replies: Include referenceId to maintain conversation thread context
+- The reference ID helps look up previous search results, conversation state, and user preferences
+- Example: { "tool": "shopping_create_order", "params": { "productId": "B", "referenceId": "{referenceId}" } }
+
 GUIDELINES:
 - Always create at least one step
 - Use dependsOn when one step needs the result of another

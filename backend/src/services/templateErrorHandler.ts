@@ -12,7 +12,6 @@ export enum TemplateErrorType {
   IMAGE_TOO_LARGE = 'image_too_large',
   TEMPLATE_RENDERING_FAILED = 'template_rendering_failed',
   PDF_GENERATION_FAILED = 'pdf_generation_failed',
-  BARCODE_GENERATION_FAILED = 'barcode_generation_failed',
   CONTENT_OVERFLOW = 'content_overflow',
   UNKNOWN = 'unknown'
 }
@@ -162,32 +161,6 @@ export class TemplateErrorHandler {
   }
 
   /**
-   * Handle barcode generation error
-   */
-  static handleBarcodeGenerationError(
-    error: Error,
-    barcodeData: string,
-    context: TemplateError['context']
-  ): TemplateError {
-    const templateError: TemplateError = {
-      type: TemplateErrorType.BARCODE_GENERATION_FAILED,
-      severity: TemplateErrorSeverity.WARNING,
-      message: `Failed to generate barcode: ${error.message}`,
-      originalError: error,
-      context: {
-        ...context,
-        barcodeData,
-        errorDetails: error.message
-      },
-      fallbackApplied: true,
-      timestamp: new Date()
-    };
-
-    this.logError(templateError);
-    return templateError;
-  }
-
-  /**
    * Classify image error based on error message
    */
   private static classifyImageError(error: Error): TemplateErrorType {
@@ -255,13 +228,6 @@ export class TemplateErrorHandler {
       return `[Image unavailable: ${imageUrl.substring(0, 50)}...]`;
     }
     return '[Image unavailable]';
-  }
-
-  /**
-   * Get fallback text for barcode errors
-   */
-  static getBarcodeFallbackText(barcodeData: string): string {
-    return `Barcode: ${barcodeData}`;
   }
 
   /**

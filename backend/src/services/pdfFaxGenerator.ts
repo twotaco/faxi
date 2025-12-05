@@ -95,13 +95,6 @@ export class PdfFaxGenerator {
       case 'checkbox':
         this.renderCheckboxOptions(doc, content);
         break;
-
-      case 'barcode':
-        // TODO: Implement barcode rendering
-        doc.fontSize(opts.fontSize.body).text(content.barcodeData?.data || '', {
-          align: 'center'
-        });
-        break;
     }
 
     // Apply bottom margin

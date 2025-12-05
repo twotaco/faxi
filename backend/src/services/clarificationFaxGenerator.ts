@@ -177,7 +177,7 @@ We don't have a payment method on file for you.`;
 
     const requiredInfo = [
       'Circle A to register a credit card (we\'ll send instructions)',
-      'Circle B to pay at convenience store (we\'ll send barcode)',
+      'Circle B to pay via bank transfer (we\'ll send details)',
       'Circle C to cancel this order'
     ];
 

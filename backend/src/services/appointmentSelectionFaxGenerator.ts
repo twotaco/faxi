@@ -296,13 +296,14 @@ export class AppointmentSelectionFaxGenerator {
   }
 
   /**
-   * Create standard footer content using FaxTemplateEngine format with prominent reference ID
+   * Create standard footer content
+   * Format: [Template Label] | Ref: FX-YYYY-NNNNNN
    */
   private static createFooter(referenceId: string): FaxContent {
     return {
       type: 'footer',
-      text: `Reply via fax. Ref: ${referenceId}`,
-      fontSize: 45, // Match body text size (45 pixels at 204 DPI ≈ 16pt)
+      text: `Appointment Booking | Ref: ${referenceId}`,
+      fontSize: 45, // 16pt - consistent across all templates
       bold: true,
       alignment: 'center',
       marginTop: 16

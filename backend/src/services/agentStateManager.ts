@@ -467,13 +467,13 @@ export class AgentStateManager {
           return `Payment processed - Transaction ID: ${output.transactionId}`;
         }
         return `Attempted to process payment`;
-      
-      case 'generate_konbini_barcode':
-        if (success && output?.barcodeUrl) {
-          return `Generated convenience store payment barcode`;
+
+      case 'initiate_bank_transfer':
+        if (success && output?.transferDetails) {
+          return `Bank transfer initiated`;
         }
-        return `Attempted to generate payment barcode`;
-      
+        return `Attempted to initiate bank transfer`;
+
       default:
         return `Payment operation: ${toolName}`;
     }

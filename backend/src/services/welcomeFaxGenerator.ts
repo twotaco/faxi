@@ -207,11 +207,11 @@ export class WelcomeFaxGenerator {
       marginBottom: 20
     });
 
-    // Footer with reference ID and support
+    // Footer
     content.push({
       type: 'footer',
-      text: `Welcome! Ref: ${refId}`,
-      fontSize: 45, // Match body text size (45 pixels at 204 DPI ≈ 16pt)
+      text: `Welcome | Ref: ${refId}`,
+      fontSize: 45, // 16pt - consistent across all templates
       bold: true,
       alignment: 'center',
       marginTop: 16
@@ -329,7 +329,7 @@ export class WelcomeFaxGenerator {
     content.push({
       type: 'footer',
       text: `Help Guide | Ref: ${refId}`,
-      fontSize: 45, // Match body text size (45 pixels at 204 DPI ≈ 16pt)
+      fontSize: 45, // 16pt - consistent across all templates
       bold: true,
       alignment: 'center',
       marginTop: 16
@@ -388,16 +388,14 @@ export class WelcomeFaxGenerator {
       },
       payment: {
         title: 'HOW TO REGISTER PAYMENT METHODS',
-        description: 'Register a credit card or use convenience store payment barcodes for easy and secure shopping.',
+        description: 'Register a credit card for easy and secure shopping.',
         examples: [
           'Register credit card: [Card Number] [Expiry] [Name on Card]',
-          'Add payment method: Visa ending in 1234',
-          'Use convenience store payment (we\'ll send you barcodes)'
+          'Add payment method: Visa ending in 1234'
         ],
         tips: [
           'Your payment info is stored securely with Stripe',
           'You can register multiple payment methods',
-          'Convenience store barcodes work at FamilyMart, 7-Eleven, Lawson',
           'We never store your full credit card number'
         ]
       },
@@ -539,15 +537,9 @@ export class WelcomeFaxGenerator {
         marginBottom: 16
       },
       {
-        type: 'text',
-        text: 'ALTERNATIVE: Use convenience store payment barcodes (no registration needed)',
-        fontSize: 11,
-        marginBottom: 16
-      },
-      {
         type: 'footer',
         text: `Payment Registration | Ref: ${refId}`,
-        fontSize: 45, // Match body text size (45 pixels at 204 DPI ≈ 16pt)
+        fontSize: 45, // 16pt - consistent across all templates
         bold: true,
         alignment: 'center',
         marginTop: 16

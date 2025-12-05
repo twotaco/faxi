@@ -330,11 +330,11 @@ export class VisualAnnotationDetector {
 
         // Determine template type based on content
         let templateType: FaxTemplate['type'] = 'email_reply';
-        
+
         if (extractedText.toLowerCase().includes('product') || extractedText.toLowerCase().includes('order')) {
           templateType = 'product_selection';
-        } else if (extractedText.toLowerCase().includes('payment') || extractedText.toLowerCase().includes('barcode')) {
-          templateType = 'payment_barcodes';
+        } else if (extractedText.toLowerCase().includes('confirmation')) {
+          templateType = 'confirmation';
         }
 
         return {
