@@ -311,13 +311,30 @@ export class EmailWebhookController {
         return;
       }
 
-      // Find or create user
-      const { user, isNew } = await userRepository.findOrCreate(phoneNumber);
-      
-      console.log('Found/created user:', {
+      // Find existing user only - do not create new users from incoming emails
+      const user = await userRepository.findByPhoneNumber(phoneNumber);
+
+      if (!user) {
+        console.log('Email rejected - recipient not a registered user:', {
+          to: emailData.to,
+          from: emailData.from,
+          phoneNumber
+        });
+        await auditLogService.log({
+          eventType: 'email.unregistered_recipient_rejected',
+          eventData: {
+            recipientEmail: emailData.to,
+            senderEmail: emailData.from,
+            phoneNumber,
+            subject: emailData.subject
+          }
+        });
+        return; // Silently reject - no bounce to sender
+      }
+
+      console.log('Found user:', {
         userId: user.id,
-        phoneNumber: user.phoneNumber,
-        isNew
+        phoneNumber: user.phoneNumber
       });
 
       // Check if sender is blocked (Requirements 15.2, 15.3)

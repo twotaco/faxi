@@ -142,6 +142,7 @@ export class AwsSesService {
   private async sendEmailAttempt(params: AwsSesEmailParams): Promise<AwsSesSendResult> {
     const input: SendEmailCommandInput = {
       Source: params.from,
+      ReplyToAddresses: [params.from],
       Destination: {
         ToAddresses: [params.to]
       },
