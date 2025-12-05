@@ -668,7 +668,13 @@ export class ShoppingMCPServer implements MCPServer {
             imageUrl: product.imageUrl
           }]
         },
-        shippingAddress: deliveryAddress
+        shippingAddress: deliveryAddress,
+        // Set top-level product fields for admin dashboard display
+        productAsin: product.asin,
+        productTitle: product.title,
+        productImageUrl: product.imageUrl,
+        quantity,
+        quotedPrice: product.price
       };
 
       const order = await orderRepository.create(orderData);

@@ -36,6 +36,11 @@ export async function getAllOrders(req: Request, res: Response): Promise<void> {
     const enrichedOrders = await Promise.all(
       result.orders.map(async (order) => {
         const user = await userRepository.findById(order.userId);
+
+        // Fallback to items.products[0] for older orders that don't have top-level product fields
+        const items = order.items as any;
+        const firstProduct = items?.products?.[0];
+
         return {
           order: {
             id: order.id,
@@ -44,11 +49,11 @@ export async function getAllOrders(req: Request, res: Response): Promise<void> {
             status: order.status,
             totalAmount: order.totalAmount,
             currency: order.currency,
-            productAsin: order.productAsin,
-            productTitle: order.productTitle,
-            productImageUrl: order.productImageUrl,
-            quantity: order.quantity,
-            quotedPrice: order.quotedPrice,
+            productAsin: order.productAsin || firstProduct?.asin || null,
+            productTitle: order.productTitle || firstProduct?.title || null,
+            productImageUrl: order.productImageUrl || firstProduct?.imageUrl || null,
+            quantity: order.quantity || firstProduct?.quantity || 1,
+            quotedPrice: order.quotedPrice || firstProduct?.price || null,
             actualPrice: order.actualPrice,
             trackingNumber: order.trackingNumber,
             stripePaymentIntentId: order.stripePaymentIntentId,
