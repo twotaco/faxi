@@ -343,6 +343,55 @@ export class OrderRepository {
   async updateTracking(id: string, trackingNumber: string): Promise<Order> {
     return await this.update(id, { trackingNumber });
   }
+
+  /**
+   * Find all orders with optional status filter
+   */
+  async findAll(options: {
+    status?: string;
+    limit?: number;
+    offset?: number;
+  } = {}): Promise<{ orders: Order[]; total: number }> {
+    const { status, limit = 50, offset = 0 } = options;
+
+    let whereClause = '';
+    const params: any[] = [];
+    let paramIndex = 1;
+
+    if (status) {
+      whereClause = `WHERE status = $${paramIndex++}`;
+      params.push(status);
+    }
+
+    // Get total count
+    const countResult = await db.query<{ count: string }>(
+      `SELECT COUNT(*) as count FROM orders ${whereClause}`,
+      params
+    );
+    const total = parseInt(countResult.rows[0].count, 10);
+
+    // Get paginated results
+    params.push(limit, offset);
+    const result = await db.query<Order>(
+      `SELECT id, user_id as "userId", reference_id as "referenceId",
+              external_order_id as "externalOrderId", status, total_amount as "totalAmount",
+              currency, items, shipping_address as "shippingAddress",
+              tracking_number as "trackingNumber",
+              product_asin as "productAsin", product_title as "productTitle",
+              product_image_url as "productImageUrl", quantity,
+              quoted_price as "quotedPrice", actual_price as "actualPrice",
+              stripe_payment_intent_id as "stripePaymentIntentId",
+              admin_user_id as "adminUserId", purchased_at as "purchasedAt",
+              created_at as "createdAt", updated_at as "updatedAt"
+       FROM orders
+       ${whereClause}
+       ORDER BY created_at DESC
+       LIMIT $${paramIndex++} OFFSET $${paramIndex++}`,
+      params
+    );
+
+    return { orders: result.rows, total };
+  }
 }
 
 export const orderRepository = new OrderRepository();

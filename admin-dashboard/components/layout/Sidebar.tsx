@@ -19,7 +19,7 @@ import {
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { name: 'Fax Jobs', href: '/jobs', icon: FileText },
-  { name: 'Pending Orders', href: '/orders/pending', icon: ShoppingCart },
+  { name: 'Orders', href: '/orders/pending', icon: ShoppingCart },
   { name: 'Users', href: '/users', icon: Users },
   { name: 'Email', href: '/email', icon: Mail },
   { name: 'MCP Servers', href: '/mcp', icon: Server },

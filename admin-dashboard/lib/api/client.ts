@@ -165,6 +165,15 @@ export const jobsApi = {
 
 // Orders API functions
 export const ordersApi = {
+  listAll: async (params?: {
+    status?: string;
+    limit?: number;
+    offset?: number;
+  }) => {
+    const response = await apiClient.get('/api/admin/orders', { params });
+    return response.data;
+  },
+
   listPending: async (params?: {
     sortBy?: 'date' | 'price' | 'user';
     sortOrder?: 'asc' | 'desc';

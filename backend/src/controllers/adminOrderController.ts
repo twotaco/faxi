@@ -3,11 +3,85 @@ import { orderManagementService } from '../services/orderManagementService';
 import { browserAutomationService } from '../services/browserAutomationService';
 import { loggingService } from '../services/loggingService';
 import { auditLogService } from '../services/auditLogService';
+import { orderRepository } from '../repositories/orderRepository';
+import { userRepository } from '../repositories/userRepository';
 
 /**
  * Admin Order Controller
  * Handles admin dashboard endpoints for order review and fulfillment
  */
+
+/**
+ * GET /api/admin/orders
+ * Returns list of all orders with optional status filter
+ */
+export async function getAllOrders(req: Request, res: Response): Promise<void> {
+  try {
+    const { status, limit = '50', offset = '0' } = req.query;
+
+    loggingService.info('Admin fetching all orders', {
+      adminUserId: (req as any).adminUser?.id,
+      status: status || 'all',
+      limit,
+      offset
+    });
+
+    const result = await orderRepository.findAll({
+      status: status as string | undefined,
+      limit: parseInt(limit as string, 10),
+      offset: parseInt(offset as string, 10)
+    });
+
+    // Enrich orders with user info
+    const enrichedOrders = await Promise.all(
+      result.orders.map(async (order) => {
+        const user = await userRepository.findById(order.userId);
+        return {
+          order: {
+            id: order.id,
+            referenceId: order.referenceId,
+            externalOrderId: order.externalOrderId,
+            status: order.status,
+            totalAmount: order.totalAmount,
+            currency: order.currency,
+            productAsin: order.productAsin,
+            productTitle: order.productTitle,
+            productImageUrl: order.productImageUrl,
+            quantity: order.quantity,
+            quotedPrice: order.quotedPrice,
+            actualPrice: order.actualPrice,
+            trackingNumber: order.trackingNumber,
+            stripePaymentIntentId: order.stripePaymentIntentId,
+            createdAt: order.createdAt,
+            updatedAt: order.updatedAt,
+            purchasedAt: order.purchasedAt
+          },
+          user: user ? {
+            id: user.id,
+            name: user.name,
+            phoneNumber: user.phoneNumber
+          } : null
+        };
+      })
+    );
+
+    res.json({
+      success: true,
+      data: {
+        orders: enrichedOrders,
+        total: result.total,
+        limit: parseInt(limit as string, 10),
+        offset: parseInt(offset as string, 10)
+      }
+    });
+  } catch (error) {
+    loggingService.error('Error fetching all orders', { error });
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch orders'
+    });
+  }
+}
 
 /**
  * GET /api/admin/orders/pending

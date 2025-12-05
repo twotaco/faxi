@@ -1,63 +1,71 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { AlertCircle, CheckCircle, Clock, ExternalLink, RefreshCw } from 'lucide-react';
+import { AlertCircle, CheckCircle, Clock, ExternalLink, RefreshCw, Package, Truck, XCircle, CreditCard } from 'lucide-react';
 import { ordersApi } from '@/lib/api/client';
 
-interface PendingOrder {
+interface OrderItem {
   order: {
     id: string;
     referenceId: string;
+    externalOrderId: string | null;
+    status: string;
+    totalAmount: number;
+    currency: string;
     productAsin: string | null;
     productTitle: string | null;
     productImageUrl: string | null;
     quantity: number;
     quotedPrice: number | null;
-    totalAmount: number;
-    currency: string;
-    status: string;
+    actualPrice: number | null;
+    trackingNumber: string | null;
+    stripePaymentIntentId: string | null;
     createdAt: string;
+    updatedAt: string;
+    purchasedAt: string | null;
   };
   user: {
     id: string;
     name: string | null;
     phoneNumber: string;
-  };
-  paymentStatus: {
-    method: 'card' | 'bank_transfer';
-    stripePaymentIntentId: string | null;
-    status: 'pending' | 'succeeded' | 'failed';
-    paidAt: Date | null;
-  };
-  priceValidation: {
-    quotedPrice: number;
-    currentPrice: number | null;
-    discrepancy: number;
-    requiresApproval: boolean;
-  };
-  stockStatus: {
-    available: boolean;
-    checkedAt: Date;
-  };
+  } | null;
 }
 
-export default function PendingOrdersPage() {
+const ORDER_STATUSES = [
+  { value: '', label: 'All Orders' },
+  { value: 'pending_payment', label: 'Awaiting Payment' },
+  { value: 'paid', label: 'Paid - Ready to Purchase' },
+  { value: 'pending_purchase', label: 'Pending Purchase' },
+  { value: 'purchased', label: 'Purchased' },
+  { value: 'shipped', label: 'Shipped' },
+  { value: 'delivered', label: 'Delivered' },
+  { value: 'cancelled', label: 'Cancelled' },
+];
+
+export default function OrdersPage() {
   const router = useRouter();
-  const [orders, setOrders] = useState<PendingOrder[]>([]);
+  const searchParams = useSearchParams();
+  const [orders, setOrders] = useState<OrderItem[]>([]);
+  const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [selectedStatus, setSelectedStatus] = useState(searchParams.get('status') || '');
 
-  const fetchOrders = async () => {
+  const fetchOrders = async (status?: string) => {
     try {
       setRefreshing(true);
-      const data = await ordersApi.listPending();
+      const data = await ordersApi.listAll({
+        status: status || undefined,
+        limit: 100
+      });
       setOrders(data.data.orders);
+      setTotal(data.data.total);
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
@@ -68,12 +76,14 @@ export default function PendingOrdersPage() {
   };
 
   useEffect(() => {
-    fetchOrders();
-    
-    // Auto-refresh every 30 seconds
-    const interval = setInterval(fetchOrders, 30000);
-    return () => clearInterval(interval);
-  }, []);
+    fetchOrders(selectedStatus);
+  }, [selectedStatus]);
+
+  const handleStatusChange = (status: string) => {
+    setSelectedStatus(status);
+    const url = status ? `/orders/pending?status=${status}` : '/orders/pending';
+    router.push(url);
+  };
 
   const formatPrice = (amount: number, currency: string = 'JPY') => {
     return new Intl.NumberFormat('ja-JP', {
@@ -92,14 +102,22 @@ export default function PendingOrdersPage() {
     });
   };
 
-  const getPaymentStatusBadge = (status: string) => {
+  const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'succeeded':
-        return <Badge className="bg-green-500"><CheckCircle className="w-3 h-3 mr-1" />Paid</Badge>;
-      case 'pending':
-        return <Badge variant="outline"><Clock className="w-3 h-3 mr-1" />Pending</Badge>;
-      case 'failed':
-        return <Badge variant="destructive"><AlertCircle className="w-3 h-3 mr-1" />Failed</Badge>;
+      case 'pending_payment':
+        return <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-300"><CreditCard className="w-3 h-3 mr-1" />Awaiting Payment</Badge>;
+      case 'paid':
+        return <Badge className="bg-blue-500"><CheckCircle className="w-3 h-3 mr-1" />Paid</Badge>;
+      case 'pending_purchase':
+        return <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-300"><Clock className="w-3 h-3 mr-1" />Pending Purchase</Badge>;
+      case 'purchased':
+        return <Badge className="bg-indigo-500"><Package className="w-3 h-3 mr-1" />Purchased</Badge>;
+      case 'shipped':
+        return <Badge className="bg-cyan-500"><Truck className="w-3 h-3 mr-1" />Shipped</Badge>;
+      case 'delivered':
+        return <Badge className="bg-green-500"><CheckCircle className="w-3 h-3 mr-1" />Delivered</Badge>;
+      case 'cancelled':
+        return <Badge variant="destructive"><XCircle className="w-3 h-3 mr-1" />Cancelled</Badge>;
       default:
         return <Badge variant="secondary">{status}</Badge>;
     }
@@ -110,7 +128,7 @@ export default function PendingOrdersPage() {
       <div className="flex items-center justify-center h-96">
         <div className="text-center">
           <RefreshCw className="w-8 h-8 animate-spin mx-auto mb-4 text-gray-400" />
-          <p className="text-gray-500">Loading pending orders...</p>
+          <p className="text-gray-500">Loading orders...</p>
         </div>
       </div>
     );
@@ -124,7 +142,7 @@ export default function PendingOrdersPage() {
           <CardDescription className="text-red-600">{error}</CardDescription>
         </CardHeader>
         <CardContent>
-          <Button onClick={fetchOrders} variant="outline">
+          <Button onClick={() => fetchOrders(selectedStatus)} variant="outline">
             <RefreshCw className="w-4 h-4 mr-2" />
             Retry
           </Button>
@@ -137,41 +155,66 @@ export default function PendingOrdersPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Pending Orders</h1>
+          <h1 className="text-3xl font-bold">Orders</h1>
           <p className="text-gray-500 mt-1">
-            Orders awaiting admin review and purchase
+            View and manage all shopping orders
           </p>
         </div>
-        <Button onClick={fetchOrders} disabled={refreshing} variant="outline">
+        <Button onClick={() => fetchOrders(selectedStatus)} disabled={refreshing} variant="outline">
           <RefreshCw className={`w-4 h-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
           Refresh
         </Button>
       </div>
 
+      {/* Status Filter */}
+      <Card>
+        <CardContent className="pt-6">
+          <div className="flex flex-wrap gap-2">
+            {ORDER_STATUSES.map((status) => (
+              <Button
+                key={status.value}
+                variant={selectedStatus === status.value ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => handleStatusChange(status.value)}
+              >
+                {status.label}
+              </Button>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
       <Card>
         <CardHeader>
-          <CardTitle>Pending Purchase Queue</CardTitle>
+          <CardTitle>
+            {selectedStatus
+              ? ORDER_STATUSES.find(s => s.value === selectedStatus)?.label
+              : 'All Orders'}
+          </CardTitle>
           <CardDescription>
-            {orders.length} {orders.length === 1 ? 'order' : 'orders'} ready for review
+            {total} {total === 1 ? 'order' : 'orders'} found
           </CardDescription>
         </CardHeader>
         <CardContent>
           {orders.length === 0 ? (
             <div className="text-center py-12">
-              <CheckCircle className="w-12 h-12 mx-auto mb-4 text-green-500" />
-              <p className="text-lg font-medium">All caught up!</p>
-              <p className="text-gray-500 mt-1">No pending orders at the moment</p>
+              <Package className="w-12 h-12 mx-auto mb-4 text-gray-400" />
+              <p className="text-lg font-medium">No orders found</p>
+              <p className="text-gray-500 mt-1">
+                {selectedStatus
+                  ? `No orders with status "${ORDER_STATUSES.find(s => s.value === selectedStatus)?.label}"`
+                  : 'No orders have been placed yet'}
+              </p>
             </div>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Order ID</TableHead>
+                  <TableHead>Reference ID</TableHead>
                   <TableHead>Product</TableHead>
                   <TableHead>Customer</TableHead>
                   <TableHead>Amount</TableHead>
-                  <TableHead>Payment</TableHead>
-                  <TableHead>Stock</TableHead>
+                  <TableHead>Status</TableHead>
                   <TableHead>Created</TableHead>
                   <TableHead>Actions</TableHead>
                 </TableRow>
@@ -196,7 +239,7 @@ export default function PendingOrdersPage() {
                             {item.order.productTitle || 'Unknown Product'}
                           </p>
                           <p className="text-xs text-gray-500">
-                            ASIN: {item.order.productAsin}
+                            ASIN: {item.order.productAsin || 'N/A'}
                           </p>
                           <p className="text-xs text-gray-500">
                             Qty: {item.order.quantity}
@@ -206,8 +249,8 @@ export default function PendingOrdersPage() {
                     </TableCell>
                     <TableCell>
                       <div>
-                        <p className="font-medium">{item.user.name || 'Unknown'}</p>
-                        <p className="text-sm text-gray-500">{item.user.phoneNumber}</p>
+                        <p className="font-medium">{item.user?.name || 'Unknown'}</p>
+                        <p className="text-sm text-gray-500">{item.user?.phoneNumber || 'N/A'}</p>
                       </div>
                     </TableCell>
                     <TableCell>
@@ -215,23 +258,15 @@ export default function PendingOrdersPage() {
                         <p className="font-medium">
                           {formatPrice(item.order.quotedPrice || item.order.totalAmount, item.order.currency)}
                         </p>
-                        {item.priceValidation.requiresApproval && (
-                          <Badge variant="destructive" className="mt-1">
-                            <AlertCircle className="w-3 h-3 mr-1" />
-                            Price Changed
-                          </Badge>
+                        {item.order.stripePaymentIntentId && (
+                          <p className="text-xs text-gray-500 truncate max-w-[120px]" title={item.order.stripePaymentIntentId}>
+                            PI: {item.order.stripePaymentIntentId.slice(-8)}
+                          </p>
                         )}
                       </div>
                     </TableCell>
                     <TableCell>
-                      {getPaymentStatusBadge(item.paymentStatus.status)}
-                    </TableCell>
-                    <TableCell>
-                      {item.stockStatus.available ? (
-                        <Badge className="bg-green-500">In Stock</Badge>
-                      ) : (
-                        <Badge variant="destructive">Out of Stock</Badge>
-                      )}
+                      {getStatusBadge(item.order.status)}
                     </TableCell>
                     <TableCell className="text-sm text-gray-500">
                       {formatDate(item.order.createdAt)}
@@ -241,7 +276,7 @@ export default function PendingOrdersPage() {
                         size="sm"
                         onClick={() => router.push(`/orders/${item.order.id}`)}
                       >
-                        Review
+                        View
                         <ExternalLink className="w-3 h-3 ml-1" />
                       </Button>
                     </TableCell>
