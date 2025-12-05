@@ -297,12 +297,12 @@
       "subtitle": "Simple steps to connect your fax machine to the internet",
       "steps": {
         "register": {
-          "title": "1. Register Your Fax Number",
-          "description": "Sign up online and register your fax machine number. Your fax number becomes your email address."
+          "title": "1. Send Us a Fax",
+          "description": "Simply enroll by faxing 050-5050-8899 (Japan) or 1-302-400-8899 (USA). Your fax number becomes your email address (1234567890@me.faxi.jp)."
         },
         "send": {
-          "title": "2. Send a Fax",
-          "description": "Write your request and send it to 050-5050-8899 (Japan) or 1-302-400-8899 (USA). Use checkmarks, circles, or simple handwriting."
+          "title": "2. Start Faxing",
+          "description": "Write your request and fax it to us. Use checkmarks, circles, or simple handwriting."
         },
         "process": {
           "title": "3. AI Processes Your Request",
