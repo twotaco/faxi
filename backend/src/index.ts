@@ -1543,6 +1543,7 @@ app.get('/api/admin/shopping/metrics/health', requireAdminAuth, requirePermissio
 // Admin order management endpoints
 import * as adminOrderController from './controllers/adminOrderController';
 app.get('/api/admin/orders/pending', requireAdminAuth, requirePermission('orders:manage'), adminOrderController.getPendingOrders);
+app.get('/api/admin/orders/awaiting-payment', requireAdminAuth, requirePermission('orders:view'), adminOrderController.getOrdersAwaitingPayment);
 app.get('/api/admin/orders/:id', requireAdminAuth, requirePermission('orders:view'), adminOrderController.getOrderDetails);
 app.post('/api/admin/orders/:id/prepare-checkout', requireAdminAuth, requirePermission('orders:manage'), adminOrderController.prepareCheckout);
 app.post('/api/admin/orders/:id/complete-purchase', requireAdminAuth, requirePermission('orders:manage'), adminOrderController.completePurchase);

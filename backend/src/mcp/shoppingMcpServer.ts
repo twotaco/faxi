@@ -603,6 +603,21 @@ export class ShoppingMCPServer implements MCPServer {
       // Calculate total amount
       const totalAmount = product.price * quantity;
 
+      // Validate price - don't create orders with 0 price
+      if (product.price <= 0 || totalAmount <= 0) {
+        console.error('Cannot create order: product price is 0 or invalid', {
+          asin: productAsin,
+          price: product.price,
+          totalAmount
+        });
+        return {
+          success: false,
+          error: 'Product price could not be determined. Please try again later.',
+          productAsin,
+          scrapedPrice: product.price
+        };
+      }
+
       // Get user's delivery address
       const deliveryAddress = userRepository.getDeliveryAddress(user);
       const formattedAddress = userRepository.formatDeliveryAddress(user);

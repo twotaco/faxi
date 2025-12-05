@@ -38,6 +38,34 @@ export async function getPendingOrders(req: Request, res: Response): Promise<voi
 }
 
 /**
+ * GET /api/admin/orders/awaiting-payment
+ * Returns list of orders waiting for customer payment (status = "pending_payment")
+ */
+export async function getOrdersAwaitingPayment(req: Request, res: Response): Promise<void> {
+  try {
+    loggingService.info('Admin fetching orders awaiting payment', {
+      adminUserId: (req as any).adminUser?.id
+    });
+
+    const orders = await orderManagementService.getOrdersAwaitingPayment();
+
+    res.json({
+      success: true,
+      data: {
+        orders,
+        count: orders.length
+      }
+    });
+  } catch (error) {
+    loggingService.error('Error fetching orders awaiting payment', { error });
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch orders awaiting payment'
+    });
+  }
+}
+
+/**
  * GET /api/admin/orders/:id
  * Returns detailed order view with fax image and validation
  */

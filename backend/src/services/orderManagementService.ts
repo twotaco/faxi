@@ -306,6 +306,66 @@ export class OrderManagementService {
   }
 
   /**
+   * Get orders awaiting customer payment (status = "pending_payment")
+   * These are orders created but not yet paid via bank transfer
+   */
+  async getOrdersAwaitingPayment(): Promise<AdminOrderView[]> {
+    loggingService.debug('Fetching orders awaiting payment');
+
+    const orders = await orderRepository.findByStatus('pending_payment');
+
+    const adminViews: AdminOrderView[] = [];
+
+    for (const order of orders) {
+      const user = await userRepository.findById(order.userId);
+      if (!user) {
+        loggingService.warn('User not found for order', {
+          orderId: order.id,
+          userId: order.userId
+        });
+        continue;
+      }
+
+      const adminView: AdminOrderView = {
+        order: order as ShoppingOrder,
+        user: {
+          id: user.id,
+          name: user.name,
+          phoneNumber: user.phoneNumber
+        },
+        faxImage: {
+          storageKey: null,
+          thumbnailUrl: null
+        },
+        paymentStatus: {
+          method: 'bank_transfer',
+          stripePaymentIntentId: (order as any).stripePaymentIntentId || null,
+          status: 'pending',  // pending = awaiting payment
+          paidAt: null
+        },
+        priceValidation: {
+          quotedPrice: (order as any).quotedPrice || order.totalAmount,
+          currentPrice: null,
+          discrepancy: 0,
+          requiresApproval: false
+        },
+        stockStatus: {
+          available: true,
+          checkedAt: new Date()
+        }
+      };
+
+      adminViews.push(adminView);
+    }
+
+    loggingService.info('Fetched orders awaiting payment', {
+      count: adminViews.length
+    });
+
+    return adminViews;
+  }
+
+  /**
    * Validate order before purchase
    * Checks current price and stock availability
    */

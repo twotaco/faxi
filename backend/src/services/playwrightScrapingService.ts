@@ -553,8 +553,9 @@ Return ONLY valid JSON, no markdown or explanation:`;
       
       // Extract product details
       const title = await page.$eval(AMAZON_SELECTORS.productTitle, el => el.textContent?.trim() || '');
-      const priceText = await page.$eval(AMAZON_SELECTORS.productPrice, el => el.textContent?.trim() || '');
-      const price = this.parsePrice(priceText);
+
+      // Try multiple price selectors - Amazon has various price display formats
+      const price = await this.extractPriceWithFallbacks(page);
       
       const primeBadge = await page.$(AMAZON_SELECTORS.productPrimeBadge);
       const primeEligible = primeBadge !== null;
@@ -635,6 +636,79 @@ Return ONLY valid JSON, no markdown or explanation:`;
     return `https://www.amazon.co.jp/s?${params.toString()}`;
   }
   
+  /**
+   * Extract price from product page using multiple fallback selectors.
+   * Amazon displays prices in various formats depending on:
+   * - Regular vs sale price
+   * - Subscribe & Save options
+   * - Prime-exclusive pricing
+   * - Bundle/variant pricing
+   */
+  private async extractPriceWithFallbacks(page: Page): Promise<number> {
+    // List of price selectors to try in order of preference
+    const priceSelectors = [
+      // Primary: Standard price display
+      '.a-price .a-offscreen',
+      // Fallback 1: Price without .a-offscreen
+      '.a-price .a-price-whole',
+      // Fallback 2: Core price span (common on product pages)
+      '#corePrice_feature_div .a-price .a-offscreen',
+      // Fallback 3: Price block variants
+      '#priceblock_ourprice',
+      '#priceblock_dealprice',
+      '#priceblock_saleprice',
+      // Fallback 4: Newer Amazon UI price displays
+      '.priceToPay .a-offscreen',
+      '.apexPriceToPay .a-offscreen',
+      // Fallback 5: Subscribe & save base price
+      '#corePrice_feature_div .a-section .a-offscreen',
+      // Fallback 6: Any visible price element
+      '[data-a-color="price"] .a-offscreen'
+    ];
+
+    for (const selector of priceSelectors) {
+      try {
+        const priceText = await page.$eval(selector, el => el.textContent?.trim() || '');
+        const price = this.parsePrice(priceText);
+        if (price > 0) {
+          this.logger.debug('Price extracted', { selector, price, priceText });
+          return price;
+        }
+      } catch {
+        // Selector not found, try next
+        continue;
+      }
+    }
+
+    // Last resort: Try to find any element with yen symbol and a number
+    try {
+      const allPrices = await page.$$eval('[class*="price"], [id*="price"]', elements => {
+        for (const el of elements) {
+          const text = el.textContent || '';
+          // Look for yen symbol followed by numbers
+          const match = text.match(/[¥￥]\s*([\d,]+)/);
+          if (match) {
+            return match[0];
+          }
+        }
+        return '';
+      });
+
+      if (allPrices) {
+        const price = this.parsePrice(allPrices);
+        if (price > 0) {
+          this.logger.debug('Price extracted via fallback regex', { price, text: allPrices });
+          return price;
+        }
+      }
+    } catch {
+      // Ignore errors from fallback extraction
+    }
+
+    this.logger.warn('Could not extract price from product page');
+    return 0;
+  }
+
   /**
    * Parse price from text (e.g., "¥1,234" or "￥764")
    * Preserves decimal places if present in source data
