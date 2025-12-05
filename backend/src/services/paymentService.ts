@@ -12,11 +12,34 @@ import { shoppingMetricsService } from './shoppingMetricsService';
 export interface BankTransferInstructions {
   paymentIntentId: string;
   bankName: string;
+  branchName?: string;
   accountNumber: string;
   accountName: string;
   amount: number;
   referenceCode: string;
   expiresAt: Date;
+  hostedInstructionsUrl?: string;
+}
+
+/**
+ * Parameters for initiating bank transfer
+ */
+export interface InitiateBankTransferParams {
+  userId: string;
+  amount: number;
+  currency: string;
+  description: string;
+  metadata?: Record<string, string>;
+}
+
+/**
+ * Result of bank transfer initiation
+ */
+export interface BankTransferResult {
+  success: boolean;
+  paymentIntent?: Stripe.PaymentIntent;
+  bankTransferDetails?: BankTransferInstructions;
+  error?: string;
 }
 
 /**
@@ -33,7 +56,7 @@ export class PaymentService {
     }
 
     this.stripe = new Stripe(stripeSecretKey, {
-      apiVersion: '2024-12-18.acacia',
+      apiVersion: '2025-10-29.clover',
     });
   }
 
@@ -216,9 +239,168 @@ export class PaymentService {
   }
 
   /**
-   * Create bank transfer payment intent with Stripe
+   * Initiate bank transfer payment for an order
+   * Uses Stripe's customer_balance with jp_bank_transfer for Japanese bank transfers
+   * @param params - Bank transfer parameters including userId, amount, and metadata
+   */
+  async initiateBankTransfer(params: InitiateBankTransferParams): Promise<BankTransferResult> {
+    const startTime = Date.now();
+
+    try {
+      const { userId, amount, currency, description, metadata } = params;
+
+      // Get user
+      const user = await userRepository.findById(userId);
+      if (!user) {
+        throw new Error(`User not found: ${userId}`);
+      }
+
+      // Create or get Stripe customer
+      let customerId = user.stripeCustomerId;
+      if (!customerId) {
+        const customer = await this.stripe.customers.create({
+          phone: user.phoneNumber,
+          email: user.emailAddress,
+          name: user.name || user.deliveryName || undefined,
+          metadata: {
+            userId: user.id,
+            phoneNumber: user.phoneNumber,
+          },
+        });
+        customerId = customer.id;
+
+        // Update user with Stripe customer ID
+        await userRepository.update(user.id, { stripeCustomerId: customerId });
+      }
+
+      // Create payment intent for bank transfer
+      // Note: customer_balance with bank_transfer requires specific configuration
+      const paymentIntent = await this.stripe.paymentIntents.create({
+        amount: Math.round(amount),
+        currency: currency.toLowerCase(),
+        customer: customerId,
+        payment_method_types: ['customer_balance'],
+        payment_method_data: {
+          type: 'customer_balance',
+        },
+        payment_method_options: {
+          customer_balance: {
+            funding_type: 'bank_transfer',
+            bank_transfer: {
+              type: 'jp_bank_transfer',
+            },
+          },
+        },
+        description,
+        metadata: {
+          ...metadata,
+          userId,
+        },
+      });
+
+      // Extract bank transfer details from next_action if available
+      let bankTransferDetails: BankTransferInstructions;
+
+      if (paymentIntent.next_action?.display_bank_transfer_instructions) {
+        const instructions = paymentIntent.next_action.display_bank_transfer_instructions;
+        const jpInstructions = instructions.financial_addresses?.[0]?.zengin;
+        // Cast instructions to access expires_at which may exist on newer API versions
+        const instructionsAny = instructions as unknown as Record<string, unknown>;
+
+        bankTransferDetails = {
+          paymentIntentId: paymentIntent.id,
+          bankName: jpInstructions?.bank_name || 'Stripe Bank',
+          branchName: jpInstructions?.branch_name ?? undefined,
+          accountNumber: jpInstructions?.account_number || 'See instructions',
+          accountName: jpInstructions?.account_holder_name || 'Faxi Inc.',
+          amount,
+          referenceCode: instructions.reference || metadata?.referenceId || paymentIntent.id,
+          expiresAt: typeof instructionsAny.expires_at === 'number'
+            ? new Date(instructionsAny.expires_at * 1000)
+            : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+          hostedInstructionsUrl: instructions.hosted_instructions_url ?? undefined,
+        };
+      } else {
+        // Fallback if next_action not available yet
+        bankTransferDetails = {
+          paymentIntentId: paymentIntent.id,
+          bankName: 'Stripe Bank Transfer',
+          accountNumber: 'See payment page',
+          accountName: 'Faxi Inc.',
+          amount,
+          referenceCode: metadata?.referenceId || paymentIntent.id,
+          expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+        };
+      }
+
+      const processingTime = Date.now() - startTime;
+
+      // Log audit trail
+      await auditLogService.log({
+        userId,
+        eventType: 'payment.bank_transfer_initiated',
+        eventData: {
+          paymentIntentId: paymentIntent.id,
+          amount,
+          currency,
+          referenceCode: bankTransferDetails.referenceCode,
+          metadata,
+          timestamp: new Date().toISOString(),
+        },
+      });
+
+      // Record payment metrics
+      await shoppingMetricsService.recordPaymentMetric(
+        true,
+        amount,
+        'bank_transfer',
+        processingTime
+      );
+
+      loggingService.info('Bank transfer initiated', {
+        userId,
+        paymentIntentId: paymentIntent.id,
+        amount,
+        referenceCode: bankTransferDetails.referenceCode,
+        processingTime,
+      });
+
+      return {
+        success: true,
+        paymentIntent,
+        bankTransferDetails,
+      };
+    } catch (error) {
+      const processingTime = Date.now() - startTime;
+      const errorMessage = error instanceof Error ? error.message : String(error);
+
+      // Record failed payment metrics
+      await shoppingMetricsService.recordPaymentMetric(
+        false,
+        params.amount,
+        'bank_transfer',
+        processingTime,
+        errorMessage
+      );
+
+      loggingService.error('Failed to initiate bank transfer', {
+        userId: params.userId,
+        amount: params.amount,
+        error: errorMessage,
+      });
+
+      return {
+        success: false,
+        error: errorMessage,
+      };
+    }
+  }
+
+  /**
+   * Create bank transfer payment intent with Stripe (legacy method)
    * @param orderId - Order ID
    * @param amount - Amount in Japanese Yen
+   * @deprecated Use initiateBankTransfer instead
    */
   async createBankTransferIntent(
     orderId: string,

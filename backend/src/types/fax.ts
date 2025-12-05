@@ -1,5 +1,5 @@
 export interface FaxTemplate {
-  type: 'email_reply' | 'product_selection' | 'confirmation' | 'multi_action' | 'clarification' | 'welcome' | 'appointment_selection' | 'general_inquiry';
+  type: 'email_reply' | 'product_selection' | 'confirmation' | 'multi_action' | 'clarification' | 'welcome' | 'appointment_selection' | 'general_inquiry' | 'order_confirmation';
   referenceId: string; // FX-YYYY-NNNNNN format
   pages: FaxPage[];
   contextData: any; // Data needed to process reply (thread IDs, product IDs, etc.)

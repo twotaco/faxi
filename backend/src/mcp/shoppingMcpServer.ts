@@ -4,6 +4,7 @@ import { orderRepository, CreateOrderData } from '../repositories/orderRepositor
 import { userRepository } from '../repositories/userRepository';
 import { auditLogService } from '../services/auditLogService';
 import { conversationContextRepository } from '../repositories/conversationContextRepository';
+import { paymentService } from '../services/paymentService';
 // isDemoMode removed - demo user exists in database, no need for mock stubs
 
 /**
@@ -564,6 +565,7 @@ export class ShoppingMCPServer implements MCPServer {
 
   /**
    * Handle create order request
+   * Creates order with pending_payment status and initiates Stripe bank transfer
    */
   private async handleCreateOrder(params: any): Promise<any> {
     const { userId, referenceId, productAsin, quantity = 1 } = params;
@@ -580,7 +582,7 @@ export class ShoppingMCPServer implements MCPServer {
 
       // Get product details to validate and get current price (force fresh scrape)
       const product = await productSearchService.getProductDetails(productAsin, userId, true);
-      
+
       if (!product) {
         return {
           success: false,
@@ -601,11 +603,15 @@ export class ShoppingMCPServer implements MCPServer {
       // Calculate total amount
       const totalAmount = product.price * quantity;
 
+      // Get user's delivery address
+      const deliveryAddress = userRepository.getDeliveryAddress(user);
+      const formattedAddress = userRepository.formatDeliveryAddress(user);
+
       // Create order with status "pending_payment"
       const orderData: CreateOrderData = {
         userId,
         referenceId,
-        status: 'pending',
+        status: 'pending_payment',
         totalAmount,
         currency: 'JPY',
         items: {
@@ -618,10 +624,54 @@ export class ShoppingMCPServer implements MCPServer {
             imageUrl: product.imageUrl
           }]
         },
-        shippingAddress: null // Will be collected during order fulfillment
+        shippingAddress: deliveryAddress
       };
 
       const order = await orderRepository.create(orderData);
+
+      // Initiate Stripe bank transfer payment
+      let bankTransferDetails = null;
+      try {
+        const paymentResult = await paymentService.initiateBankTransfer({
+          userId,
+          amount: totalAmount,
+          currency: 'JPY',
+          description: `Faxi Order ${order.referenceId}: ${product.title}`,
+          metadata: {
+            orderId: order.id,
+            referenceId: order.referenceId,
+            productAsin: product.asin
+          }
+        });
+
+        if (paymentResult.success && paymentResult.paymentIntent) {
+          // Update order with Stripe payment intent ID
+          await orderRepository.update(order.id, {
+            stripePaymentIntentId: paymentResult.paymentIntent.id
+          });
+
+          bankTransferDetails = paymentResult.bankTransferDetails;
+        }
+      } catch (paymentError) {
+        console.error('Failed to initiate bank transfer:', paymentError);
+
+        // Log to audit trail so admin can see it
+        await auditLogService.log({
+          userId,
+          eventType: 'payment.initiation_failed',
+          eventData: {
+            orderId: order.id,
+            referenceId: order.referenceId,
+            productAsin: product.asin,
+            amount: totalAmount,
+            currency: 'JPY',
+            error: paymentError instanceof Error ? paymentError.message : String(paymentError),
+            timestamp: new Date().toISOString()
+          }
+        });
+
+        // Continue without payment - order is still created
+      }
 
       // Log order creation via MCP tool call (faxJobId is null for demo/direct MCP calls)
       await auditLogService.logMCPToolCall({
@@ -630,7 +680,7 @@ export class ShoppingMCPServer implements MCPServer {
         toolName: 'create_order',
         toolServer: 'shopping',
         input: { productAsin, quantity, referenceId },
-        output: { orderId: order.id, totalAmount },
+        output: { orderId: order.id, totalAmount, hasBankTransfer: !!bankTransferDetails },
         success: true
       });
 
@@ -650,9 +700,14 @@ export class ShoppingMCPServer implements MCPServer {
           title: product.title,
           price: product.price,
           imageUrl: product.imageUrl
-        }
+        },
+        deliveryAddress: {
+          ...deliveryAddress,
+          formatted: formattedAddress
+        },
+        bankTransferDetails
       };
-      
+
     } catch (error) {
       return {
         success: false,

@@ -65,6 +65,7 @@ export const toolToServerMap: Record<string, string> = {
   'user_profile_lookup_contact': 'user_profile',
   'user_profile_delete_contact': 'user_profile',
   'user_profile_get_profile': 'user_profile',
+  'user_profile_update_address': 'user_profile',
   'request_clarification': 'clarification'
 };
 
@@ -83,7 +84,8 @@ export const toolNameMap: Record<string, string> = {
   'user_profile_update_contact': 'update_contact',
   'user_profile_lookup_contact': 'lookup_contact',
   'user_profile_delete_contact': 'delete_contact',
-  'user_profile_get_profile': 'get_user_profile'
+  'user_profile_get_profile': 'get_user_profile',
+  'user_profile_update_address': 'update_delivery_address'
 };
 
 /**
@@ -127,6 +129,10 @@ AVAILABLE TOOLS:
 
 - user_profile_get_profile: Get user profile information and preferences
   params: {} (no parameters needed)
+
+- user_profile_update_address: Update the user's delivery address for shopping orders
+  params: { postalCode?: string, prefecture?: string, city?: string, address1?: string, address2?: string, phone?: string, name?: string }
+  Note: Update only the fields provided. Japanese addresses: postalCode is XXX-XXXX format, prefecture is 都道府県
 `;
 
 /**

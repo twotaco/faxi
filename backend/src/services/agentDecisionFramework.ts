@@ -49,6 +49,9 @@ export class AgentDecisionFramework {
       case 'blocklist_management':
         return this.canCompleteBlocklistImmediately(context);
 
+      case 'profile_update':
+        return this.canCompleteProfileUpdateImmediately(context);
+
       default:
         return false;
     }
@@ -129,6 +132,23 @@ export class AgentDecisionFramework {
     const params = context.interpretation.parameters;
     // Need action and target (email or name)
     return !!(params.blocklistAction && (params.targetEmail || params.targetName));
+  }
+
+  /**
+   * Determine if profile/address update can be completed immediately
+   */
+  private canCompleteProfileUpdateImmediately(context: DecisionContext): boolean {
+    const params = context.interpretation.parameters;
+    // Need at least one address field to update
+    return !!(
+      params.postalCode ||
+      params.prefecture ||
+      params.city ||
+      params.address1 ||
+      params.address2 ||
+      params.phone ||
+      params.deliveryName
+    );
   }
 
   /**
@@ -495,7 +515,10 @@ export class AgentDecisionFramework {
       
       case 'reply':
         return this.createReplyWorkflowSteps(context);
-      
+
+      case 'profile_update':
+        return this.createProfileUpdateWorkflowSteps(context);
+
       default:
         return [];
     }
@@ -707,6 +730,33 @@ export class AgentDecisionFramework {
           selectedOptions: params.selectedOptions || [],
           freeformText: params.freeformText,
           userId: context.userId
+        }
+      }
+    }];
+  }
+
+  /**
+   * Create profile/address update workflow steps
+   */
+  private createProfileUpdateWorkflowSteps(context: DecisionContext): WorkflowStep[] {
+    const params = context.interpretation.parameters;
+
+    return [{
+      id: 'update_delivery_address',
+      type: 'tool_call',
+      description: 'Update user delivery address',
+      toolCall: {
+        server: 'user_profile',
+        tool: 'update_delivery_address',
+        input: {
+          userId: context.userId,
+          postalCode: params.postalCode,
+          prefecture: params.prefecture,
+          city: params.city,
+          address1: params.address1,
+          address2: params.address2,
+          phone: params.phone,
+          name: params.deliveryName
         }
       }
     }];

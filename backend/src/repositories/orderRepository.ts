@@ -52,6 +52,7 @@ export interface UpdateOrderData {
   status?: 'pending' | 'paid' | 'processing' | 'shipped' | 'delivered' | 'cancelled' | 'pending_payment' | 'pending_purchase' | 'purchased';
   trackingNumber?: string;
   shippingAddress?: any;
+  stripePaymentIntentId?: string;
   // Shopping-specific fields
   actualPrice?: number;
   adminUserId?: string;
@@ -120,9 +121,32 @@ export class OrderRepository {
               stripe_payment_intent_id as "stripePaymentIntentId",
               admin_user_id as "adminUserId", purchased_at as "purchasedAt",
               created_at as "createdAt", updated_at as "updatedAt"
-       FROM orders 
+       FROM orders
        WHERE reference_id = $1`,
       [referenceId]
+    );
+
+    return result.rows[0] || null;
+  }
+
+  /**
+   * Find order by Stripe payment intent ID
+   */
+  async findByStripePaymentIntentId(paymentIntentId: string): Promise<Order | null> {
+    const result = await db.query<Order>(
+      `SELECT id, user_id as "userId", reference_id as "referenceId",
+              external_order_id as "externalOrderId", status, total_amount as "totalAmount",
+              currency, items, shipping_address as "shippingAddress",
+              tracking_number as "trackingNumber",
+              product_asin as "productAsin", product_title as "productTitle",
+              product_image_url as "productImageUrl", quantity,
+              quoted_price as "quotedPrice", actual_price as "actualPrice",
+              stripe_payment_intent_id as "stripePaymentIntentId",
+              admin_user_id as "adminUserId", purchased_at as "purchasedAt",
+              created_at as "createdAt", updated_at as "updatedAt"
+       FROM orders
+       WHERE stripe_payment_intent_id = $1`,
+      [paymentIntentId]
     );
 
     return result.rows[0] || null;
@@ -255,6 +279,11 @@ export class OrderRepository {
     if (data.shippingAddress !== undefined) {
       updates.push(`shipping_address = $${paramIndex++}`);
       values.push(JSON.stringify(data.shippingAddress));
+    }
+
+    if (data.stripePaymentIntentId !== undefined) {
+      updates.push(`stripe_payment_intent_id = $${paramIndex++}`);
+      values.push(data.stripePaymentIntentId);
     }
 
     if (data.actualPrice !== undefined) {

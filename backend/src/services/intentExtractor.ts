@@ -41,7 +41,8 @@ export class IntentExtractor {
       this.detectPaymentIntent(text, visualAnnotations),
       this.detectReplyIntent(text, visualAnnotations),
       this.detectBlocklistIntent(text, visualAnnotations),
-      this.detectContactManagementIntent(text, visualAnnotations)
+      this.detectContactManagementIntent(text, visualAnnotations),
+      this.detectProfileUpdateIntent(text, visualAnnotations)
     ]);
 
     // Find the highest confidence intent
@@ -237,17 +238,13 @@ export class IntentExtractor {
       })
       .filter((t): t is string => t !== null);
 
-    // Also check for circled options in OCR text (○ B. or ○ D. patterns)
-    // These appear when the circle is picked up by OCR rather than visual annotation
-    const textCirclePattern = /[○◯⭕]\s*([A-E])[\.\s]/gi;
-    const textOptions: string[] = [];
-    let match;
-    while ((match = textCirclePattern.exec(text)) !== null) {
-      textOptions.push(match[1].toUpperCase());
-    }
+    // NOTE: We intentionally do NOT check for ○ B. patterns in OCR text here.
+    // The template itself contains empty circle characters (○) next to each option,
+    // so matching "○ B." in OCR would pick up template circles, not user selections.
+    // We rely solely on visual annotation detection (actual hand-drawn circles/checkmarks).
 
-    // Combine both sources, removing duplicates
-    const selectedOptions = Array.from(new Set([...annotationOptions, ...textOptions]));
+    // Only use annotations as the source of truth for selections
+    const selectedOptions = annotationOptions;
 
     if (selectedOptions.length > 0) {
       // Check for reference ID indicating this is a reply to a previous shopping form
@@ -900,6 +897,103 @@ export class IntentExtractor {
   }
 
   /**
+   * Detect profile/address update intent
+   */
+  private async detectProfileUpdateIntent(text: string, annotations: VisualAnnotation[]): Promise<{
+    intent: string;
+    confidence: number;
+    parameters: IntentParameters;
+  }> {
+    let confidence = 0;
+    const parameters: IntentParameters = {};
+
+    // Address update keywords (English and Japanese)
+    const addressUpdateKeywords = [
+      'change address', 'update address', 'new address', 'delivery address',
+      'shipping address', 'move to', 'moved to', 'change my address',
+      '住所変更', '配送先変更', '届け先変更', '住所を変更', '新しい住所',
+      '引っ越し', '引越し', 'アドレス変更'
+    ];
+
+    // Profile update keywords
+    const profileUpdateKeywords = [
+      'change name', 'update name', 'change phone', 'update phone',
+      'change profile', 'update profile', 'my new',
+      '名前変更', '電話番号変更', 'プロフィール変更'
+    ];
+
+    // Check for address update keywords
+    const hasAddressKeyword = addressUpdateKeywords.some(keyword =>
+      text.includes(keyword.toLowerCase())
+    );
+
+    // Check for profile update keywords
+    const hasProfileKeyword = profileUpdateKeywords.some(keyword =>
+      text.includes(keyword.toLowerCase())
+    );
+
+    if (hasAddressKeyword) {
+      parameters.profileUpdateType = 'address';
+      confidence += 0.7;
+    } else if (hasProfileKeyword) {
+      parameters.profileUpdateType = 'profile';
+      confidence += 0.5;
+    }
+
+    // Try to extract postal code (Japanese format: XXX-XXXX)
+    const postalCodePattern = /(\d{3}[-\s]?\d{4})/;
+    const postalCodeMatch = text.match(postalCodePattern);
+    if (postalCodeMatch) {
+      parameters.postalCode = postalCodeMatch[1].replace(/\s/g, '').replace('-', '-');
+      confidence += 0.15;
+    }
+
+    // Try to extract Japanese prefecture
+    const prefectures = [
+      '北海道', '青森県', '岩手県', '宮城県', '秋田県', '山形県', '福島県',
+      '茨城県', '栃木県', '群馬県', '埼玉県', '千葉県', '東京都', '神奈川県',
+      '新潟県', '富山県', '石川県', '福井県', '山梨県', '長野県', '岐阜県',
+      '静岡県', '愛知県', '三重県', '滋賀県', '京都府', '大阪府', '兵庫県',
+      '奈良県', '和歌山県', '鳥取県', '島根県', '岡山県', '広島県', '山口県',
+      '徳島県', '香川県', '愛媛県', '高知県', '福岡県', '佐賀県', '長崎県',
+      '熊本県', '大分県', '宮崎県', '鹿児島県', '沖縄県'
+    ];
+
+    for (const prefecture of prefectures) {
+      if (text.includes(prefecture.toLowerCase()) || text.includes(prefecture)) {
+        parameters.prefecture = prefecture;
+        confidence += 0.1;
+        break;
+      }
+    }
+
+    // Look for address line patterns (Japanese addresses often include numbers and 丁目/番地)
+    const addressLinePattern = /(\d+[\-\s]?\d*[\-\s]?\d*|[一二三四五六七八九十]+丁目|番地)/;
+    if (addressLinePattern.test(text)) {
+      confidence += 0.05;
+    }
+
+    // Extract phone number pattern
+    const phonePattern = /(\d{2,4}[-\s]?\d{2,4}[-\s]?\d{3,4})/;
+    const phoneMatch = text.match(phonePattern);
+    if (phoneMatch && !postalCodeMatch) {
+      parameters.phone = phoneMatch[1];
+      confidence += 0.1;
+    }
+
+    // If we detect address keywords but no actual address data, reduce confidence
+    if (hasAddressKeyword && !parameters.postalCode && !parameters.prefecture) {
+      confidence *= 0.7;
+    }
+
+    return {
+      intent: 'profile_update',
+      confidence: Math.min(confidence, 0.95),
+      parameters
+    };
+  }
+
+  /**
    * Get reason for intent classification
    */
   private getIntentReason(intent: string, confidence: number): string {
@@ -910,7 +1004,8 @@ export class IntentExtractor {
       payment_registration: 'Contains payment or billing-related keywords',
       reply: 'Contains circled options or reference to previous communication',
       blocklist_management: 'Contains block/unblock keywords and email address',
-      contact_management: 'Contains contact management keywords (add/update/delete/list)'
+      contact_management: 'Contains contact management keywords (add/update/delete/list)',
+      profile_update: 'Contains address or profile update keywords'
     };
     return reasons[intent] || 'Pattern match detected';
   }

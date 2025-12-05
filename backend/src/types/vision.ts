@@ -19,7 +19,7 @@ export interface ConversationContext {
 }
 
 export interface InterpretationResult {
-  intent: 'email' | 'shopping' | 'ai_chat' | 'payment_registration' | 'reply' | 'blocklist_management' | 'contact_management' | 'unknown';
+  intent: 'email' | 'shopping' | 'ai_chat' | 'payment_registration' | 'reply' | 'blocklist_management' | 'contact_management' | 'profile_update' | 'unknown';
   confidence: number; // 0-1
   parameters: IntentParameters;
   visualAnnotations?: VisualAnnotation[];
@@ -79,6 +79,16 @@ export interface IntentParameters {
   newName?: string; // New name for add/update operations
   email?: string; // Email for add/update operations
   note?: string; // Note/relationship for add/update operations
+
+  // Profile/address update intent
+  profileUpdateType?: 'address' | 'profile';
+  postalCode?: string; // Japanese postal code (XXX-XXXX)
+  prefecture?: string; // Japanese prefecture
+  city?: string;
+  address1?: string; // Street address line 1
+  address2?: string; // Building/apartment
+  phone?: string; // Contact phone number
+  deliveryName?: string; // Name for delivery
 }
 
 export interface VisualAnnotation {

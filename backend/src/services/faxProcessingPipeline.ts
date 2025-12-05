@@ -669,6 +669,46 @@ export class FaxProcessingPipeline {
       };
     }
 
+    // Order creation response with bank transfer details
+    const orderResult = planResult.results.find(r =>
+      (r.tool === 'shopping_create_order' || r.tool === 'create_order') && r.success && r.result?.order
+    );
+    if (orderResult) {
+      const { order, product, deliveryAddress, bankTransferDetails } = orderResult.result;
+      return {
+        type: 'order_confirmation',
+        referenceId: order.referenceId || referenceId,
+        contextData: {
+          order: {
+            id: order.id,
+            referenceId: order.referenceId,
+            status: order.status,
+            totalAmount: order.totalAmount,
+            currency: order.currency || 'JPY',
+          },
+          product: {
+            asin: product?.asin,
+            title: product?.title,
+            price: product?.price,
+            imageUrl: product?.imageUrl,
+            quantity: order.items?.products?.[0]?.quantity || 1,
+          },
+          deliveryAddress: deliveryAddress,
+          bankTransferDetails: bankTransferDetails ? {
+            bankName: bankTransferDetails.bankName,
+            branchName: bankTransferDetails.branchName,
+            accountNumber: bankTransferDetails.accountNumber,
+            accountName: bankTransferDetails.accountName,
+            amount: bankTransferDetails.amount,
+            referenceCode: bankTransferDetails.referenceCode,
+            expiresAt: bankTransferDetails.expiresAt,
+            hostedInstructionsUrl: bankTransferDetails.hostedInstructionsUrl,
+          } : undefined,
+        },
+        pages: [],
+      };
+    }
+
     // Email sent response
     const emailResult = planResult.results.find(r => r.tool === 'email_send' && r.success);
     if (emailResult) {
@@ -685,6 +725,32 @@ export class FaxProcessingPipeline {
           content: [{
             type: 'text',
             text: planResult.synthesizedResponse || 'Your email has been sent.',
+            fontSize: 12,
+          }],
+          pageNumber: 1,
+          totalPages: 1,
+        }],
+      };
+    }
+
+    // Address update response
+    const addressResult = planResult.results.find(r =>
+      (r.tool === 'user_profile_update_address' || r.tool === 'update_delivery_address') && r.success
+    );
+    if (addressResult) {
+      return {
+        type: 'confirmation',
+        referenceId,
+        contextData: {
+          type: 'profile_update',
+          actionType: 'address_update',
+          description: 'Delivery address updated',
+          result: addressResult.result?.message || planResult.synthesizedResponse || 'Your delivery address has been updated successfully.',
+        },
+        pages: [{
+          content: [{
+            type: 'text',
+            text: addressResult.result?.message || planResult.synthesizedResponse || 'Your delivery address has been updated successfully.',
             fontSize: 12,
           }],
           pageNumber: 1,

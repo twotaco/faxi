@@ -269,22 +269,68 @@ export class StripeWebhookController {
    */
   private async updateOrderStatus(paymentIntentId: string, status: string): Promise<void> {
     try {
-      // Find orders associated with this payment intent
-      // Note: This would require adding a payment_intent_id field to the orders table
-      // or storing the association in the order metadata
-      
-      // For now, we'll log the status update
-      await auditLogService.log({
-        eventType: 'order.status_updated',
-        eventData: {
-          paymentIntentId,
-          newStatus: status,
-          timestamp: new Date().toISOString(),
-        },
-      });
-      
+      // Find order associated with this payment intent
+      const order = await orderRepository.findByStripePaymentIntentId(paymentIntentId);
+
+      if (!order) {
+        console.log(`No order found for payment intent: ${paymentIntentId}`);
+        return;
+      }
+
+      // Map Stripe status to order status
+      let orderStatus: 'pending_payment' | 'paid' | 'cancelled' | 'pending_purchase';
+      switch (status) {
+        case 'paid':
+          orderStatus = 'paid';
+          break;
+        case 'payment_failed':
+        case 'canceled':
+          orderStatus = 'cancelled';
+          break;
+        case 'processing':
+          // Bank transfer processing - keep as pending_payment
+          orderStatus = 'pending_payment';
+          break;
+        case 'pending_action':
+          // Requires action - keep as pending_payment
+          orderStatus = 'pending_payment';
+          break;
+        default:
+          orderStatus = 'pending_payment';
+      }
+
+      // Update order status if it's different
+      if (order.status !== orderStatus) {
+        await orderRepository.updateStatus(order.id, orderStatus);
+
+        // Log the status update
+        await auditLogService.log({
+          userId: order.userId,
+          eventType: 'order.status_updated',
+          eventData: {
+            orderId: order.id,
+            referenceId: order.referenceId,
+            paymentIntentId,
+            previousStatus: order.status,
+            newStatus: orderStatus,
+            timestamp: new Date().toISOString(),
+          },
+        });
+
+        console.log(`Order ${order.referenceId} status updated: ${order.status} -> ${orderStatus}`);
+      }
+
     } catch (error) {
       console.error('Failed to update order status:', error);
+
+      await auditLogService.logSystemError({
+        errorType: 'order_status_update_failed',
+        errorMessage: error instanceof Error ? error.message : 'Unknown error',
+        context: {
+          paymentIntentId,
+          requestedStatus: status,
+        },
+      });
     }
   }
 }

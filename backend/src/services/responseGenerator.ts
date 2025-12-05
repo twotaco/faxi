@@ -5,6 +5,7 @@ import { ClarificationFaxGenerator } from './clarificationFaxGenerator.js';
 import { WelcomeFaxGenerator } from './welcomeFaxGenerator.js';
 import { AppointmentSelectionFaxGenerator } from './appointmentSelectionFaxGenerator.js';
 import { GeneralInquiryFaxGenerator } from './generalInquiryFaxGenerator.js';
+import { ShoppingOrderConfirmationFaxGenerator, ShoppingOrderConfirmationData } from './shoppingOrderConfirmationFaxGenerator.js';
 import { FaxGenerator } from './faxGenerator.js';
 import { PdfFaxGenerator } from './pdfFaxGenerator.js';
 import { FaxTemplateEngine } from './faxTemplateEngine.js';
@@ -22,7 +23,7 @@ import {
 } from '../types/fax.js';
 
 export interface ResponseGeneratorRequest {
-  type: 'email_reply' | 'product_selection' | 'confirmation' | 'clarification' | 'welcome' | 'multi_action' | 'appointment_selection' | 'general_inquiry';
+  type: 'email_reply' | 'product_selection' | 'confirmation' | 'clarification' | 'welcome' | 'multi_action' | 'appointment_selection' | 'general_inquiry' | 'order_confirmation';
   data: any;
   referenceId?: string;
   options?: any;
@@ -209,6 +210,39 @@ export class ResponseGenerator {
         template = {
           type: 'general_inquiry',
           referenceId,
+          pages: [],
+          contextData: request.data
+        };
+        break;
+
+      case 'order_confirmation':
+        // Build ShoppingOrderConfirmationData from the order result
+        const orderData = request.data;
+        const shoppingOrderData: ShoppingOrderConfirmationData = {
+          orderId: orderData.order?.id || '',
+          referenceId: orderData.order?.referenceId || referenceId,
+          productTitle: orderData.product?.title || 'Product',
+          productAsin: orderData.product?.asin || '',
+          quantity: orderData.product?.quantity || 1,
+          quotedPrice: orderData.product?.price || 0,
+          totalAmount: orderData.order?.totalAmount || 0,
+          paymentMethod: orderData.bankTransferDetails ? 'bank_transfer' : 'card',
+          bankTransferInstructions: orderData.bankTransferDetails ? {
+            bankName: orderData.bankTransferDetails.bankName,
+            accountNumber: orderData.bankTransferDetails.accountNumber,
+            accountName: orderData.bankTransferDetails.accountName,
+            amount: orderData.bankTransferDetails.amount,
+            referenceCode: orderData.bankTransferDetails.referenceCode,
+            expiresAt: new Date(orderData.bankTransferDetails.expiresAt),
+          } : undefined,
+          userName: orderData.deliveryAddress?.name,
+        };
+        pdfBuffer = await ShoppingOrderConfirmationFaxGenerator.generateOrderConfirmationFax(
+          shoppingOrderData
+        );
+        template = {
+          type: 'order_confirmation',
+          referenceId: shoppingOrderData.referenceId,
           pages: [],
           contextData: request.data
         };

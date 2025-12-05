@@ -397,8 +397,8 @@ export class UserProfileMCPServer implements MCPServer {
    * Handle update delivery address request
    */
   private async handleUpdateDeliveryAddress(params: any): Promise<any> {
-    const { userId, name, address1, address2, city, state, postalCode, country = 'JP', phone } = params;
-    
+    const { userId, name, address1, address2, city, prefecture, postalCode, phone } = params;
+
     try {
       // Verify user exists
       const user = await userRepository.findById(userId);
@@ -409,37 +409,53 @@ export class UserProfileMCPServer implements MCPServer {
         };
       }
 
-      // Create delivery address object
-      const deliveryAddress = {
-        name,
-        address1,
-        address2: address2 || null,
-        city,
-        state,
-        postalCode,
-        country,
-        phone: phone || user.phoneNumber
-      };
+      // Get current delivery address for logging
+      const previousAddress = userRepository.getDeliveryAddress(user);
 
-      // Update user's name if provided and different
-      if (name && name !== user.name) {
-        await userRepository.update(userId, { name });
+      // Build the update object with only provided fields
+      const addressUpdate: Partial<{
+        name: string | null;
+        postalCode: string | null;
+        prefecture: string | null;
+        city: string | null;
+        address1: string | null;
+        address2: string | null;
+        phone: string | null;
+      }> = {};
+
+      if (name !== undefined) addressUpdate.name = name;
+      if (postalCode !== undefined) addressUpdate.postalCode = postalCode;
+      if (prefecture !== undefined) addressUpdate.prefecture = prefecture;
+      if (city !== undefined) addressUpdate.city = city;
+      if (address1 !== undefined) addressUpdate.address1 = address1;
+      if (address2 !== undefined) addressUpdate.address2 = address2;
+      if (phone !== undefined) addressUpdate.phone = phone;
+
+      // Update if there's something to update
+      if (Object.keys(addressUpdate).length > 0) {
+        await userRepository.updateDeliveryAddress(userId, addressUpdate);
       }
+
+      // Get updated user
+      const updatedUser = await userRepository.findById(userId);
+      const newAddress = updatedUser ? userRepository.getDeliveryAddress(updatedUser) : null;
+      const formattedAddress = updatedUser ? userRepository.formatDeliveryAddress(updatedUser) : null;
 
       // Log the address update
       await auditLogService.logUserProfileUpdated({
         userId,
         field: 'delivery_address',
-        oldValue: null, // We don't store previous addresses
-        newValue: deliveryAddress
+        oldValue: previousAddress,
+        newValue: newAddress
       });
 
       return {
         success: true,
-        deliveryAddress,
-        message: 'Delivery address updated successfully'
+        deliveryAddress: newAddress,
+        formattedAddress,
+        message: '配送先住所を更新しました (Delivery address updated successfully)'
       };
-      
+
     } catch (error) {
       return {
         success: false,
