@@ -1329,16 +1329,19 @@ export class MCPControllerAgent {
       }
     } else if (contextData.searchResults) {
       // Single product search - standard lookup
-      selectedProducts = selectedMarkers
-        .map((marker: string) => {
-          const product = contextData.searchResults?.find((p: any) => p.selectionMarker === marker);
-          return product ? product.asin : null;
-        })
-        .filter((asin: string | null): asin is string => asin !== null);
+      for (const marker of selectedMarkers) {
+        const product = contextData.searchResults?.find((p: any) => p.selectionMarker === marker);
+        if (product?.asin) {
+          selectedProducts.push(product.asin);
+        } else {
+          // Log but continue - gracefully skip invalid markers
+          console.warn(`[MCP Agent] No ASIN found for marker "${marker}" in context ${shoppingContext.referenceId}, skipping`);
+        }
+      }
     }
 
     if (selectedProducts.length === 0) {
-      console.log('[MCP Agent] No valid products found for selection markers');
+      console.log('[MCP Agent] No valid products found for selection markers:', selectedMarkers);
       return [];
     }
 

@@ -15,11 +15,128 @@ import { contextRecoveryService, extractReferenceIdFromText } from './contextRec
 
 export class AIVisionInterpreter {
   private genAI: GoogleGenerativeAI;
-  private model: any;
 
   constructor() {
     this.genAI = new GoogleGenerativeAI(config.gemini.apiKey);
-    this.model = this.genAI.getGenerativeModel({ model: config.gemini.model });
+  }
+
+  /**
+   * Get JSON schema for fax interpretation response.
+   * This ensures Gemini returns structured, validated JSON.
+   */
+  private getFaxInterpretationSchema(): any {
+    return {
+      type: 'object',
+      properties: {
+        intent: {
+          type: 'string',
+          enum: ['email', 'shopping', 'ai_chat', 'payment_registration', 'reply', 'unknown'],
+          description: 'The primary intent detected from the fax'
+        },
+        confidence: {
+          type: 'number',
+          description: 'Confidence score between 0.0 and 1.0'
+        },
+        extractedText: {
+          type: 'string',
+          description: 'Full text content extracted from the fax via OCR'
+        },
+        parameters: {
+          type: 'object',
+          properties: {
+            // Shopping intent - product selection
+            selectedProductIds: {
+              type: 'array',
+              items: { type: 'string', enum: ['A', 'B', 'C', 'D', 'E'] },
+              description: 'Product selection letters from USER-DRAWN marks only (circles, checkmarks). DO NOT include pre-printed template circles.'
+            },
+            selectionConfidence: {
+              type: 'number',
+              description: 'Confidence in product selection detection (0.0-1.0)'
+            },
+            shoppingSubIntent: {
+              type: 'string',
+              enum: ['product_search', 'product_selection', 'order_status'],
+              description: 'Sub-intent for shopping requests'
+            },
+            productQuery: {
+              type: 'string',
+              description: 'Product search query if user is searching for products'
+            },
+            quantity: {
+              type: 'number',
+              description: 'Quantity requested'
+            },
+            // Email intent
+            recipientEmail: {
+              type: 'string',
+              description: 'Email address of the recipient'
+            },
+            recipientName: {
+              type: 'string',
+              description: 'Name of the recipient for address book lookup'
+            },
+            subject: {
+              type: 'string',
+              description: 'Email subject line'
+            },
+            body: {
+              type: 'string',
+              description: 'Email body content'
+            },
+            // AI chat intent
+            question: {
+              type: 'string',
+              description: 'Question to ask AI'
+            }
+          }
+        },
+        visualAnnotations: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              type: {
+                type: 'string',
+                enum: ['circle', 'checkmark', 'underline', 'arrow', 'checkbox'],
+                description: 'Type of visual annotation detected'
+              },
+              boundingBox: {
+                type: 'object',
+                properties: {
+                  x: { type: 'number' },
+                  y: { type: 'number' },
+                  width: { type: 'number' },
+                  height: { type: 'number' }
+                }
+              },
+              associatedText: {
+                type: 'string',
+                description: 'Text near or associated with this annotation'
+              },
+              confidence: {
+                type: 'number',
+                description: 'Detection confidence for this annotation'
+              }
+            }
+          },
+          description: 'Visual annotations detected (only USER-DRAWN marks, not template elements)'
+        },
+        referenceId: {
+          type: 'string',
+          description: 'Reference ID if found (format: FX-YYYY-NNNNNN)'
+        },
+        requiresClarification: {
+          type: 'boolean',
+          description: 'Whether clarification is needed from the user'
+        },
+        clarificationQuestion: {
+          type: 'string',
+          description: 'Question to ask user if clarification is needed'
+        }
+      },
+      required: ['intent', 'confidence']
+    };
   }
 
   /**
@@ -101,6 +218,17 @@ export class AIVisionInterpreter {
 
         // Update interpretation with refined results
         interpretation.intent = refinedIntent.intent as any;
+
+        // For shopping with product selections, trust Gemini's structured output directly
+        // No fallback to regex-based extraction - Gemini's schema-enforced response is authoritative
+        if (refinedIntent.parameters.shoppingSubIntent === 'product_selection') {
+          const geminiSelections = interpretation.parameters.selectedProductIds as string[] | undefined;
+          if (geminiSelections && geminiSelections.length > 0) {
+            // Use Gemini's selections directly - schema ensures valid format
+            refinedIntent.parameters.selectedProductIds = geminiSelections;
+            refinedIntent.parameters.selectionConfidence = interpretation.parameters.selectionConfidence;
+          }
+        }
         interpretation.parameters = { ...interpretation.parameters, ...refinedIntent.parameters };
         
         // Recalculate confidence based on parameter completeness
@@ -326,6 +454,36 @@ VISUAL ANNOTATION DETECTION:
 - Arrows pointing to specific items
 - Hand-drawn boxes around text
 
+CRITICAL - PRODUCT SELECTION DETECTION:
+Faxi shopping forms have a specific structure you MUST understand:
+
+1. TEMPLATE ELEMENTS (NOT user selections):
+   - Pre-printed empty circles: "○ A. Product Name" - these are form design
+   - Pre-printed option letters: A, B, C, D, E next to products
+   - Pre-printed checkboxes: □ - empty squares
+
+2. USER SELECTIONS (report ONLY these):
+   - Hand-drawn circles AROUND or OVER the product letter (A, B, C, D, E)
+   - Filled checkmarks (✓) or X marks in boxes
+   - Handwritten marks: circled letters, "これ", arrows pointing to items
+   - Ink marks that are clearly NOT part of the original printed template
+
+3. DISTINGUISHING FEATURES:
+   - Pre-printed elements: Clean, uniform, aligned with other text
+   - User-drawn marks: Often rougher, at angles, darker/lighter ink, overlapping text
+
+4. OUTPUT REQUIREMENTS:
+   - Set parameters.selectedProductIds ONLY for products with USER-DRAWN selection marks
+   - Set parameters.selectionConfidence (0-1): 0.9+ for clear marks, 0.6-0.8 for ambiguous
+   - Include visualAnnotations ONLY for user-drawn marks, NOT template circles
+   - If no clear user selections found, set selectedProductIds: []
+
+EXAMPLE:
+If form shows "○ A. Shampoo" and "○ B. Conditioner" with a hand-drawn circle around "B":
+- selectedProductIds: ["B"] (NOT ["A", "B"])
+- selectionConfidence: 0.95
+- visualAnnotations: [{ type: "circle", associatedText: "B", confidence: 0.95 }]
+
 INTENT CLASSIFICATION:
 1. "email" - User wants to send an email (extract recipient, subject, body)
 2. "shopping" - User wants to buy something (extract product description, preferences)
@@ -370,33 +528,22 @@ CONVERSATION CONTEXT:
   }
 
   /**
-   * Call Gemini API with image and prompt
+   * Call Gemini API with image and prompt using structured output (JSON mode)
    */
   private async callGeminiAPI(imageData: string, systemPrompt: string): Promise<any> {
+    // Create model with structured output configuration
+    const model = this.genAI.getGenerativeModel({
+      model: config.gemini.model,
+      generationConfig: {
+        responseMimeType: 'application/json',
+        responseSchema: this.getFaxInterpretationSchema()
+      }
+    });
+
+    // Simplified prompt - schema handles output structure
     const prompt = `${systemPrompt}
 
-Please analyze this fax image and provide a JSON response with the following structure:
-{
-  "intent": "email|shopping|ai_chat|payment_registration|reply|unknown",
-  "confidence": 0.0-1.0,
-  "extractedText": "full text content from the fax",
-  "parameters": {
-    // Intent-specific parameters
-  },
-  "visualAnnotations": [
-    {
-      "type": "circle|checkmark|underline|arrow|checkbox",
-      "boundingBox": {"x": 0, "y": 0, "width": 0, "height": 0},
-      "associatedText": "text near the annotation",
-      "confidence": 0.0-1.0
-    }
-  ],
-  "referenceId": "FX-YYYY-NNNNNN if found",
-  "requiresClarification": true/false,
-  "clarificationQuestion": "specific question if clarification needed"
-}
-
-Analyze the image now:`;
+Analyze the fax image and return your interpretation.`;
 
     let imagePart;
     if (imageData.startsWith('data:')) {
@@ -441,25 +588,27 @@ Analyze the image now:`;
       };
     }
 
-    const result = await this.model.generateContent([prompt, imagePart]);
+    const result = await model.generateContent([prompt, imagePart]);
     const response = await result.response;
     return response.text();
   }
 
   /**
-   * Parse Gemini response into structured format
+   * Parse Gemini response into structured format.
+   * With structured output (JSON mode), the response is guaranteed to be valid JSON.
    */
   private async parseGeminiResponse(geminiResponse: string, request: InterpretationRequest): Promise<InterpretationResult> {
     try {
-      // Extract JSON from response (Gemini might include extra text)
-      const jsonMatch = geminiResponse.match(/\{[\s\S]*\}/);
-      if (!jsonMatch) {
-        throw new Error('No JSON found in Gemini response');
+      // With structured output, Gemini returns pure JSON - no regex extraction needed
+      const parsed = JSON.parse(geminiResponse);
+
+      // Log selections for debugging
+      if (parsed.parameters?.selectedProductIds?.length > 0) {
+        console.log('[Vision] Gemini detected product selections:', parsed.parameters.selectedProductIds,
+          'confidence:', parsed.parameters.selectionConfidence);
       }
 
-      const parsed = JSON.parse(jsonMatch[0]);
-
-      // Validate and structure the response
+      // Structure the response
       const result: InterpretationResult = {
         intent: parsed.intent || 'unknown',
         confidence: Math.max(0, Math.min(1, parsed.confidence || 0)),
@@ -489,6 +638,7 @@ Analyze the image now:`;
       return result;
 
     } catch (error) {
+      console.error('[Vision] Failed to parse Gemini response:', error, 'Response:', geminiResponse.substring(0, 200));
       // Fallback interpretation if parsing fails
       return {
         intent: 'unknown',

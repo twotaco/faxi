@@ -47,6 +47,7 @@ export interface IntentParameters {
   productQuery?: string; // Single product query (legacy, for backwards compatibility)
   productQueries?: string[]; // Multiple product queries (max 5) - used for multi-product requests
   selectedProductIds?: string[]; // From circled/checked items
+  selectionConfidence?: number; // Confidence in product selection detection (0-1)
   quantity?: number;
   deliveryPreferences?: string;
   priceRange?: {

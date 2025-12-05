@@ -34,9 +34,13 @@ export class IntentExtractor {
   }> {
     
     const text = rawText.toLowerCase();
+
+    // Extract existing selections from Gemini's structured output (if available)
+    const existingSelections = existingInterpretation?.parameters?.selectedProductIds as string[] | undefined;
+
     const results = await Promise.all([
       this.detectEmailIntent(text, visualAnnotations),
-      this.detectShoppingIntent(text, visualAnnotations),
+      this.detectShoppingIntent(text, visualAnnotations, existingSelections),
       this.detectAIChatIntent(text, visualAnnotations),
       this.detectPaymentIntent(text, visualAnnotations),
       this.detectReplyIntent(text, visualAnnotations),
@@ -211,60 +215,65 @@ export class IntentExtractor {
   /**
    * Detect shopping intent
    * Supports: product_search, product_selection, order_status
+   *
+   * Product selections are detected by Gemini vision with structured output.
+   * This method validates and refines but does NOT re-extract selections from annotations.
    */
-  private async detectShoppingIntent(text: string, annotations: VisualAnnotation[]): Promise<{
+  private async detectShoppingIntent(
+    text: string,
+    annotations: VisualAnnotation[],
+    existingSelections?: string[]
+  ): Promise<{
     intent: string;
     confidence: number;
     parameters: IntentParameters;
   }> {
     // ============ CHECK PRODUCT SELECTIONS FIRST ============
-    // This must run before order status check, because product selection replies
-    // also contain reference IDs but should NOT be classified as order_status queries.
+    // Product selections come from Gemini's structured output (schema-enforced).
+    // We trust these directly without regex re-extraction from annotation text.
 
-    // Check for selected product IDs from visual annotations (circled items)
-    // Extract selection marker (A, B, C, D, E) from annotation's associated text
-    // associatedText may be just "D" or full text like "D. Dove シャンプー..."
-    const annotationOptions = annotations
-      .filter(ann => ann.type === 'circle' || ann.type === 'checkmark')
-      .map(ann => {
-        const assocText = ann.associatedText?.trim();
-        if (!assocText) return null;
-        // Check if it's a single letter (A-E)
-        if (/^[A-E]$/i.test(assocText)) return assocText.toUpperCase();
-        // Check if it starts with a letter followed by period or space (e.g., "D. Dove..." or "D Dove...")
-        const match = assocText.match(/^([A-E])[\.\s]/i);
-        if (match) return match[1].toUpperCase();
-        return null;
-      })
-      .filter((t): t is string => t !== null);
+    // Check if we have product selections (from Gemini vision)
+    const hasProductSelections = existingSelections && existingSelections.length > 0;
 
-    // NOTE: We intentionally do NOT check for ○ B. patterns in OCR text here.
-    // The template itself contains empty circle characters (○) next to each option,
-    // so matching "○ B." in OCR would pick up template circles, not user selections.
-    // We rely solely on visual annotation detection (actual hand-drawn circles/checkmarks).
+    // Also check if annotations suggest selections (circles/checkmarks present)
+    const hasSelectionAnnotations = annotations.some(
+      ann => ann.type === 'circle' || ann.type === 'checkmark'
+    );
 
-    // Only use annotations as the source of truth for selections
-    const selectedOptions = annotationOptions;
-
-    if (selectedOptions.length > 0) {
+    if (hasProductSelections || hasSelectionAnnotations) {
       // Check for reference ID indicating this is a reply to a previous shopping form
-      // Reference ID pattern: Ref: UUID format or FX-YYYY-NNNNNN format
       const hasReferenceId = /(?:ref|reference):\s*(?:[a-f0-9-]{36}|FX-\d{4}-\d{6})/i.test(text);
 
       // Check for shopping order form keywords (from our PDF templates)
       const hasOrderFormKeywords = /(?:shopping\s*order\s*form|order\s*form|注文書|ショッピング)/i.test(text);
 
-      // This is a product selection - boost confidence if replying to a form
       const isReplyToForm = hasReferenceId || hasOrderFormKeywords;
-      return {
-        intent: 'shopping',
-        confidence: isReplyToForm ? 0.95 : 0.9,
-        parameters: {
-          shoppingSubIntent: 'product_selection',
-          selectedProductIds: selectedOptions,
-          isReplyToForm
-        }
-      };
+
+      // If we have Gemini-detected selections, use them directly
+      if (hasProductSelections) {
+        return {
+          intent: 'shopping',
+          confidence: isReplyToForm ? 0.95 : 0.9,
+          parameters: {
+            shoppingSubIntent: 'product_selection',
+            selectedProductIds: existingSelections,
+            isReplyToForm
+          }
+        };
+      }
+
+      // If we have selection annotations but no extracted IDs,
+      // this is still a product_selection intent (Gemini will handle extraction)
+      if (hasSelectionAnnotations && isReplyToForm) {
+        return {
+          intent: 'shopping',
+          confidence: 0.85,
+          parameters: {
+            shoppingSubIntent: 'product_selection',
+            isReplyToForm
+          }
+        };
+      }
     }
 
     // ============ THEN CHECK ORDER STATUS ============
