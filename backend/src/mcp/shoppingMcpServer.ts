@@ -566,9 +566,22 @@ export class ShoppingMCPServer implements MCPServer {
   /**
    * Handle create order request
    * Creates order with pending_payment status and initiates Stripe bank transfer
+   *
+   * Accepts quoted product info from conversation context to avoid re-scraping Amazon.
+   * If quotedPrice is provided, uses that; otherwise falls back to fresh scrape.
    */
   private async handleCreateOrder(params: any): Promise<any> {
-    const { userId, referenceId, productAsin, quantity = 1 } = params;
+    const {
+      userId,
+      referenceId,
+      productAsin,
+      quantity = 1,
+      // Quoted product info from conversation context (preferred - avoids re-scraping)
+      quotedPrice,
+      quotedTitle,
+      quotedImageUrl,
+      quotedPrimeEligible
+    } = params;
 
     try {
       // Verify user exists
@@ -580,24 +593,39 @@ export class ShoppingMCPServer implements MCPServer {
         };
       }
 
-      // Get product details to validate and get current price (force fresh scrape)
-      const product = await productSearchService.getProductDetails(productAsin, userId, true);
+      let product: any;
 
-      if (!product) {
-        return {
-          success: false,
-          error: `Product not found: ${productAsin}`
+      // Use quoted price from conversation context if available (faster, more reliable)
+      if (quotedPrice && quotedPrice > 0) {
+        console.log(`[Shopping] Using quoted price from context: ¥${quotedPrice} for ${productAsin}`);
+        product = {
+          asin: productAsin,
+          price: quotedPrice,
+          title: quotedTitle || `Product ${productAsin}`,
+          imageUrl: quotedImageUrl,
+          primeEligible: quotedPrimeEligible ?? true
         };
-      }
+      } else {
+        // Fallback: scrape fresh product details (slower, can fail)
+        console.log(`[Shopping] No quoted price, scraping fresh for ${productAsin}`);
+        product = await productSearchService.getProductDetails(productAsin, userId, true);
 
-      // Check product availability
-      const availability = this.getAvailabilityStatus(product);
-      if (availability === 'out_of_stock') {
-        return {
-          success: false,
-          error: 'Product is currently out of stock',
-          availability
-        };
+        if (!product) {
+          return {
+            success: false,
+            error: `Product not found: ${productAsin}`
+          };
+        }
+
+        // Check product availability (only when scraping fresh)
+        const availability = this.getAvailabilityStatus(product);
+        if (availability === 'out_of_stock') {
+          return {
+            success: false,
+            error: 'Product is currently out of stock',
+            availability
+          };
+        }
       }
 
       // Calculate total amount
@@ -608,7 +636,8 @@ export class ShoppingMCPServer implements MCPServer {
         console.error('Cannot create order: product price is 0 or invalid', {
           asin: productAsin,
           price: product.price,
-          totalAmount
+          totalAmount,
+          hadQuotedPrice: !!quotedPrice
         });
         return {
           success: false,

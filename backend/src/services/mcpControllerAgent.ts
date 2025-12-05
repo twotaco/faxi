@@ -576,17 +576,27 @@ export class MCPControllerAgent {
     }
 
     try {
-      // For shopping_create_order, resolve selection markers (A, B, C, D, E) to actual ASINs
+      // For shopping_create_order, resolve selection markers (A, B, C, D, E) to full product info
+      // This includes ASIN, price, title - no need to re-scrape Amazon
       if (step.tool === 'shopping_create_order' && resolvedParams.productId?.match(/^[A-J]$/i)) {
-        const resolvedAsin = await this.resolveSelectionMarkerToAsin(
+        const product = await this.resolveSelectionMarkerToProduct(
           resolvedParams.productId,
           resolvedParams.referenceId
         );
-        if (resolvedAsin) {
-          console.log(`Resolved selection marker "${resolvedParams.productId}" to ASIN: ${resolvedAsin}`);
-          resolvedParams.productId = resolvedAsin;
+        if (product) {
+          console.log(`Resolved selection marker "${resolvedParams.productId}" to product:`, {
+            asin: product.asin,
+            price: product.price,
+            title: product.title?.substring(0, 50)
+          });
+          // Pass full product info to handleCreateOrder so it doesn't need to re-scrape
+          resolvedParams.productId = product.asin;
+          resolvedParams.quotedPrice = product.price;
+          resolvedParams.quotedTitle = product.title;
+          resolvedParams.quotedImageUrl = product.imageUrl;
+          resolvedParams.quotedPrimeEligible = product.primeEligible;
         } else {
-          console.warn(`Could not resolve selection marker "${resolvedParams.productId}" to ASIN`);
+          console.warn(`Could not resolve selection marker "${resolvedParams.productId}" to product`);
         }
       }
 
@@ -888,13 +898,13 @@ export class MCPControllerAgent {
   }
 
   /**
-   * Resolve a selection marker (A, B, C, etc.) to the actual ASIN
-   * by looking up the conversation context from the reference ID
+   * Resolve a selection marker (A, B, C, etc.) to full product info from conversation context.
+   * Returns the product with ASIN, price, title, etc. - no need to re-scrape Amazon.
    */
-  private async resolveSelectionMarkerToAsin(
+  private async resolveSelectionMarkerToProduct(
     selectionMarker: string,
     referenceId?: string
-  ): Promise<string | null> {
+  ): Promise<{ asin: string; price: number; title: string; imageUrl?: string; primeEligible?: boolean } | null> {
     if (!referenceId) {
       console.log('[MCP Agent] No reference ID provided for selection marker resolution');
       return null;
@@ -920,8 +930,18 @@ export class MCPControllerAgent {
       if (searchResults && Array.isArray(searchResults)) {
         const product = searchResults.find((p: any) => p.selectionMarker === marker);
         if (product?.asin) {
-          console.log(`[MCP Agent] Found ASIN ${product.asin} for marker ${marker} in single search results`);
-          return product.asin;
+          console.log(`[MCP Agent] Found product for marker ${marker}:`, {
+            asin: product.asin,
+            price: product.price,
+            title: product.title?.substring(0, 50)
+          });
+          return {
+            asin: product.asin,
+            price: product.price,
+            title: product.title,
+            imageUrl: product.imageUrl,
+            primeEligible: product.primeEligible
+          };
         }
       }
 
@@ -930,8 +950,18 @@ export class MCPControllerAgent {
         for (const group of groupedResults) {
           const product = group.products?.find((p: any) => p.selectionMarker === marker);
           if (product?.asin) {
-            console.log(`[MCP Agent] Found ASIN ${product.asin} for marker ${marker} in grouped results`);
-            return product.asin;
+            console.log(`[MCP Agent] Found product for marker ${marker} in grouped results:`, {
+              asin: product.asin,
+              price: product.price,
+              title: product.title?.substring(0, 50)
+            });
+            return {
+              asin: product.asin,
+              price: product.price,
+              title: product.title,
+              imageUrl: product.imageUrl,
+              primeEligible: product.primeEligible
+            };
           }
         }
       }
@@ -940,9 +970,20 @@ export class MCPControllerAgent {
       return null;
 
     } catch (error) {
-      console.error('[MCP Agent] Error resolving selection marker to ASIN:', error);
+      console.error('[MCP Agent] Error resolving selection marker to product:', error);
       return null;
     }
+  }
+
+  /**
+   * @deprecated Use resolveSelectionMarkerToProduct instead - it returns full product info including price
+   */
+  private async resolveSelectionMarkerToAsin(
+    selectionMarker: string,
+    referenceId?: string
+  ): Promise<string | null> {
+    const product = await this.resolveSelectionMarkerToProduct(selectionMarker, referenceId);
+    return product?.asin || null;
   }
 
   /**
