@@ -8,9 +8,7 @@ import {
   Users, 
   Server, 
   Brain, 
-  DollarSign, 
   Bell, 
-  Settings,
   BarChart3,
   FileSearch,
   ShoppingCart,
@@ -24,12 +22,10 @@ const navigation = [
   { name: 'Users', href: '/users', icon: Users },
   { name: 'MCP Servers', href: '/mcp', icon: Server },
   { name: 'AI Inspector', href: '/ai', icon: Brain },
-  { name: 'Financial', href: '/financial', icon: DollarSign },
   { name: 'Alerts', href: '/alerts', icon: Bell },
   { name: 'Analytics', href: '/analytics', icon: BarChart3 },
   { name: 'Audit Logs', href: '/audit', icon: FileSearch },
   { name: 'Guides', href: '/guides', icon: BookOpen },
-  { name: 'Configuration', href: '/config', icon: Settings },
 ];
 
 export function Sidebar() {

@@ -108,7 +108,7 @@ export async function getAiMetrics(req: Request, res: Response) {
          SUM(CASE WHEN success = true THEN 1 ELSE 0 END) as success_count,
          AVG(accuracy) as avg_accuracy,
          AVG(confidence) as avg_confidence,
-         AVG(processing_time) as avg_processing_time
+         AVG(processing_time_ms) as avg_processing_time
        FROM processing_metrics
        WHERE created_at > NOW() - INTERVAL '24 hours'`
     );
@@ -126,7 +126,7 @@ export async function getAiMetrics(req: Request, res: Response) {
          metric_type,
          accuracy,
          confidence,
-         processing_time,
+         processing_time_ms,
          success,
          error_message,
          created_at
@@ -148,7 +148,7 @@ export async function getAiMetrics(req: Request, res: Response) {
         metricType: row.metric_type,
         accuracy: parseFloat(row.accuracy) || 0,
         confidence: parseFloat(row.confidence) || 0,
-        processingTime: parseFloat(row.processing_time) || 0,
+        processingTime: parseFloat(row.processing_time_ms) || 0,
         success: row.success,
         errorMessage: row.error_message,
         createdAt: row.created_at,
@@ -230,15 +230,13 @@ export async function getAnalyticsOverview(req: Request, res: Response) {
     // Get user metrics
     const userStatsResult = await db.query(
       `SELECT 
-         COUNT(*) as total_users,
-         COUNT(CASE WHEN region IS NOT NULL THEN 1 END) as users_with_region,
-         COUNT(CASE WHEN age_range IS NOT NULL THEN 1 END) as users_with_age
+         COUNT(*) as total_users
        FROM users`
     );
 
     const usersByRegionResult = await db.query(
       `SELECT region, COUNT(*) as count
-       FROM users
+       FROM user_insights
        WHERE region IS NOT NULL
        GROUP BY region
        ORDER BY count DESC`
@@ -246,7 +244,7 @@ export async function getAnalyticsOverview(req: Request, res: Response) {
 
     const usersByAgeResult = await db.query(
       `SELECT age_range, COUNT(*) as count
-       FROM users
+       FROM user_insights
        WHERE age_range IS NOT NULL
        GROUP BY age_range
        ORDER BY age_range`
@@ -255,15 +253,17 @@ export async function getAnalyticsOverview(req: Request, res: Response) {
     const usersByDigitalScoreResult = await db.query(
       `SELECT 
          CASE 
-           WHEN digital_exclusion_score < 30 THEN 'Low (0-29)'
-           WHEN digital_exclusion_score < 60 THEN 'Medium (30-59)'
-           ELSE 'High (60-100)'
+           WHEN digital_exclusion_score = 1 THEN 'Very Low (1)'
+           WHEN digital_exclusion_score = 2 THEN 'Low (2)'
+           WHEN digital_exclusion_score = 3 THEN 'Medium (3)'
+           WHEN digital_exclusion_score = 4 THEN 'High (4)'
+           WHEN digital_exclusion_score = 5 THEN 'Very High (5)'
          END as score_range,
          COUNT(*) as count
-       FROM users
+       FROM user_insights
        WHERE digital_exclusion_score IS NOT NULL
-       GROUP BY score_range
-       ORDER BY score_range`
+       GROUP BY digital_exclusion_score
+       ORDER BY digital_exclusion_score`
     );
 
     // Get fax job metrics
@@ -309,7 +309,7 @@ export async function getAnalyticsOverview(req: Request, res: Response) {
       `SELECT 
          AVG(accuracy) as avg_accuracy,
          AVG(confidence) as avg_confidence,
-         AVG(processing_time) as avg_processing_time
+         AVG(processing_time_ms) as avg_processing_time
        FROM processing_metrics
        WHERE created_at > NOW() - INTERVAL '24 hours'`
     );

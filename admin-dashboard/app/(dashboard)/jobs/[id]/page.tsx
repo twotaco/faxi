@@ -325,9 +325,82 @@ export default function JobDetailsPage() {
       {job.interpretationResult && (
         <div className="bg-white rounded-lg shadow p-4 mb-4">
           <h3 className="text-base font-semibold text-gray-800 mb-3">AI Interpretation</h3>
-          <pre className="bg-gray-50 p-3 rounded-lg overflow-x-auto text-xs max-h-60 overflow-y-auto">
-            {JSON.stringify(job.interpretationResult, null, 2)}
-          </pre>
+          
+          {/* Confidence Scores - Highlighted */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+            <div className="p-3 bg-purple-50 rounded-lg border border-purple-200">
+              <div className="text-xs text-gray-600 mb-1">Overall Confidence</div>
+              <div className={`text-2xl font-bold ${
+                job.interpretationResult.confidence >= 0.9 ? 'text-green-600' :
+                job.interpretationResult.confidence >= 0.7 ? 'text-yellow-600' : 'text-red-600'
+              }`}>
+                {(job.interpretationResult.confidence * 100).toFixed(1)}%
+              </div>
+            </div>
+            
+            <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+              <div className="text-xs text-gray-600 mb-1">Detected Intent</div>
+              <div className="text-lg font-semibold text-gray-800 capitalize">
+                {job.interpretationResult.intent.replace(/_/g, ' ')}
+              </div>
+            </div>
+            
+            {job.interpretationResult.contextRecovery && (
+              <div className="p-3 bg-indigo-50 rounded-lg border border-indigo-200">
+                <div className="text-xs text-gray-600 mb-1">Context Recovery</div>
+                <div className="text-lg font-semibold text-gray-800 capitalize">
+                  {job.interpretationResult.contextRecovery.method.replace(/_/g, ' ')}
+                </div>
+                <div className="text-xs text-gray-500 mt-1">
+                  Confidence: {(job.interpretationResult.contextRecovery.confidence * 100).toFixed(1)}%
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Extracted Text */}
+          {job.interpretationResult.extractedText && (
+            <div className="mb-4">
+              <h4 className="text-sm font-medium text-gray-700 mb-2">Extracted Text</h4>
+              <div className="bg-gray-50 p-3 rounded-lg border border-gray-200">
+                <pre className="text-xs text-gray-700 whitespace-pre-wrap">
+                  {job.interpretationResult.extractedText}
+                </pre>
+              </div>
+            </div>
+          )}
+
+          {/* Visual Annotations */}
+          {job.interpretationResult.visualAnnotations && job.interpretationResult.visualAnnotations.length > 0 && (
+            <div className="mb-4">
+              <h4 className="text-sm font-medium text-gray-700 mb-2">Visual Annotations Detected</h4>
+              <div className="space-y-2">
+                {job.interpretationResult.visualAnnotations.map((annotation: any, idx: number) => (
+                  <div key={idx} className="flex items-center justify-between p-2 bg-yellow-50 rounded border border-yellow-200">
+                    <div className="flex items-center space-x-2">
+                      <span className="text-xs font-medium text-gray-700 capitalize">{annotation.type}</span>
+                      {annotation.associatedText && (
+                        <span className="text-xs text-gray-600">→ {annotation.associatedText}</span>
+                      )}
+                    </div>
+                    <span className="text-xs text-gray-500">
+                      {(annotation.confidence * 100).toFixed(0)}% confidence
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Full JSON Details */}
+          <details>
+            <summary className="cursor-pointer text-sm text-gray-600 hover:text-gray-800 mb-2">
+              View Full Interpretation JSON
+            </summary>
+            <pre className="bg-gray-50 p-3 rounded-lg overflow-x-auto text-xs max-h-60 overflow-y-auto">
+              {JSON.stringify(job.interpretationResult, null, 2)}
+            </pre>
+          </details>
         </div>
       )}
 
