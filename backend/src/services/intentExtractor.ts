@@ -216,36 +216,9 @@ export class IntentExtractor {
     confidence: number;
     parameters: IntentParameters;
   }> {
-    // Check for order status queries first
-    const orderStatusKeywords = [
-      'order status', 'track order', 'where is my order', 'delivery status',
-      'when will it arrive', 'shipping status', 'order tracking', 'status of my order',
-      'check order', 'order update'
-    ];
-    
-    const hasOrderStatusKeyword = orderStatusKeywords.some(keyword => text.includes(keyword));
-    const hasReferenceId = /(?:ref|reference|order)(?:\s+id)?:\s*FX-\d{4}-\d{6}/i.test(text);
-    
-    if (hasOrderStatusKeyword || hasReferenceId) {
-      let confidence = hasOrderStatusKeyword ? 0.7 : 0.5;
-      const parameters: IntentParameters = {
-        shoppingSubIntent: 'order_status'
-      };
-      
-      // Look for reference ID
-      const refIdPattern = /(?:ref|reference|order)(?:\s+id)?:\s*(FX-\d{4}-\d{6})/i;
-      const refMatch = text.match(refIdPattern);
-      if (refMatch) {
-        parameters.referenceId = refMatch[1].toUpperCase(); // Normalize to uppercase
-        confidence += 0.3;
-      }
-      
-      return {
-        intent: 'shopping',
-        confidence: Math.min(confidence, 1.0),
-        parameters
-      };
-    }
+    // ============ CHECK PRODUCT SELECTIONS FIRST ============
+    // This must run before order status check, because product selection replies
+    // also contain reference IDs but should NOT be classified as order_status queries.
 
     // Check for selected product IDs from visual annotations (circled items)
     // Extract selection marker (A, B, C, D, E) from annotation's associated text
@@ -297,6 +270,41 @@ export class IntentExtractor {
       };
     }
 
+    // ============ THEN CHECK ORDER STATUS ============
+    // Only if no product selections were found AND explicit status keywords exist
+    const orderStatusKeywords = [
+      'order status', 'track order', 'where is my order', 'delivery status',
+      'when will it arrive', 'shipping status', 'order tracking', 'status of my order',
+      'check order', 'order update'
+    ];
+
+    const hasOrderStatusKeyword = orderStatusKeywords.some(keyword => text.includes(keyword));
+    const hasReferenceIdForStatus = /(?:ref|reference|order)(?:\s+id)?:\s*FX-\d{4}-\d{6}/i.test(text);
+
+    // Only classify as order_status if explicit status keywords are present
+    // Reference ID alone is NOT enough - that's usually a product selection reply
+    if (hasOrderStatusKeyword) {
+      let statusConfidence = 0.7;
+      const statusParameters: IntentParameters = {
+        shoppingSubIntent: 'order_status'
+      };
+
+      // Look for reference ID to boost confidence
+      const refIdPattern = /(?:ref|reference|order)(?:\s+id)?:\s*(FX-\d{4}-\d{6})/i;
+      const refMatch = text.match(refIdPattern);
+      if (refMatch) {
+        statusParameters.referenceId = refMatch[1].toUpperCase();
+        statusConfidence += 0.3;
+      }
+
+      return {
+        intent: 'shopping',
+        confidence: Math.min(statusConfidence, 1.0),
+        parameters: statusParameters
+      };
+    }
+
+    // ============ FINALLY CHECK PRODUCT SEARCH ============
     // Check for product search keywords
     const shoppingKeywords = [
       'buy', 'purchase', 'order', 'shop', 'need', 'want',
