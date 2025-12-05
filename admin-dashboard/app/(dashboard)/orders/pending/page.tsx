@@ -1,12 +1,12 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { AlertCircle, CheckCircle, Clock, ExternalLink, RefreshCw, Package, Truck, XCircle, CreditCard } from 'lucide-react';
+import { CheckCircle, Clock, ExternalLink, RefreshCw, Package, Truck, XCircle, CreditCard } from 'lucide-react';
 import { ordersApi } from '@/lib/api/client';
 
 interface OrderItem {
@@ -47,7 +47,7 @@ const ORDER_STATUSES = [
   { value: 'cancelled', label: 'Cancelled' },
 ];
 
-export default function OrdersPage() {
+function OrdersPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [orders, setOrders] = useState<OrderItem[]>([]);
@@ -288,5 +288,24 @@ export default function OrdersPage() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+function OrdersPageLoading() {
+  return (
+    <div className="flex items-center justify-center h-96">
+      <div className="text-center">
+        <RefreshCw className="w-8 h-8 animate-spin mx-auto mb-4 text-gray-400" />
+        <p className="text-gray-500">Loading orders...</p>
+      </div>
+    </div>
+  );
+}
+
+export default function OrdersPage() {
+  return (
+    <Suspense fallback={<OrdersPageLoading />}>
+      <OrdersPageContent />
+    </Suspense>
   );
 }
