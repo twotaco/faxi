@@ -41,6 +41,13 @@ export class FaxGenerator {
 
   /**
    * Generate PDF from a fax template (for Telnyx API)
+   *
+   * Footer positioning: The footer is always positioned at the bottom of the page,
+   * not immediately after content. This prevents the footer from appearing in the
+   * middle of the page when content is short.
+   *
+   * Multi-page handling: If content exceeds the available space (page height minus
+   * footer area), it will be automatically split across multiple pages.
    */
   static async generatePdf(template: FaxTemplate, options?: Partial<FaxGenerationOptions>): Promise<Buffer> {
     const opts = { ...this.DEFAULT_OPTIONS, ...options };
@@ -58,10 +65,30 @@ export class FaxGenerator {
 
       let currentY = opts.margins.top;
 
-      // Render each content element
-      for (const content of page.content) {
+      // Separate footer from other content
+      const footerContent = page.content.filter(c => c.type === 'footer');
+      const mainContent = page.content.filter(c => c.type !== 'footer');
+
+      // Calculate footer height for positioning
+      const footerHeight = this.calculateFooterHeight(ctx, footerContent, opts);
+
+      // Footer starts at: page height - bottom margin - footer height
+      const footerStartY = opts.height - opts.margins.bottom - footerHeight;
+
+      // Render main content (everything except footer)
+      for (const content of mainContent) {
         const newY = await this.renderContent(ctx, content, currentY, opts);
         currentY = newY;
+      }
+
+      // Render footer at fixed position at bottom of page
+      let footerY = footerStartY;
+      for (const footer of footerContent) {
+        // Apply footer's marginTop
+        if (footer.marginTop) {
+          footerY += footer.marginTop;
+        }
+        footerY = this.renderText(ctx, footer, footerY, opts.width - opts.margins.left - opts.margins.right, opts.margins, opts);
       }
 
       // Convert canvas to PNG buffer for PDF conversion
@@ -110,6 +137,176 @@ export class FaxGenerator {
         reject(error);
       }
     });
+  }
+
+  /**
+   * Calculate the height needed for footer content
+   * Used to position footer at the bottom of the page
+   */
+  private static calculateFooterHeight(
+    ctx: CanvasRenderingContext2D,
+    footerContent: FaxContent[],
+    options: FaxGenerationOptions
+  ): number {
+    const { margins, width } = options;
+    const contentWidth = width - margins.left - margins.right;
+    let totalHeight = 0;
+
+    for (const footer of footerContent) {
+      // Add marginTop
+      if (footer.marginTop) {
+        totalHeight += footer.marginTop;
+      }
+
+      // Calculate text height
+      if (footer.text) {
+        const fontSize = footer.fontSize || options.defaultFontSize;
+        const fontWeight = footer.bold ? 'bold' : 'normal';
+        ctx.font = `${fontWeight} ${fontSize}px Arial, sans-serif`;
+
+        const lines = this.wrapText(ctx, footer.text, contentWidth);
+        const lineHeight = fontSize * 1.2;
+        totalHeight += lines.length * lineHeight;
+      }
+
+      // Add marginBottom
+      if (footer.marginBottom) {
+        totalHeight += footer.marginBottom;
+      }
+    }
+
+    // Add some padding for safety
+    return totalHeight + 20;
+  }
+
+  /**
+   * Get available content height for a single page (excluding header/footer areas)
+   * This is useful for template generators to determine when to split content
+   */
+  static getAvailableContentHeight(): number {
+    const opts = this.DEFAULT_OPTIONS;
+    // Page height minus top margin, bottom margin, and footer area (~150px for footer)
+    return opts.height - opts.margins.top - opts.margins.bottom - 180;
+  }
+
+  /**
+   * Estimate the height of a content element without rendering it
+   * Used by template generators to determine pagination needs
+   */
+  static estimateContentHeight(content: FaxContent, options?: Partial<FaxGenerationOptions>): number {
+    const opts = { ...this.DEFAULT_OPTIONS, ...options };
+    const contentWidth = opts.width - opts.margins.left - opts.margins.right;
+    let height = 0;
+
+    // Add margins
+    if (content.marginTop) height += content.marginTop;
+    if (content.marginBottom) height += content.marginBottom;
+
+    switch (content.type) {
+      case 'text':
+      case 'header':
+      case 'footer':
+        if (content.text) {
+          const fontSize = content.fontSize || opts.defaultFontSize;
+          const lineHeight = fontSize * 1.2;
+          // Estimate wrapped lines: chars per line ≈ contentWidth / (fontSize * 0.5)
+          const charsPerLine = Math.floor(contentWidth / (fontSize * 0.5));
+          const lines = content.text.split('\n').reduce((acc, line) => {
+            return acc + Math.max(1, Math.ceil(line.length / charsPerLine));
+          }, 0);
+          height += lines * lineHeight;
+        }
+        break;
+
+      case 'circle_option':
+      case 'checkbox':
+        if (content.options) {
+          const fontSize = content.fontSize || opts.defaultFontSize;
+          const lineHeight = fontSize * 1.8; // More spacing for options
+          height += content.options.length * lineHeight;
+        }
+        break;
+
+      case 'barcode':
+        height += (content.barcodeData?.height || 60) + 20;
+        break;
+
+      case 'image':
+        height += (content.imageData?.height || 300) + 30;
+        break;
+
+      case 'blank_space':
+        height += content.height || 50;
+        break;
+    }
+
+    return height;
+  }
+
+  /**
+   * Automatically paginate content that is too long for a single page
+   *
+   * @param content Array of content elements (excluding footer)
+   * @param footer Footer content to add to each page
+   * @param referenceId Reference ID for the document
+   * @param templateType Type of template
+   * @returns Array of FaxPage objects
+   */
+  static paginateContent(
+    content: FaxContent[],
+    footer: FaxContent,
+    referenceId: string,
+    templateType: string
+  ): FaxPage[] {
+    const availableHeight = this.getAvailableContentHeight();
+    const pages: FaxPage[] = [];
+    let currentPageContent: FaxContent[] = [];
+    let currentHeight = 0;
+
+    for (const item of content) {
+      const itemHeight = this.estimateContentHeight(item);
+
+      // If adding this item would overflow, start a new page
+      if (currentHeight + itemHeight > availableHeight && currentPageContent.length > 0) {
+        // Close current page
+        pages.push({
+          content: [...currentPageContent],
+          pageNumber: pages.length + 1,
+          totalPages: 0 // Will be updated later
+        });
+        currentPageContent = [];
+        currentHeight = 0;
+      }
+
+      currentPageContent.push(item);
+      currentHeight += itemHeight;
+    }
+
+    // Add remaining content to last page
+    if (currentPageContent.length > 0) {
+      pages.push({
+        content: [...currentPageContent],
+        pageNumber: pages.length + 1,
+        totalPages: 0
+      });
+    }
+
+    // Update total pages and add footers
+    const totalPages = pages.length;
+    pages.forEach((page, index) => {
+      page.totalPages = totalPages;
+      // Add page-specific footer with page numbers if multi-page
+      if (totalPages > 1) {
+        page.content.push({
+          ...footer,
+          text: `${footer.text} | Page ${index + 1} of ${totalPages}`
+        });
+      } else {
+        page.content.push(footer);
+      }
+    });
+
+    return pages;
   }
 
   /**
@@ -572,6 +769,7 @@ export class FaxGenerator {
 
   /**
    * Generate PNG from a fax template (for Gemini AI vision processing)
+   * Uses the same footer positioning logic as generatePdf
    */
   static async generatePng(template: FaxTemplate, options?: Partial<FaxGenerationOptions>): Promise<Buffer> {
     const opts = { ...this.DEFAULT_OPTIONS, ...options };
@@ -594,9 +792,28 @@ export class FaxGenerator {
 
     let currentY = opts.margins.top;
 
-    // Render each content element
-    for (const content of page.content) {
+    // Separate footer from other content (same logic as generatePdf)
+    const footerContent = page.content.filter(c => c.type === 'footer');
+    const mainContent = page.content.filter(c => c.type !== 'footer');
+
+    // Calculate footer height for positioning
+    const footerHeight = this.calculateFooterHeight(ctx, footerContent, opts);
+
+    // Footer starts at: page height - bottom margin - footer height
+    const footerStartY = opts.height - opts.margins.bottom - footerHeight;
+
+    // Render main content (everything except footer)
+    for (const content of mainContent) {
       currentY = await this.renderContent(ctx, content, currentY, opts);
+    }
+
+    // Render footer at fixed position at bottom of page
+    let footerY = footerStartY;
+    for (const footer of footerContent) {
+      if (footer.marginTop) {
+        footerY += footer.marginTop;
+      }
+      footerY = this.renderText(ctx, footer, footerY, opts.width - opts.margins.left - opts.margins.right, opts.margins, opts);
     }
 
     // Convert canvas to PNG buffer

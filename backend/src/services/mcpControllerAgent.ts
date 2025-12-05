@@ -314,13 +314,42 @@ export class MCPControllerAgent {
       }
     }
 
+    // Determine final output based on intent and results
+    // For shopping, we need to aggregate search results + payment info
+    const aggregatedOutput = this.aggregateWorkflowResults(results, context);
+
     return {
       success: !hasErrors,
       steps: await this.getExecutionSteps(executionId),
-      finalOutput,
+      finalOutput: aggregatedOutput || finalOutput,
       requiresUserInput: this.workflowRequiresUserInput(workflow, results),
       nextAction: this.determineNextAction(workflow, results)
     };
+  }
+
+  /**
+   * Aggregate workflow results based on intent
+   */
+  private aggregateWorkflowResults(results: Record<string, any>, context: DecisionContext): any {
+    const intent = context.interpretation.intent;
+
+    if (intent === 'shopping') {
+      // Look for search_products result
+      const searchResult = results['search_products'];
+      if (searchResult?.products) {
+        return {
+          products: searchResult.products,
+          query: searchResult.query || context.interpretation.parameters.productQuery,
+          groupedResults: searchResult.groupedResults,
+          // Include payment info if available
+          paymentMethods: results['payment_strategy']?.methods || [],
+          hasPaymentMethod: (results['payment_strategy']?.methods?.length || 0) > 0
+        };
+      }
+    }
+
+    // For other intents, return the most relevant result
+    return null;
   }
 
   /**

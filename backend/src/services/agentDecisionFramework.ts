@@ -418,24 +418,7 @@ export class AgentDecisionFramework {
     const intentWorkflow = await this.createIntentSpecificWorkflow(context);
     workflow.push(...intentWorkflow);
 
-    // Step 3: Generate proactive suggestions
-    workflow.push({
-      id: 'generate_suggestions',
-      type: 'tool_call',
-      description: 'Generate proactive suggestions',
-      dependencies: ['gather_context'],
-      toolCall: {
-        server: 'user_profile',
-        tool: 'generate_suggestions',
-        input: {
-          userId: context.userId,
-          intent: interpretation.intent,
-          parameters: interpretation.parameters
-        }
-      }
-    });
-
-    // Step 4: Determine payment strategy (for shopping)
+    // Step 3: Determine payment strategy (for shopping)
     if (interpretation.intent === 'shopping') {
       workflow.push({
         id: 'payment_strategy',
