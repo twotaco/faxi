@@ -248,10 +248,33 @@ export class IntentExtractor {
     }
 
     // Check for selected product IDs from visual annotations (circled items)
-    const selectedOptions = annotations
+    // Extract selection marker (A, B, C, D, E) from annotation's associated text
+    // associatedText may be just "D" or full text like "D. Dove シャンプー..."
+    const annotationOptions = annotations
       .filter(ann => ann.type === 'circle' || ann.type === 'checkmark')
-      .map(ann => ann.associatedText)
-      .filter((text): text is string => text !== undefined && /^[A-Z]$/.test(text));
+      .map(ann => {
+        const assocText = ann.associatedText?.trim();
+        if (!assocText) return null;
+        // Check if it's a single letter (A-E)
+        if (/^[A-E]$/i.test(assocText)) return assocText.toUpperCase();
+        // Check if it starts with a letter followed by period or space (e.g., "D. Dove..." or "D Dove...")
+        const match = assocText.match(/^([A-E])[\.\s]/i);
+        if (match) return match[1].toUpperCase();
+        return null;
+      })
+      .filter((t): t is string => t !== null);
+
+    // Also check for circled options in OCR text (○ B. or ○ D. patterns)
+    // These appear when the circle is picked up by OCR rather than visual annotation
+    const textCirclePattern = /[○◯⭕]\s*([A-E])[\.\s]/gi;
+    const textOptions: string[] = [];
+    let match;
+    while ((match = textCirclePattern.exec(text)) !== null) {
+      textOptions.push(match[1].toUpperCase());
+    }
+
+    // Combine both sources, removing duplicates
+    const selectedOptions = Array.from(new Set([...annotationOptions, ...textOptions]));
 
     if (selectedOptions.length > 0) {
       // Check for reference ID indicating this is a reply to a previous shopping form
@@ -477,10 +500,13 @@ export class IntentExtractor {
 
     // Reduce confidence if this looks like a shopping form reply (product circles present)
     // Shopping forms often contain "payment" text but circled A-E options indicate product selection
-    const hasProductCircles = annotations.some(ann =>
-      (ann.type === 'circle' || ann.type === 'checkmark') &&
-      ann.associatedText && /^[A-Z]$/.test(ann.associatedText)
-    );
+    const hasProductCircles = annotations.some(ann => {
+      if (ann.type !== 'circle' && ann.type !== 'checkmark') return false;
+      const assocText = ann.associatedText?.trim();
+      if (!assocText) return false;
+      // Check single letter or text starting with letter+period/space
+      return /^[A-E]$/i.test(assocText) || /^[A-E][\.\s]/i.test(assocText);
+    });
     if (hasProductCircles) {
       confidence *= 0.3; // Heavily penalize - this is likely a product selection, not payment registration
     }
