@@ -33,8 +33,9 @@ export interface GroupedProductSelectionFaxData {
 }
 
 export class ProductSelectionFaxGenerator {
-  // Common text constants
-  private static readonly HEADER_TEXT = 'Faxi Shopping';
+  // Common text constants - use keywords that help with intent detection when faxed back
+  private static readonly HEADER_TEXT = 'FAXI SHOPPING ORDER FORM';
+  private static readonly HEADER_TEXT_JP = 'ファクシ ショッピング注文書';
   private static readonly DELIVERY_TEXT = 'All products are available with free delivery';
   private static readonly DIVIDER = '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━';
 
@@ -76,6 +77,7 @@ export class ProductSelectionFaxGenerator {
 
   /**
    * Create common header content
+   * Uses clear "ORDER FORM" terminology to help with intent detection when faxed back
    */
   private static createHeaderContent(): FaxContent[] {
     return [
@@ -84,6 +86,13 @@ export class ProductSelectionFaxGenerator {
         text: this.HEADER_TEXT,
         fontSize: 34,
         bold: true,
+        alignment: 'center',
+        marginBottom: 10
+      },
+      {
+        type: 'text',
+        text: this.HEADER_TEXT_JP,
+        fontSize: 28,
         alignment: 'center',
         marginBottom: 30
       }
@@ -204,8 +213,8 @@ export class ProductSelectionFaxGenerator {
       marginBottom: 30
     });
 
-    // Footer with reference ID
-    content.push(this.createFooterContent('Multi-Product Options', refId));
+    // Footer with reference ID - use "Order Form" for better intent detection
+    content.push(this.createFooterContent('Shopping Order Form', refId));
 
     // Collect all products for context data
     const allProducts = data.groupedResults.flatMap(g => g.products.map((p, i) => ({
@@ -335,8 +344,8 @@ export class ProductSelectionFaxGenerator {
       marginBottom: layoutConstraints.compactMode ? 25 : 40
     });
 
-    // Footer with reference ID
-    content.push(this.createFooterContent('Product Options', refId));
+    // Footer with reference ID - use "Order Form" for better intent detection
+    content.push(this.createFooterContent('Shopping Order Form', refId));
 
     return {
       type: 'product_selection',

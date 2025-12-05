@@ -9,6 +9,7 @@ import {
 } from '../types/agent';
 import { InterpretationResult } from '../types/vision';
 import { auditLogService } from './auditLogService';
+import { conversationContextRepository } from '../repositories/conversationContextRepository';
 
 /**
  * Agent Decision Framework - Implements the core logic for minimizing round-trips
@@ -463,7 +464,7 @@ export class AgentDecisionFramework {
         return this.createEmailWorkflowSteps(context);
       
       case 'shopping':
-        return this.createShoppingWorkflowSteps(context);
+        return await this.createShoppingWorkflowSteps(context);
       
       case 'ai_chat':
         return this.createAIChatWorkflowSteps(context);
@@ -527,11 +528,66 @@ export class AgentDecisionFramework {
   /**
    * Create shopping-specific workflow steps
    */
-  private createShoppingWorkflowSteps(context: DecisionContext): WorkflowStep[] {
+  private async createShoppingWorkflowSteps(context: DecisionContext): Promise<WorkflowStep[]> {
     const params = context.interpretation.parameters;
     const workflow: WorkflowStep[] = [];
 
-    // Search for products
+    // Handle product selection from a previous shopping form reply
+    if (params.shoppingSubIntent === 'product_selection' &&
+        params.selectedProductIds &&
+        params.selectedProductIds.length > 0) {
+
+      // Extract reference ID from the interpretation (set by context recovery or extracted from text)
+      const referenceId = context.interpretation.referenceId ||
+        this.extractReferenceIdFromText(context.interpretation.extractedText || '');
+
+      if (referenceId) {
+        // Look up the previous shopping context to get product ASINs
+        const shoppingContext = await conversationContextRepository.findByReferenceId(referenceId);
+
+        if (shoppingContext?.contextData?.searchResults) {
+          const searchResults = shoppingContext.contextData.searchResults as Array<{
+            asin: string;
+            selectionMarker: string;
+            productName?: string;
+            title?: string;
+            price?: number;
+          }>;
+
+          // Map selection markers (A, B, C) to actual product ASINs
+          for (const marker of params.selectedProductIds) {
+            const product = searchResults.find(p => p.selectionMarker === marker);
+            if (product?.asin) {
+              workflow.push({
+                id: `create_order_${marker}`,
+                type: 'tool_call',
+                description: `Create order for product ${marker}: ${product.productName || product.title || 'Selected product'}`,
+                toolCall: {
+                  server: 'shopping',
+                  tool: 'create_order',
+                  input: {
+                    userId: context.userId,
+                    referenceId: referenceId,
+                    productAsin: product.asin,
+                    quantity: params.quantity || 1
+                  }
+                }
+              });
+            }
+          }
+
+          // If we created order steps, return them
+          if (workflow.length > 0) {
+            return workflow;
+          }
+        }
+      }
+
+      // Fallback: if context lookup failed, log and continue to search
+      console.log('[AgentDecision] Could not resolve product selection, falling back to search');
+    }
+
+    // Search for products (new search or fallback)
     if (params.productQuery) {
       workflow.push({
         id: 'search_products',
@@ -547,43 +603,28 @@ export class AgentDecisionFramework {
           }
         }
       });
-
-    }
-
-    // If user already selected products, add to cart and checkout
-    if (params.selectedProductIds && params.selectedProductIds.length > 0) {
-      workflow.push({
-        id: 'add_to_cart',
-        type: 'tool_call',
-        description: 'Add selected products to cart',
-        toolCall: {
-          server: 'shopping',
-          tool: 'add_to_cart',
-          input: {
-            productIds: params.selectedProductIds,
-            quantities: Array(params.selectedProductIds.length).fill(params.quantity || 1),
-            userId: context.userId
-          }
-        }
-      });
-
-      workflow.push({
-        id: 'checkout',
-        type: 'tool_call',
-        description: 'Complete purchase',
-        dependencies: ['add_to_cart', 'payment_strategy'],
-        toolCall: {
-          server: 'shopping',
-          tool: 'checkout',
-          input: {
-            userId: context.userId,
-            deliveryAddress: context.userProfile?.deliveryAddress
-          }
-        }
-      });
     }
 
     return workflow;
+  }
+
+  /**
+   * Extract reference ID from text (UUID or FX-YYYY-NNNNNN format)
+   */
+  private extractReferenceIdFromText(text: string): string | null {
+    // Try UUID format first (from demo sessions)
+    const uuidMatch = text.match(/(?:ref|reference):\s*([a-f0-9-]{36})/i);
+    if (uuidMatch) {
+      return uuidMatch[1];
+    }
+
+    // Try FX-YYYY-NNNNNN format
+    const fxMatch = text.match(/(?:ref|reference):\s*(FX-\d{4}-\d{6})/i);
+    if (fxMatch) {
+      return fxMatch[1];
+    }
+
+    return null;
   }
 
   /**

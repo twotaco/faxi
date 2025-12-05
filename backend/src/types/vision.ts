@@ -54,6 +54,7 @@ export interface IntentParameters {
     max?: number;
   };
   referenceId?: string; // For order status queries
+  isReplyToForm?: boolean; // True when this is a reply to a previous shopping form
   
   // AI chat intent
   question?: string;

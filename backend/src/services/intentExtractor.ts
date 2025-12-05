@@ -254,13 +254,22 @@ export class IntentExtractor {
       .filter((text): text is string => text !== undefined && /^[A-Z]$/.test(text));
 
     if (selectedOptions.length > 0) {
-      // This is a product selection
+      // Check for reference ID indicating this is a reply to a previous shopping form
+      // Reference ID pattern: Ref: UUID format or FX-YYYY-NNNNNN format
+      const hasReferenceId = /(?:ref|reference):\s*(?:[a-f0-9-]{36}|FX-\d{4}-\d{6})/i.test(text);
+
+      // Check for shopping order form keywords (from our PDF templates)
+      const hasOrderFormKeywords = /(?:shopping\s*order\s*form|order\s*form|注文書|ショッピング)/i.test(text);
+
+      // This is a product selection - boost confidence if replying to a form
+      const isReplyToForm = hasReferenceId || hasOrderFormKeywords;
       return {
         intent: 'shopping',
-        confidence: 0.9,
+        confidence: isReplyToForm ? 0.95 : 0.9,
         parameters: {
           shoppingSubIntent: 'product_selection',
-          selectedProductIds: selectedOptions
+          selectedProductIds: selectedOptions,
+          isReplyToForm
         }
       };
     }
@@ -464,6 +473,16 @@ export class IntentExtractor {
     if (cardPattern.test(text)) {
       parameters.cardDetails = '****-****-****-' + text.match(cardPattern)?.[0].slice(-4);
       confidence += 0.4;
+    }
+
+    // Reduce confidence if this looks like a shopping form reply (product circles present)
+    // Shopping forms often contain "payment" text but circled A-E options indicate product selection
+    const hasProductCircles = annotations.some(ann =>
+      (ann.type === 'circle' || ann.type === 'checkmark') &&
+      ann.associatedText && /^[A-Z]$/.test(ann.associatedText)
+    );
+    if (hasProductCircles) {
+      confidence *= 0.3; // Heavily penalize - this is likely a product selection, not payment registration
     }
 
     return {
