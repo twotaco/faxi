@@ -70,6 +70,19 @@ app.use(monitoringService.requestMonitoring());
 // Special middleware for Stripe webhooks (needs raw body)
 app.use('/webhooks/stripe', express.raw({ type: 'application/json' }));
 
+// Special middleware for SNS webhooks (AWS SNS sends text/plain but body is JSON)
+app.use('/webhooks/email/sns', express.text({ type: 'text/plain' }), (req, res, next) => {
+  // Parse the text body as JSON if it's a string
+  if (typeof req.body === 'string' && req.body.length > 0) {
+    try {
+      req.body = JSON.parse(req.body);
+    } catch (e) {
+      console.error('Failed to parse SNS message body as JSON:', e);
+    }
+  }
+  next();
+});
+
 // Regular middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -1516,6 +1529,15 @@ app.get('/api/admin/shopping/metrics/automation', requireAdminAuth, requirePermi
 app.get('/api/admin/shopping/metrics/price-discrepancy', requireAdminAuth, requirePermission('dashboard:view'), shoppingMetricsController.getPriceDiscrepancyMetrics);
 app.get('/api/admin/shopping/metrics/alerts', requireAdminAuth, requirePermission('dashboard:view'), shoppingMetricsController.getShoppingAlerts);
 app.get('/api/admin/shopping/metrics/health', requireAdminAuth, requirePermission('dashboard:view'), shoppingMetricsController.getShoppingHealth);
+
+// Admin order management endpoints
+import * as adminOrderController from './controllers/adminOrderController';
+app.get('/api/admin/orders/pending', requireAdminAuth, requirePermission('orders:manage'), adminOrderController.getPendingOrders);
+app.get('/api/admin/orders/:id', requireAdminAuth, requirePermission('orders:view'), adminOrderController.getOrderDetails);
+app.post('/api/admin/orders/:id/prepare-checkout', requireAdminAuth, requirePermission('orders:manage'), adminOrderController.prepareCheckout);
+app.post('/api/admin/orders/:id/complete-purchase', requireAdminAuth, requirePermission('orders:manage'), adminOrderController.completePurchase);
+app.post('/api/admin/orders/:id/cancel', requireAdminAuth, requirePermission('orders:manage'), adminOrderController.cancelOrder);
+app.post('/api/admin/orders/:id/update-tracking', requireAdminAuth, requirePermission('orders:manage'), adminOrderController.updateTracking);
 
 // Webhook endpoints
 // Single Telnyx webhook endpoint for all fax events (recommended)

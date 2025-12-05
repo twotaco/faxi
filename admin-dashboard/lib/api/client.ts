@@ -195,6 +195,11 @@ export const ordersApi = {
     const response = await apiClient.post(`/api/admin/orders/${id}/cancel`, { reason });
     return response.data;
   },
+
+  updateTracking: async (id: string, trackingNumber: string) => {
+    const response = await apiClient.post(`/api/admin/orders/${id}/update-tracking`, { trackingNumber });
+    return response.data;
+  },
 };
 
 export default apiClient;
