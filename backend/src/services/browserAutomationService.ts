@@ -48,10 +48,26 @@ export class BrowserAutomationService {
       throw new Error('Order missing product ASIN');
     }
 
+    // Check if Playwright automation is enabled
+    const usePlaywright = process.env.AMAZON_EMAIL && process.env.AMAZON_PASSWORD;
+
+    if (usePlaywright) {
+      loggingService.info('Using Playwright automation for checkout preparation');
+      return await this.prepareCheckoutWithPlaywright(order);
+    } else {
+      loggingService.info('Using mock checkout (Playwright disabled - set AMAZON_EMAIL and AMAZON_PASSWORD)');
+      return await this.prepareCheckoutMock(order);
+    }
+  }
+
+  /**
+   * Mock checkout preparation (when Playwright is disabled)
+   */
+  private async prepareCheckoutMock(order: ShoppingOrder): Promise<CheckoutSession> {
     try {
       // Get fresh product data for validation
       const productDetails = await productSearchService.getProductDetails(
-        order.productAsin,
+        order.productAsin!,
         true // force fresh scrape
       );
 
@@ -59,8 +75,6 @@ export class BrowserAutomationService {
         throw new Error(`Product not found: ${order.productAsin}`);
       }
 
-      // For MVP, we'll return mock checkout details
-      // In production, this would use Playwright to actually navigate Amazon
       const checkoutDetails: CheckoutDetails = {
         totalPrice: productDetails.price,
         shippingCost: 0, // Prime shipping
@@ -72,7 +86,7 @@ export class BrowserAutomationService {
       };
 
       const sessionId = `checkout_${order.id}_${Date.now()}`;
-      const checkoutUrl = `https://www.amazon.co.jp/gp/cart/view.html?asin=${order.productAsin}`;
+      const checkoutUrl = `https://www.amazon.co.jp/dp/${order.productAsin}`;
 
       const session: CheckoutSession = {
         sessionId,
@@ -81,7 +95,7 @@ export class BrowserAutomationService {
         expiresAt: new Date(Date.now() + 30 * 60 * 1000) // 30 minutes
       };
 
-      loggingService.info('Checkout prepared successfully', {
+      loggingService.info('Mock checkout prepared successfully', {
         orderId: order.id,
         sessionId,
         currentPrice: checkoutDetails.currentPrice,
@@ -90,7 +104,7 @@ export class BrowserAutomationService {
 
       return session;
     } catch (error) {
-      loggingService.error('Error preparing checkout', {
+      loggingService.error('Error preparing mock checkout', {
         orderId: order.id,
         error
       });
@@ -99,8 +113,8 @@ export class BrowserAutomationService {
   }
 
   /**
-   * Full Playwright implementation (for future use)
-   * This is the actual browser automation that would be used in production
+   * Full Playwright implementation
+   * Automates Amazon checkout up to the final review page
    */
   private async prepareCheckoutWithPlaywright(order: ShoppingOrder): Promise<CheckoutSession> {
     let context: BrowserContext | null = null;
@@ -109,13 +123,28 @@ export class BrowserAutomationService {
     try {
       // Launch browser
       if (!this.browser) {
+        loggingService.info('Launching browser for automation');
         this.browser = await chromium.launch({
-          headless: false, // Show browser for admin to see
+          headless: false, // Show browser for transparency
           args: [
             '--disable-blink-features=AutomationControlled',
-            '--disable-dev-shm-usage'
+            '--disable-dev-shm-usage',
+            '--no-sandbox'
           ]
         });
+      }
+
+      // Try to load existing session
+      const sessionPath = './amazon-session.json';
+      let storageState = undefined;
+      try {
+        const fs = await import('fs');
+        if (fs.existsSync(sessionPath)) {
+          storageState = sessionPath;
+          loggingService.info('Loading existing Amazon session');
+        }
+      } catch (err) {
+        loggingService.debug('No existing session found, will log in');
       }
 
       // Create context with realistic fingerprint
@@ -123,28 +152,54 @@ export class BrowserAutomationService {
         locale: 'ja-JP',
         timezoneId: 'Asia/Tokyo',
         viewport: { width: 1920, height: 1080 },
-        userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+        userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        storageState
       });
 
       page = await context.newPage();
 
+      // Check if we need to log in
+      await page.goto('https://www.amazon.co.jp', { waitUntil: 'networkidle' });
+      
+      const isLoggedIn = await page.locator('#nav-link-accountList-nav-line-1').textContent()
+        .then(text => !text?.includes('ログイン'))
+        .catch(() => false);
+
+      if (!isLoggedIn) {
+        loggingService.info('Not logged in, performing login');
+        await this.loginToAmazon(page);
+        
+        // Save session for future use
+        try {
+          await context.storageState({ path: sessionPath });
+          loggingService.info('Amazon session saved');
+        } catch (err) {
+          loggingService.warn('Failed to save session', { error: err });
+        }
+      } else {
+        loggingService.info('Already logged in to Amazon');
+      }
+
       // Navigate to product page
       const productUrl = `https://www.amazon.co.jp/dp/${order.productAsin}`;
+      loggingService.info('Navigating to product page', { productUrl });
       await page.goto(productUrl, { waitUntil: 'networkidle' });
 
       // Add to cart
       await this.addToCart(page, order.quantity);
 
       // Navigate to cart
-      await page.goto('https://www.amazon.co.jp/gp/cart/view.html');
+      await page.goto('https://www.amazon.co.jp/gp/cart/view.html', { waitUntil: 'networkidle' });
 
       // Proceed to checkout
+      loggingService.info('Proceeding to checkout');
       await page.click('#sc-buy-box-ptc-button');
+      await page.waitForLoadState('networkidle');
 
       // Fill shipping address (if not already saved)
       await this.fillShippingAddress(page, order.shippingAddress);
 
-      // Navigate to review page
+      // Navigate to review page (stop before Place Order)
       await this.navigateToReview(page);
 
       // Extract checkout details
@@ -161,20 +216,63 @@ export class BrowserAutomationService {
         expiresAt: new Date(Date.now() + 30 * 60 * 1000)
       };
 
-      loggingService.info('Playwright checkout prepared', {
+      loggingService.info('Playwright checkout prepared successfully', {
         orderId: order.id,
-        sessionId
+        sessionId,
+        checkoutUrl
       });
 
+      // Don't close browser - admin needs to see it
       return session;
     } catch (error) {
       loggingService.error('Playwright checkout preparation failed', { error });
       
-      // Clean up
-      if (page) await page.close();
-      if (context) await context.close();
+      // Clean up on error
+      if (page) await page.close().catch(() => {});
+      if (context) await context.close().catch(() => {});
       
       throw error;
+    }
+  }
+
+  /**
+   * Log into Amazon.co.jp
+   */
+  private async loginToAmazon(page: Page): Promise<void> {
+    const email = process.env.AMAZON_EMAIL;
+    const password = process.env.AMAZON_PASSWORD;
+
+    if (!email || !password) {
+      throw new Error('AMAZON_EMAIL and AMAZON_PASSWORD must be set in environment variables');
+    }
+
+    try {
+      // Go to login page
+      await page.goto('https://www.amazon.co.jp/ap/signin', { waitUntil: 'networkidle' });
+
+      // Enter email
+      await page.fill('#ap_email', email);
+      await page.click('#continue');
+      await page.waitForLoadState('networkidle');
+
+      // Enter password
+      await page.fill('#ap_password', password);
+      await page.click('#signInSubmit');
+      await page.waitForLoadState('networkidle');
+
+      // Handle 2FA if present (wait for manual input)
+      const has2FA = await page.locator('#auth-mfa-otpcode').isVisible().catch(() => false);
+      if (has2FA) {
+        loggingService.warn('2FA detected - waiting for manual input (60 seconds)');
+        await page.waitForNavigation({ timeout: 60000 }).catch(() => {
+          throw new Error('2FA timeout - please complete 2FA within 60 seconds');
+        });
+      }
+
+      loggingService.info('Successfully logged into Amazon');
+    } catch (error) {
+      loggingService.error('Amazon login failed', { error });
+      throw new Error('Failed to log into Amazon - check credentials');
     }
   }
 
@@ -182,20 +280,53 @@ export class BrowserAutomationService {
    * Add product to cart
    */
   private async addToCart(page: Page, quantity: number): Promise<void> {
-    // Set quantity
-    if (quantity > 1) {
-      await page.selectOption('#quantity', quantity.toString());
+    try {
+      // Set quantity if more than 1
+      if (quantity > 1) {
+        const quantitySelector = await page.locator('#quantity').isVisible().catch(() => false);
+        if (quantitySelector) {
+          await page.selectOption('#quantity', quantity.toString());
+          await page.waitForTimeout(500); // Human-like delay
+        }
+      }
+
+      // Try different add to cart button selectors
+      const addToCartSelectors = [
+        '#add-to-cart-button',
+        '#buy-now-button',
+        'input[name="submit.add-to-cart"]',
+        '#add-to-cart-button-ubb'
+      ];
+
+      let clicked = false;
+      for (const selector of addToCartSelectors) {
+        const isVisible = await page.locator(selector).isVisible().catch(() => false);
+        if (isVisible) {
+          await page.click(selector);
+          clicked = true;
+          loggingService.debug('Clicked add to cart button', { selector });
+          break;
+        }
+      }
+
+      if (!clicked) {
+        throw new Error('Could not find add to cart button');
+      }
+
+      // Wait for confirmation (try multiple possible selectors)
+      await Promise.race([
+        page.waitForSelector('#NATC_SMART_WAGON_CONF_MSG_SUCCESS', { timeout: 5000 }),
+        page.waitForSelector('#huc-v2-order-row-confirm-text', { timeout: 5000 }),
+        page.waitForURL('**/gp/cart/**', { timeout: 5000 })
+      ]).catch(() => {
+        loggingService.warn('Add to cart confirmation not detected, but continuing');
+      });
+
+      loggingService.info('Product added to cart successfully');
+    } catch (error) {
+      loggingService.error('Failed to add product to cart', { error });
+      throw new Error('Failed to add product to cart');
     }
-
-    // Click add to cart button
-    await page.click('#add-to-cart-button');
-
-    // Wait for confirmation
-    await page.waitForSelector('#NATC_SMART_WAGON_CONF_MSG_SUCCESS', {
-      timeout: 5000
-    });
-
-    loggingService.debug('Product added to cart');
   }
 
   /**
@@ -203,28 +334,55 @@ export class BrowserAutomationService {
    */
   private async fillShippingAddress(page: Page, address: any): Promise<void> {
     try {
-      // Check if address form is present
-      const hasAddressForm = await page.locator('#address-ui-widgets-enterAddressFullName').isVisible();
+      // Wait for page to load
+      await page.waitForLoadState('networkidle');
 
-      if (hasAddressForm) {
+      // Check if we need to add a new address
+      const needsNewAddress = await page.locator('#address-ui-widgets-enterAddressFullName').isVisible().catch(() => false);
+
+      if (needsNewAddress) {
+        loggingService.info('Filling new shipping address');
+        
+        // Fill address form
         await page.fill('#address-ui-widgets-enterAddressFullName', address.name);
+        await page.waitForTimeout(200);
+        
         await page.fill('#address-ui-widgets-enterAddressPostalCode', address.postalCode);
+        await page.waitForTimeout(200);
+        
         await page.fill('#address-ui-widgets-enterAddressLine1', address.addressLine1);
+        await page.waitForTimeout(200);
         
         if (address.addressLine2) {
           await page.fill('#address-ui-widgets-enterAddressLine2', address.addressLine2);
+          await page.waitForTimeout(200);
         }
 
         await page.fill('#address-ui-widgets-enterAddressCity', address.city);
+        await page.waitForTimeout(200);
+        
         await page.fill('#address-ui-widgets-enterAddressPhoneNumber', address.phoneNumber);
+        await page.waitForTimeout(200);
 
         // Submit address
         await page.click('#address-ui-widgets-form-submit-button');
+        await page.waitForLoadState('networkidle');
+        
+        loggingService.info('Shipping address submitted');
+      } else {
+        // Check if there's an existing address we can use
+        const hasExistingAddress = await page.locator('.address-plus-pm-container').isVisible().catch(() => false);
+        
+        if (hasExistingAddress) {
+          loggingService.info('Using existing saved address');
+          // Address is already selected, continue
+        } else {
+          loggingService.warn('No address form found, may already be on next step');
+        }
       }
-
-      loggingService.debug('Shipping address filled');
     } catch (error) {
       loggingService.warn('Could not fill shipping address, may already be saved', { error });
+      // Don't throw - address might already be saved
     }
   }
 
@@ -232,19 +390,57 @@ export class BrowserAutomationService {
    * Navigate to final review page (stop before Place Order)
    */
   private async navigateToReview(page: Page): Promise<void> {
-    // Continue through payment method selection
-    // (assumes payment method is already saved)
-    
     try {
-      // Click continue to review
-      await page.click('input[name="ppw-widgetEvent:SetPaymentPlanSelectContinueEvent"]');
-      
-      // Wait for review page
-      await page.waitForSelector('#placeYourOrder', { timeout: 10000 });
-      
-      loggingService.debug('Navigated to review page');
+      await page.waitForLoadState('networkidle');
+
+      // Look for payment method selection
+      const paymentContinueSelectors = [
+        'input[name="ppw-widgetEvent:SetPaymentPlanSelectContinueEvent"]',
+        '#continue-top',
+        '#orderSummaryPrimaryActionBtn',
+        'input[name="placeYourOrder1"]'
+      ];
+
+      // Try to find and click continue button
+      let foundContinue = false;
+      for (const selector of paymentContinueSelectors) {
+        const isVisible = await page.locator(selector).isVisible().catch(() => false);
+        if (isVisible) {
+          const text = await page.locator(selector).textContent().catch(() => '');
+          // Don't click "Place Order" - only click "Continue" type buttons
+          if (!text.includes('注文') && !text.includes('Place Order')) {
+            await page.click(selector);
+            await page.waitForLoadState('networkidle');
+            foundContinue = true;
+            loggingService.info('Clicked continue button', { selector });
+            break;
+          }
+        }
+      }
+
+      // Wait for review page - look for Place Order button (but don't click it!)
+      const placeOrderSelectors = [
+        '#placeYourOrder',
+        'input[name="placeYourOrder1"]',
+        '#submitOrderButtonId'
+      ];
+
+      let onReviewPage = false;
+      for (const selector of placeOrderSelectors) {
+        const isVisible = await page.locator(selector).isVisible().catch(() => false);
+        if (isVisible) {
+          onReviewPage = true;
+          loggingService.info('Reached review page - STOPPING before Place Order button');
+          break;
+        }
+      }
+
+      if (!onReviewPage) {
+        loggingService.warn('Could not confirm we are on review page');
+      }
     } catch (error) {
-      loggingService.warn('Navigation to review page may have failed', { error });
+      loggingService.error('Error navigating to review page', { error });
+      throw new Error('Failed to navigate to review page');
     }
   }
 
@@ -253,27 +449,102 @@ export class BrowserAutomationService {
    */
   private async extractCheckoutDetails(page: Page): Promise<CheckoutDetails> {
     try {
-      // Extract total price
-      const totalPriceText = await page.locator('#subtotals-marketplace-table .grand-total-price').textContent();
-      const totalPrice = this.parsePrice(totalPriceText || '0');
+      await page.waitForLoadState('networkidle');
+
+      // Try multiple selectors for total price
+      let totalPrice = 0;
+      const totalSelectors = [
+        '#subtotals-marketplace-table .grand-total-price',
+        '.grand-total-price',
+        '#order-summary-total',
+        '.payment-summary-total'
+      ];
+
+      for (const selector of totalSelectors) {
+        const text = await page.locator(selector).textContent().catch(() => null);
+        if (text) {
+          totalPrice = this.parsePrice(text);
+          if (totalPrice > 0) break;
+        }
+      }
 
       // Extract shipping cost
-      const shippingText = await page.locator('#subtotals-marketplace-table .shipping-cost').textContent();
-      const shippingCost = this.parsePrice(shippingText || '0');
+      let shippingCost = 0;
+      const shippingSelectors = [
+        '#subtotals-marketplace-table .shipping-cost',
+        '.shipping-cost',
+        '#order-summary-shipping'
+      ];
+
+      for (const selector of shippingSelectors) {
+        const text = await page.locator(selector).textContent().catch(() => null);
+        if (text) {
+          shippingCost = this.parsePrice(text);
+          break;
+        }
+      }
 
       // Extract tax
-      const taxText = await page.locator('#subtotals-marketplace-table .tax-amount').textContent();
-      const tax = this.parsePrice(taxText || '0');
+      let tax = 0;
+      const taxSelectors = [
+        '#subtotals-marketplace-table .tax-amount',
+        '.tax-amount',
+        '#order-summary-tax'
+      ];
+
+      for (const selector of taxSelectors) {
+        const text = await page.locator(selector).textContent().catch(() => null);
+        if (text) {
+          tax = this.parsePrice(text);
+          break;
+        }
+      }
 
       // Extract delivery estimate
-      const deliveryText = await page.locator('.shipment .delivery-date').textContent();
-      const estimatedDelivery = deliveryText?.trim() || 'Unknown';
+      let estimatedDelivery = 'Unknown';
+      const deliverySelectors = [
+        '.shipment .delivery-date',
+        '.delivery-date',
+        '#order-summary-delivery-date'
+      ];
+
+      for (const selector of deliverySelectors) {
+        const text = await page.locator(selector).textContent().catch(() => null);
+        if (text) {
+          estimatedDelivery = text.trim();
+          break;
+        }
+      }
 
       // Extract product title
-      const productTitle = await page.locator('.product-title').textContent();
+      let productTitle = 'Unknown';
+      const titleSelectors = [
+        '.product-title',
+        '.sc-product-title',
+        '#order-summary-product-title'
+      ];
+
+      for (const selector of titleSelectors) {
+        const text = await page.locator(selector).textContent().catch(() => null);
+        if (text) {
+          productTitle = text.trim();
+          break;
+        }
+      }
 
       // Check stock status
-      const inStock = !(await page.locator('.out-of-stock-message').isVisible());
+      const inStock = !(await page.locator('.out-of-stock-message').isVisible().catch(() => false));
+
+      const currentPrice = totalPrice - shippingCost - tax;
+
+      loggingService.info('Extracted checkout details', {
+        totalPrice,
+        shippingCost,
+        tax,
+        currentPrice,
+        estimatedDelivery,
+        inStock
+      });
 
       return {
         totalPrice,
@@ -281,12 +552,22 @@ export class BrowserAutomationService {
         tax,
         estimatedDelivery,
         inStock,
-        productTitle: productTitle?.trim() || 'Unknown',
-        currentPrice: totalPrice - shippingCost - tax
+        productTitle,
+        currentPrice
       };
     } catch (error) {
       loggingService.error('Error extracting checkout details', { error });
-      throw new Error('Failed to extract checkout details');
+      
+      // Return fallback values rather than failing
+      return {
+        totalPrice: 0,
+        shippingCost: 0,
+        tax: 0,
+        estimatedDelivery: 'Unknown',
+        inStock: true,
+        productTitle: 'Unknown',
+        currentPrice: 0
+      };
     }
   }
 

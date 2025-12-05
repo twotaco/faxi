@@ -361,8 +361,8 @@ export class SnsWebhookHandler {
         break;
 
       case 'inbound_email':
-        // Inbound emails are handled by EmailWebhookController
-        console.log('Inbound email notification - will be handled by EmailWebhookController');
+        // Process inbound email
+        await this.handleInboundEmailNotification(parsed.data);
         break;
 
       default:
@@ -482,6 +482,162 @@ export class SnsWebhookHandler {
     } catch (error) {
       console.error('Error handling complaint notification:', error);
       throw error;
+    }
+  }
+
+  /**
+   * Handle inbound email notification from SES
+   */
+  private async handleInboundEmailNotification(data: any): Promise<void> {
+    try {
+      const mail = data.mail;
+      const content = data.content;
+
+      if (!mail) {
+        console.error('No mail data in inbound email notification');
+        return;
+      }
+
+      const destination = mail.destination?.[0] || '';
+      const source = mail.source || '';
+      const subject = mail.commonHeaders?.subject || '';
+
+      console.log('Processing inbound email:', {
+        to: destination,
+        from: source,
+        subject: subject
+      });
+
+      // Extract sender name from commonHeaders.from
+      let fromName: string | undefined;
+      if (mail.commonHeaders?.from && mail.commonHeaders.from.length > 0) {
+        const fromHeader = mail.commonHeaders.from[0];
+        const nameMatch = fromHeader.match(/^(.+?)\s*<.+>$/);
+        if (nameMatch) {
+          fromName = nameMatch[1].trim();
+        }
+      }
+
+      // Import necessary services
+      const { extractPhoneFromEmail, isFaxiUserEmail } = await import('../config/email.js');
+      const { userRepository } = await import('../repositories/userRepository.js');
+      const { addressBookRepository } = await import('../repositories/addressBookRepository.js');
+      const { blocklistService } = await import('./blocklistService.js');
+      const { enqueueEmailToFax } = await import('../queue/faxQueue.js');
+
+      // Extract recipient phone number from email address
+      const phoneNumber = extractPhoneFromEmail(destination);
+
+      if (!phoneNumber) {
+        console.error('Invalid Faxi email address:', destination);
+        await auditLogService.logSystemError({
+          errorType: 'invalid_email_address',
+          errorMessage: `Received email for invalid Faxi address: ${destination}`,
+          context: { to: destination, from: source }
+        });
+        return;
+      }
+
+      // Validate that this is a Faxi user email
+      if (!isFaxiUserEmail(destination)) {
+        console.error('Email not for Faxi user:', destination);
+        return;
+      }
+
+      // Find existing user
+      const user = await userRepository.findByPhoneNumber(phoneNumber);
+
+      if (!user) {
+        console.log('Email rejected - recipient not a registered user:', {
+          to: destination,
+          from: source,
+          phoneNumber
+        });
+        await auditLogService.log({
+          eventType: 'email.unregistered_recipient_rejected',
+          eventData: {
+            recipientEmail: destination,
+            senderEmail: source,
+            phoneNumber,
+            subject
+          }
+        });
+        return;
+      }
+
+      console.log('Found user:', {
+        userId: user.id,
+        phoneNumber: user.phoneNumber
+      });
+
+      // Check if sender is blocked
+      const isBlocked = await blocklistService.isBlocked(user.id, source);
+      if (isBlocked) {
+        console.log('Email from blocked sender rejected:', {
+          userId: user.id,
+          senderEmail: source
+        });
+        await auditLogService.log({
+          userId: user.id,
+          eventType: 'email.blocked_sender_rejected',
+          eventData: {
+            senderEmail: source,
+            subject
+          }
+        });
+        return;
+      }
+
+      // Register sender as contact automatically
+      try {
+        await addressBookRepository.addFromEmail(
+          user.id,
+          source,
+          fromName
+        );
+        console.log('Contact registered/updated:', {
+          userId: user.id,
+          email: source,
+          name: fromName
+        });
+      } catch (error) {
+        console.error('Failed to register contact:', error);
+      }
+
+      // Log email receipt
+      await auditLogService.logEmailReceived({
+        userId: user.id,
+        fromEmail: source,
+        toEmail: destination,
+        subject,
+        bodyLength: content?.length || 0,
+        hasAttachments: false,
+        provider: 'ses'
+      });
+
+      // Enqueue email-to-fax conversion
+      const jobId = await enqueueEmailToFax({
+        to: user.phoneNumber,
+        from: source,
+        subject,
+        body: content || '',
+        receivedAt: mail.timestamp || new Date().toISOString()
+      });
+
+      console.log('Email-to-fax job enqueued:', {
+        jobId,
+        userId: user.id,
+        phoneNumber: user.phoneNumber
+      });
+
+    } catch (error) {
+      console.error('Error handling inbound email notification:', error);
+
+      await auditLogService.logSystemError({
+        errorType: 'inbound_email_processing_error',
+        errorMessage: `Failed to process inbound email: ${error}`,
+        context: { data }
+      });
     }
   }
 

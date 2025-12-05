@@ -46,8 +46,8 @@ export const defaultScrapingConfig: PlaywrightScrapingConfig = {
   timezone: 'Asia/Tokyo',
   
   // Must run headless in Docker containers (no X server available)
-  // Can set PLAYWRIGHT_HEADLESS=false for local debugging with a display
-  headless: process.env.PLAYWRIGHT_HEADLESS !== 'false',
+  // Can set SCRAPING_HEADLESS=false for local debugging with a display
+  headless: process.env.SCRAPING_HEADLESS !== 'false',
   
   // Human-like delays between actions
   delayMin: 150,

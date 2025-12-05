@@ -1368,7 +1368,7 @@ STRIPE_WEBHOOK_SECRET=whsec_...
 # Browser Automation
 AMAZON_EMAIL=proxy@faxi.jp
 AMAZON_PASSWORD=encrypted_password
-PLAYWRIGHT_HEADLESS=true
+SCRAPING_HEADLESS=true
 
 # Feature Flags
 ENABLE_SHOPPING_MCP=true
