@@ -28,7 +28,7 @@ jobs:
         id: migration-check
         run: |
           # Check if any migration files changed in this push
-          if git diff --name-only HEAD~1 HEAD | grep -qE "^backend/src/migrations/|^backend/migrations/"; then
+          if git diff --name-only HEAD~1 HEAD | grep -qE "^backend/src/database/migrations/"; then
             echo "has_migrations=true" >> $GITHUB_OUTPUT
             echo "Migration files changed - will run migrations"
           else
