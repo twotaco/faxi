@@ -471,7 +471,7 @@ export async function getAuditLogs(req: Request, res: Response) {
  */
 export async function getEmailMetrics(req: Request, res: Response) {
   try {
-    const { days = '7' } = req.query;
+    const { days = '7', userId } = req.query;
     const numDays = parseInt(days as string, 10);
 
     // Get metrics for the specified period
@@ -487,21 +487,30 @@ export async function getEmailMetrics(req: Request, res: Response) {
     // Check for threshold violations
     const alerts = await emailMetricsService.checkThresholds(metrics);
 
-    // Get recent email events from audit logs (without content for privacy)
+    // Get recent email events from audit logs (include full event_data for detail view)
+    const userFilter = userId ? 'AND user_id = $1' : '';
+    const queryParams = userId ? [userId] : [];
     const recentEventsResult = await db.query(
       `SELECT
          id,
          user_id,
          event_type,
+         event_data,
          event_data->>'provider' as provider,
          event_data->>'status' as status,
          event_data->>'fromDomain' as from_domain,
          event_data->>'toDomain' as to_domain,
+         event_data->>'senderEmail' as sender_email,
+         event_data->>'recipientEmail' as recipient_email,
+         event_data->>'phoneNumber' as phone_number,
+         event_data->>'subject' as subject,
          created_at
        FROM audit_logs
        WHERE event_type LIKE 'email.%'
+       ${userFilter}
        ORDER BY created_at DESC
-       LIMIT 50`
+       LIMIT 50`,
+      queryParams
     );
 
     // Get inbound email stats from audit logs
@@ -624,7 +633,12 @@ export async function getEmailMetrics(req: Request, res: Response) {
         status: row.status,
         fromDomain: row.from_domain,
         toDomain: row.to_domain,
+        senderEmail: row.sender_email,
+        recipientEmail: row.recipient_email,
+        phoneNumber: row.phone_number,
+        subject: row.subject,
         createdAt: row.created_at,
+        eventData: row.event_data, // Full event data for detail view
       })),
     });
   } catch (error) {

@@ -2,8 +2,8 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api/client';
-import { RefreshCw, Mail, ArrowUpRight, ArrowDownRight, AlertTriangle, CheckCircle, XCircle, Clock, FileText, Phone, ArrowRight, Loader2 } from 'lucide-react';
-import { useState } from 'react';
+import { RefreshCw, Mail, ArrowUpRight, ArrowDownRight, AlertTriangle, CheckCircle, XCircle, Clock, FileText, Phone, ArrowRight, Loader2, Search, X, ChevronDown, ChevronUp, User } from 'lucide-react';
+import { useState, useEffect } from 'react';
 
 interface PipelineJob {
   id: string;
@@ -77,12 +77,21 @@ interface EmailMetricsData {
     status: string;
     fromDomain: string;
     toDomain: string;
+    senderEmail: string | null;
+    recipientEmail: string | null;
+    phoneNumber: string | null;
+    subject: string | null;
     createdAt: string;
+    eventData: Record<string, unknown> | null;
   }>;
 }
 
-async function fetchEmailMetrics(days: number): Promise<EmailMetricsData> {
-  const response = await apiClient.get(`/api/admin/dashboard/email/metrics?days=${days}`);
+type EmailEvent = EmailMetricsData['recentEvents'][number];
+
+async function fetchEmailMetrics(days: number, userId?: string): Promise<EmailMetricsData> {
+  const params = new URLSearchParams({ days: String(days) });
+  if (userId) params.append('userId', userId);
+  const response = await apiClient.get(`/api/admin/dashboard/email/metrics?${params}`);
   return response.data;
 }
 
@@ -152,10 +161,21 @@ function timeAgo(dateStr: string): string {
 export default function EmailMetricsPage() {
   const [days, setDays] = useState(7);
   const [selectedJob, setSelectedJob] = useState<PipelineJob | null>(null);
+  const [selectedEvent, setSelectedEvent] = useState<EmailEvent | null>(null);
+  const [userIdFilter, setUserIdFilter] = useState('');
+  const [debouncedUserId, setDebouncedUserId] = useState('');
+
+  // Debounce user ID filter
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedUserId(userIdFilter);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [userIdFilter]);
 
   const { data, isLoading, error, refetch } = useQuery({
-    queryKey: ['email-metrics', days],
-    queryFn: () => fetchEmailMetrics(days),
+    queryKey: ['email-metrics', days, debouncedUserId],
+    queryFn: () => fetchEmailMetrics(days, debouncedUserId || undefined),
     refetchInterval: 60000,
   });
 
@@ -535,60 +555,155 @@ export default function EmailMetricsPage() {
 
           {/* Recent Events */}
           <div>
-            <h3 className="text-lg font-semibold text-gray-800 mb-4">Recent Email Events</h3>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-800">Recent Email Events</h3>
+              {/* User ID Filter */}
+              <div className="flex items-center space-x-2">
+                <div className="relative">
+                  <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <input
+                    type="text"
+                    value={userIdFilter}
+                    onChange={(e) => setUserIdFilter(e.target.value)}
+                    placeholder="Filter by User ID..."
+                    className="pl-9 pr-8 py-2 border border-gray-300 rounded-lg text-sm w-64 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                  {userIdFilter && (
+                    <button
+                      onClick={() => setUserIdFilter('')}
+                      className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
+                {debouncedUserId && (
+                  <span className="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded">
+                    Filtered
+                  </span>
+                )}
+              </div>
+            </div>
             <div className="bg-white rounded-lg shadow overflow-hidden">
               {data?.recentEvents && data.recentEvents.length > 0 ? (
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Event
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Provider
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        From Domain
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        To Domain
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Time
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {data.recentEvents.map((event) => (
-                      <tr key={event.id}>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex items-center space-x-2">
-                            {getEventIcon(event.eventType)}
-                            <span className="text-sm text-gray-900">
-                              {formatEventType(event.eventType)}
-                            </span>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {event.provider || '-'}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {event.fromDomain || '-'}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {event.toDomain || '-'}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {new Date(event.createdAt).toLocaleString()}
-                        </td>
+                <>
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-8">
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Event
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          From
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          To
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Subject
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Time
+                        </th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {data.recentEvents.map((event) => (
+                        <tr
+                          key={event.id}
+                          onClick={() => setSelectedEvent(selectedEvent?.id === event.id ? null : event)}
+                          className="cursor-pointer hover:bg-gray-50 transition-colors"
+                        >
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            {selectedEvent?.id === event.id ? (
+                              <ChevronUp className="w-4 h-4 text-gray-400" />
+                            ) : (
+                              <ChevronDown className="w-4 h-4 text-gray-400" />
+                            )}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex items-center space-x-2">
+                              {getEventIcon(event.eventType)}
+                              <span className="text-sm text-gray-900">
+                                {formatEventType(event.eventType)}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {event.senderEmail || event.fromDomain || '-'}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {event.recipientEmail || event.toDomain || '-'}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 max-w-xs truncate" title={event.subject || ''}>
+                            {event.subject || '-'}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {new Date(event.createdAt).toLocaleString()}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+
+                  {/* Detail Expansion Panel */}
+                  {selectedEvent && (
+                    <div className="border-t border-gray-200 bg-blue-50 p-6">
+                      <div className="flex items-center justify-between mb-4">
+                        <h4 className="text-sm font-semibold text-blue-900">
+                          Event Details: {formatEventType(selectedEvent.eventType)}
+                        </h4>
+                        <button
+                          onClick={() => setSelectedEvent(null)}
+                          className="text-blue-600 hover:text-blue-800"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                        <div>
+                          <p className="text-xs text-blue-700 font-medium">Event ID</p>
+                          <p className="text-sm text-blue-900 font-mono">{selectedEvent.id.slice(0, 8)}...</p>
+                        </div>
+                        {selectedEvent.userId && (
+                          <div>
+                            <p className="text-xs text-blue-700 font-medium">User ID</p>
+                            <p className="text-sm text-blue-900 font-mono">{selectedEvent.userId.slice(0, 8)}...</p>
+                          </div>
+                        )}
+                        {selectedEvent.phoneNumber && (
+                          <div>
+                            <p className="text-xs text-blue-700 font-medium">Phone Number</p>
+                            <p className="text-sm text-blue-900">{selectedEvent.phoneNumber}</p>
+                          </div>
+                        )}
+                        <div>
+                          <p className="text-xs text-blue-700 font-medium">Timestamp</p>
+                          <p className="text-sm text-blue-900">{new Date(selectedEvent.createdAt).toLocaleString()}</p>
+                        </div>
+                      </div>
+
+                      {/* Full Event Data */}
+                      {selectedEvent.eventData && (
+                        <details className="mt-4">
+                          <summary className="cursor-pointer text-sm font-medium text-blue-800 hover:text-blue-900">
+                            View Full Event Data (JSON)
+                          </summary>
+                          <pre className="mt-2 p-4 bg-white rounded-lg border border-blue-200 text-xs overflow-x-auto max-h-64 overflow-y-auto">
+                            {JSON.stringify(selectedEvent.eventData, null, 2)}
+                          </pre>
+                        </details>
+                      )}
+                    </div>
+                  )}
+                </>
               ) : (
                 <div className="p-8 text-center text-gray-500">
                   <Mail className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-                  <p>No recent email events</p>
+                  <p>{debouncedUserId ? 'No email events for this user' : 'No recent email events'}</p>
                 </div>
               )}
             </div>
