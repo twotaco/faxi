@@ -541,27 +541,13 @@ export class AgentDecisionFramework {
           server: 'shopping',
           tool: 'search_products',
           input: {
+            userId: context.userId,
             query: params.productQuery,
             maxResults: 5
           }
         }
       });
 
-      // Get complementary products
-      workflow.push({
-        id: 'get_complementary',
-        type: 'tool_call',
-        description: 'Find complementary products',
-        dependencies: ['search_products'],
-        toolCall: {
-          server: 'shopping',
-          tool: 'get_complementary_products',
-          input: {
-            query: params.productQuery,
-            maxResults: 3
-          }
-        }
-      });
     }
 
     // If user already selected products, add to cart and checkout
