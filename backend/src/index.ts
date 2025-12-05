@@ -90,8 +90,8 @@ app.use('/webhooks/email/sns', express.text({ type: ['text/plain', 'application/
 });
 
 // Regular middleware
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '10mb' })); // Support demo file uploads up to 5MB (with base64 overhead)
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(cookieParser());
 
 // Serve static files (favicon, etc.)

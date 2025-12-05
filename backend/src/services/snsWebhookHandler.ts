@@ -519,46 +519,25 @@ export class SnsWebhookHandler {
       }
 
       // Import necessary services
-      const { extractPhoneFromEmail, isFaxiUserEmail } = await import('../config/email.js');
       const { userRepository } = await import('../repositories/userRepository.js');
       const { addressBookRepository } = await import('../repositories/addressBookRepository.js');
       const { blocklistService } = await import('./blocklistService.js');
       const { enqueueEmailToFax } = await import('../queue/faxQueue.js');
 
-      // Extract recipient phone number from email address
-      const phoneNumber = extractPhoneFromEmail(destination);
-
-      if (!phoneNumber) {
-        console.error('Invalid Faxi email address:', destination);
-        await auditLogService.logSystemError({
-          errorType: 'invalid_email_address',
-          errorMessage: `Received email for invalid Faxi address: ${destination}`,
-          context: { to: destination, from: source }
-        });
-        return;
-      }
-
-      // Validate that this is a Faxi user email
-      if (!isFaxiUserEmail(destination)) {
-        console.error('Email not for Faxi user:', destination);
-        return;
-      }
-
-      // Find existing user
-      const user = await userRepository.findByPhoneNumber(phoneNumber);
+      // Find user by email address directly
+      const user = await userRepository.findByEmail(destination);
 
       if (!user) {
         console.log('Email rejected - recipient not a registered user:', {
           to: destination,
-          from: source,
-          phoneNumber
+          from: source
         });
         await auditLogService.log({
           eventType: 'email.unregistered_recipient_rejected',
           eventData: {
             recipientEmail: destination,
             senderEmail: source,
-            phoneNumber,
+            phoneNumber: destination.split('@')[0],
             subject
           }
         });

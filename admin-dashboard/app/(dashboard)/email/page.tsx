@@ -3,7 +3,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api/client';
 import { RefreshCw, Mail, ArrowUpRight, ArrowDownRight, AlertTriangle, CheckCircle, XCircle, Clock, FileText, Phone, ArrowRight, Loader2, Search, X, ChevronDown, ChevronUp, User } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 
 interface PipelineJob {
   id: string;
@@ -611,94 +611,86 @@ export default function EmailMetricsPage() {
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
                       {data.recentEvents.map((event) => (
-                        <tr
-                          key={event.id}
-                          onClick={() => setSelectedEvent(selectedEvent?.id === event.id ? null : event)}
-                          className="cursor-pointer hover:bg-gray-50 transition-colors"
-                        >
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            {selectedEvent?.id === event.id ? (
-                              <ChevronUp className="w-4 h-4 text-gray-400" />
-                            ) : (
-                              <ChevronDown className="w-4 h-4 text-gray-400" />
-                            )}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="flex items-center space-x-2">
-                              {getEventIcon(event.eventType)}
-                              <span className="text-sm text-gray-900">
-                                {formatEventType(event.eventType)}
-                              </span>
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {event.senderEmail || event.fromDomain || '-'}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {event.recipientEmail || event.toDomain || '-'}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 max-w-xs truncate" title={event.subject || ''}>
-                            {event.subject || '-'}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {new Date(event.createdAt).toLocaleString()}
-                          </td>
-                        </tr>
+                        <React.Fragment key={event.id}>
+                          <tr
+                            onClick={() => setSelectedEvent(selectedEvent?.id === event.id ? null : event)}
+                            className="cursor-pointer hover:bg-gray-50 transition-colors"
+                          >
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              {selectedEvent?.id === event.id ? (
+                                <ChevronUp className="w-4 h-4 text-gray-400" />
+                              ) : (
+                                <ChevronDown className="w-4 h-4 text-gray-400" />
+                              )}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="flex items-center space-x-2">
+                                {getEventIcon(event.eventType)}
+                                <span className="text-sm text-gray-900">
+                                  {formatEventType(event.eventType)}
+                                </span>
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                              {event.senderEmail || event.fromDomain || '-'}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                              {event.recipientEmail || event.toDomain || '-'}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 max-w-xs truncate" title={event.subject || ''}>
+                              {event.subject || '-'}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                              {new Date(event.createdAt).toLocaleString()}
+                            </td>
+                          </tr>
+                          {/* Inline Detail Row */}
+                          {selectedEvent?.id === event.id && (
+                            <tr>
+                              <td colSpan={6} className="px-0 py-0">
+                                <div className="bg-blue-50 p-4 border-t border-b border-blue-100">
+                                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                    <div>
+                                      <p className="text-xs text-blue-700 font-medium">Event ID</p>
+                                      <p className="text-sm text-blue-900 font-mono">{event.id.slice(0, 8)}...</p>
+                                    </div>
+                                    {event.userId && (
+                                      <div>
+                                        <p className="text-xs text-blue-700 font-medium">User ID</p>
+                                        <p className="text-sm text-blue-900 font-mono">{event.userId.slice(0, 8)}...</p>
+                                      </div>
+                                    )}
+                                    {event.phoneNumber && (
+                                      <div>
+                                        <p className="text-xs text-blue-700 font-medium">Phone Number</p>
+                                        <p className="text-sm text-blue-900">{event.phoneNumber}</p>
+                                      </div>
+                                    )}
+                                    <div>
+                                      <p className="text-xs text-blue-700 font-medium">Timestamp</p>
+                                      <p className="text-sm text-blue-900">{new Date(event.createdAt).toLocaleString()}</p>
+                                    </div>
+                                  </div>
+
+                                  {/* Full Event Data */}
+                                  {event.eventData && (
+                                    <details className="mt-3">
+                                      <summary className="cursor-pointer text-sm font-medium text-blue-800 hover:text-blue-900">
+                                        View Full Event Data (JSON)
+                                      </summary>
+                                      <pre className="mt-2 p-3 bg-white rounded-lg border border-blue-200 text-xs overflow-x-auto max-h-48 overflow-y-auto">
+                                        {JSON.stringify(event.eventData, null, 2)}
+                                      </pre>
+                                    </details>
+                                  )}
+                                </div>
+                              </td>
+                            </tr>
+                          )}
+                        </React.Fragment>
                       ))}
                     </tbody>
                   </table>
-
-                  {/* Detail Expansion Panel */}
-                  {selectedEvent && (
-                    <div className="border-t border-gray-200 bg-blue-50 p-6">
-                      <div className="flex items-center justify-between mb-4">
-                        <h4 className="text-sm font-semibold text-blue-900">
-                          Event Details: {formatEventType(selectedEvent.eventType)}
-                        </h4>
-                        <button
-                          onClick={() => setSelectedEvent(null)}
-                          className="text-blue-600 hover:text-blue-800"
-                        >
-                          <X className="w-4 h-4" />
-                        </button>
-                      </div>
-
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-                        <div>
-                          <p className="text-xs text-blue-700 font-medium">Event ID</p>
-                          <p className="text-sm text-blue-900 font-mono">{selectedEvent.id.slice(0, 8)}...</p>
-                        </div>
-                        {selectedEvent.userId && (
-                          <div>
-                            <p className="text-xs text-blue-700 font-medium">User ID</p>
-                            <p className="text-sm text-blue-900 font-mono">{selectedEvent.userId.slice(0, 8)}...</p>
-                          </div>
-                        )}
-                        {selectedEvent.phoneNumber && (
-                          <div>
-                            <p className="text-xs text-blue-700 font-medium">Phone Number</p>
-                            <p className="text-sm text-blue-900">{selectedEvent.phoneNumber}</p>
-                          </div>
-                        )}
-                        <div>
-                          <p className="text-xs text-blue-700 font-medium">Timestamp</p>
-                          <p className="text-sm text-blue-900">{new Date(selectedEvent.createdAt).toLocaleString()}</p>
-                        </div>
-                      </div>
-
-                      {/* Full Event Data */}
-                      {selectedEvent.eventData && (
-                        <details className="mt-4">
-                          <summary className="cursor-pointer text-sm font-medium text-blue-800 hover:text-blue-900">
-                            View Full Event Data (JSON)
-                          </summary>
-                          <pre className="mt-2 p-4 bg-white rounded-lg border border-blue-200 text-xs overflow-x-auto max-h-64 overflow-y-auto">
-                            {JSON.stringify(selectedEvent.eventData, null, 2)}
-                          </pre>
-                        </details>
-                      )}
-                    </div>
-                  )}
                 </>
               ) : (
                 <div className="p-8 text-center text-gray-500">
