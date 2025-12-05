@@ -10,6 +10,8 @@ import {
 import { InterpretationResult } from '../types/vision';
 import { auditLogService } from './auditLogService';
 import { conversationContextRepository } from '../repositories/conversationContextRepository';
+import { geminiPlannerService } from './geminiPlannerService';
+import { ExecutionPlan } from './toolDefinitions';
 
 /**
  * Agent Decision Framework - Implements the core logic for minimizing round-trips
@@ -50,6 +52,36 @@ export class AgentDecisionFramework {
       default:
         return false;
     }
+  }
+
+  /**
+   * Create an execution plan using the Gemini planner
+   * This is the primary method for intelligent multi-step workflow orchestration
+   */
+  async createExecutionPlanWithPlanner(
+    context: DecisionContext,
+    extractedText: string,
+    userName?: string
+  ): Promise<ExecutionPlan | null> {
+    console.log('[AgentDecision] Creating execution plan with Gemini planner');
+    console.log('Extracted text:', extractedText.substring(0, 200));
+
+    const plannerResult = await geminiPlannerService.createExecutionPlan(
+      extractedText,
+      userName || 'User'
+    );
+
+    if (!plannerResult.success || !plannerResult.plan) {
+      console.log('[AgentDecision] Planner failed, falling back to hardcoded workflow');
+      return null;
+    }
+
+    console.log('[AgentDecision] Plan created successfully:', {
+      stepCount: plannerResult.plan.steps.length,
+      summary: plannerResult.plan.summary
+    });
+
+    return plannerResult.plan;
   }
 
   /**

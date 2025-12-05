@@ -23,6 +23,15 @@ import { shoppingMCPServer } from '../mcp/shoppingMcpServer';
 import { paymentMCPServer } from '../mcp/paymentMcpServer';
 import { aiChatMCPServer } from '../mcp/aiChatMcpServer';
 import { userProfileMCPServer } from '../mcp/userProfileMcpServer';
+import { geminiPlannerService } from './geminiPlannerService';
+import { loggingService } from './loggingService';
+import {
+  ExecutionPlan,
+  ExecutionStep,
+  StepCondition,
+  toolToServerMap,
+  toolNameMap
+} from './toolDefinitions';
 
 /**
  * MCP Controller Agent - Orchestrates complex workflows using MCP tools
@@ -333,22 +342,527 @@ export class MCPControllerAgent {
   private aggregateWorkflowResults(results: Record<string, any>, context: DecisionContext): any {
     const intent = context.interpretation.intent;
 
+    console.log('[MCP Agent] aggregateWorkflowResults called:', {
+      intent,
+      resultKeys: Object.keys(results),
+      hasSearchProducts: !!results['search_products'],
+      searchProductsKeys: results['search_products'] ? Object.keys(results['search_products']) : []
+    });
+
     if (intent === 'shopping') {
       // Look for search_products result
       const searchResult = results['search_products'];
+      console.log('[MCP Agent] Shopping search result:', {
+        hasSearchResult: !!searchResult,
+        hasProducts: !!searchResult?.products,
+        productCount: searchResult?.products?.length,
+        query: searchResult?.query
+      });
+
       if (searchResult?.products) {
-        return {
+        const aggregated = {
           products: searchResult.products,
           query: searchResult.query || context.interpretation.parameters.productQuery,
           groupedResults: searchResult.groupedResults,
+          referenceId: searchResult.referenceId,
           // Include payment info if available
           paymentMethods: results['payment_strategy']?.methods || [],
           hasPaymentMethod: (results['payment_strategy']?.methods?.length || 0) > 0
         };
+        console.log('[MCP Agent] Returning aggregated shopping result:', {
+          productCount: aggregated.products.length,
+          query: aggregated.query,
+          referenceId: aggregated.referenceId
+        });
+        return aggregated;
       }
     }
 
     // For other intents, return the most relevant result
+    return null;
+  }
+
+  /**
+   * Execute an ExecutionPlan created by the Gemini planner
+   * Implements ADK-style multi-step orchestration with data chaining
+   */
+  async executePlan(
+    plan: ExecutionPlan,
+    userId: string,
+    originalRequest: string
+  ): Promise<{
+    success: boolean;
+    results: Array<{
+      stepId: string;
+      tool: string;
+      description: string;
+      params: Record<string, any>;
+      result: any;
+      success: boolean;
+      skipped?: boolean;
+      error?: string;
+    }>;
+    finalOutput: any;
+    synthesizedResponse?: string;
+  }> {
+    const results: Array<{
+      stepId: string;
+      tool: string;
+      description: string;
+      params: Record<string, any>;
+      result: any;
+      success: boolean;
+      skipped?: boolean;
+      error?: string;
+    }> = [];
+
+    const stepResults: Map<string, any> = new Map();
+    // ADK-style shared state for outputKey data chaining
+    const sharedState: Map<string, any> = new Map();
+
+    // Topologically sort steps based on dependencies
+    const sortedSteps = this.topologicalSort(plan.steps);
+
+    console.log('\n=== EXECUTING PLAN ===');
+    console.log('Total steps:', sortedSteps.length);
+
+    for (const step of sortedSteps) {
+      console.log(`\n--- Step ${step.id}: ${step.tool} ---`);
+      console.log('Description:', step.description);
+
+      // Check dependencies are satisfied
+      if (step.dependsOn && step.dependsOn.length > 0) {
+        const unmetDeps = step.dependsOn.filter(depId => !stepResults.has(depId));
+        if (unmetDeps.length > 0) {
+          console.log('Skipping - unmet dependencies:', unmetDeps);
+          loggingService.warn('Skipping step due to unmet dependencies', {
+            stepId: step.id,
+            unmetDeps
+          });
+          results.push({
+            stepId: step.id,
+            tool: step.tool,
+            description: step.description,
+            params: step.params,
+            result: null,
+            success: false,
+            skipped: true,
+            error: `Dependencies not met: ${unmetDeps.join(', ')}`
+          });
+          continue;
+        }
+      }
+
+      // Check condition if present
+      if (step.condition) {
+        const conditionMet = this.evaluateCondition(step.condition, stepResults);
+        if (!conditionMet) {
+          console.log('Skipping - condition not met');
+          loggingService.info('Skipping step due to condition not met', {
+            stepId: step.id,
+            condition: step.condition
+          });
+          results.push({
+            stepId: step.id,
+            tool: step.tool,
+            description: step.description,
+            params: step.params,
+            result: null,
+            success: true, // Condition skip is not a failure
+            skipped: true
+          });
+          continue;
+        }
+      }
+
+      // Resolve {variable} placeholders in params using shared state
+      const resolvedParams = this.resolveStateVariables(step.params, sharedState);
+      console.log('Resolved params:', JSON.stringify(resolvedParams, null, 2));
+
+      // Execute the step
+      const stepResult = await this.executeStepFromPlan(step, resolvedParams, userId);
+      results.push(stepResult);
+
+      // Store result for dependent steps
+      if (stepResult.success) {
+        stepResults.set(step.id, stepResult.result);
+
+        // Store formatted result in shared state if outputKey specified
+        if (step.outputKey) {
+          const formattedOutput = geminiPlannerService.formatStepOutput(step.tool, stepResult.result);
+          sharedState.set(step.outputKey, formattedOutput);
+          console.log(`Stored output in shared state: ${step.outputKey}`, formattedOutput);
+        }
+      }
+    }
+
+    // Determine overall success
+    const nonSkippedResults = results.filter(r => !r.skipped);
+    const hasErrors = nonSkippedResults.some(r => !r.success);
+    const successfulResults = results.filter(r => r.success && !r.skipped);
+
+    // Synthesize response if we have multiple successful results
+    let synthesizedResponse: string | undefined;
+    if (successfulResults.length > 0) {
+      const synthesisResult = await geminiPlannerService.synthesizeResponse(
+        originalRequest,
+        successfulResults.map(r => ({
+          tool: r.tool,
+          description: r.description,
+          params: r.params,
+          result: r.result,
+          success: r.success
+        })),
+        plan.summary
+      );
+      if (synthesisResult.success) {
+        synthesizedResponse = synthesisResult.response;
+      }
+    }
+
+    // Get the most relevant final output
+    const finalOutput = this.determineFinalOutput(results, sharedState);
+
+    console.log('\n=== PLAN EXECUTION COMPLETE ===');
+    console.log('Success:', !hasErrors);
+    console.log('Results:', results.length);
+    console.log('Successful:', successfulResults.length);
+
+    return {
+      success: !hasErrors,
+      results,
+      finalOutput,
+      synthesizedResponse
+    };
+  }
+
+  /**
+   * Execute a single step from an ExecutionPlan
+   */
+  private async executeStepFromPlan(
+    step: ExecutionStep,
+    resolvedParams: Record<string, any>,
+    userId: string
+  ): Promise<{
+    stepId: string;
+    tool: string;
+    description: string;
+    params: Record<string, any>;
+    result: any;
+    success: boolean;
+    error?: string;
+  }> {
+    const serverName = toolToServerMap[step.tool];
+    const mcpToolName = toolNameMap[step.tool];
+
+    if (!serverName || !mcpToolName) {
+      console.error(`Unknown tool mapping for: ${step.tool}`);
+      return {
+        stepId: step.id,
+        tool: step.tool,
+        description: step.description,
+        params: resolvedParams,
+        result: null,
+        success: false,
+        error: `Unknown tool: ${step.tool}`
+      };
+    }
+
+    try {
+      // Map parameters to MCP format
+      const mcpParams = this.mapParamsToMcp(serverName, mcpToolName, { ...resolvedParams, userId });
+      console.log('MCP params:', JSON.stringify(mcpParams, null, 2));
+
+      // Execute via MCP tool
+      const result = await this.executeTool(serverName, mcpToolName, mcpParams);
+
+      console.log('Tool result:', JSON.stringify(result, null, 2).substring(0, 500));
+
+      const isSuccess = result && result.success !== false;
+
+      return {
+        stepId: step.id,
+        tool: step.tool,
+        description: step.description,
+        params: resolvedParams,
+        result,
+        success: isSuccess
+      };
+
+    } catch (error: any) {
+      console.error(`Step execution failed: ${error.message}`);
+      return {
+        stepId: step.id,
+        tool: step.tool,
+        description: step.description,
+        params: resolvedParams,
+        result: null,
+        success: false,
+        error: error.message
+      };
+    }
+  }
+
+  /**
+   * Map Gemini function parameters to MCP tool parameters
+   */
+  private mapParamsToMcp(
+    serverName: string,
+    toolName: string,
+    params: Record<string, any>
+  ): Record<string, any> {
+    const { userId, ...rest } = params;
+
+    switch (`${serverName}_${toolName}`) {
+      case 'shopping_search_products':
+        return {
+          userId,
+          query: rest.query,
+          filters: {
+            priceMin: rest.minPrice,
+            priceMax: rest.maxPrice,
+            primeOnly: rest.primeOnly ?? true,
+            minRating: 3.5
+          }
+        };
+
+      case 'shopping_create_order':
+        return {
+          userId,
+          productAsin: rest.productId,
+          quantity: rest.quantity || 1,
+          referenceId: rest.referenceId
+        };
+
+      case 'email_send_email':
+        return {
+          userId,
+          to: rest.recipientEmail,
+          recipientName: rest.recipientName,
+          subject: rest.subject || 'Message from Faxi',
+          body: rest.body
+        };
+
+      case 'ai_chat_chat':
+        return {
+          userId,
+          message: rest.question,
+          context: rest.context
+        };
+
+      case 'payment_register_payment_method':
+        return {
+          userId,
+          methodType: rest.methodType
+        };
+
+      case 'user_profile_get_address_book':
+        return { userId };
+
+      case 'user_profile_add_contact':
+        return {
+          userId,
+          name: rest.name,
+          email: rest.email,
+          relationship: rest.note
+        };
+
+      case 'user_profile_lookup_contact':
+        return {
+          userId,
+          query: rest.query
+        };
+
+      case 'user_profile_update_contact':
+        return {
+          userId,
+          contactId: rest.contactId,
+          currentName: rest.currentName,
+          currentEmail: rest.currentEmail,
+          name: rest.name,
+          email: rest.email,
+          relationship: rest.note,
+          notes: rest.notes
+        };
+
+      case 'user_profile_delete_contact':
+        return {
+          userId,
+          contactId: rest.contactId
+        };
+
+      case 'user_profile_get_user_profile':
+        return { userId };
+
+      default:
+        return { userId, ...rest };
+    }
+  }
+
+  /**
+   * Resolve {variable} and {variable.field} placeholders in params using shared state
+   */
+  private resolveStateVariables(
+    params: Record<string, any>,
+    sharedState: Map<string, any>
+  ): Record<string, any> {
+    const resolve = (value: any): any => {
+      if (typeof value === 'string') {
+        // Replace {key} or {key.field} patterns
+        return value.replace(/\{(\w+)(?:\.(\w+))?\}/g, (match, key, field) => {
+          const stored = sharedState.get(key);
+          if (!stored) return match; // Keep original if not found
+          if (field) {
+            // Access specific field like {products.count}
+            return stored[field] !== undefined ? String(stored[field]) : match;
+          }
+          // Return formatted output by default
+          return stored.formatted ?? String(stored);
+        });
+      }
+      if (Array.isArray(value)) {
+        return value.map(resolve);
+      }
+      if (typeof value === 'object' && value !== null) {
+        return Object.fromEntries(
+          Object.entries(value).map(([k, v]) => [k, resolve(v)])
+        );
+      }
+      return value;
+    };
+
+    // Deep clone and resolve
+    return resolve(JSON.parse(JSON.stringify(params)));
+  }
+
+  /**
+   * Evaluate a step condition
+   */
+  private evaluateCondition(condition: StepCondition, stepResults: Map<string, any>): boolean {
+    const dependentResult = stepResults.get(condition.step);
+
+    if (!dependentResult) {
+      console.log('Condition references non-existent step result:', condition.step);
+      return false;
+    }
+
+    // Get the value to check
+    let valueToCheck: string;
+    if (condition.field) {
+      valueToCheck = String(dependentResult[condition.field] || '');
+    } else {
+      // For ai_chat, check the response field
+      valueToCheck = String(dependentResult.response || dependentResult.message || JSON.stringify(dependentResult));
+    }
+
+    const valueLower = valueToCheck.toLowerCase();
+    const checkValueLower = (condition.value || '').toLowerCase();
+
+    switch (condition.check) {
+      case 'contains':
+        return valueLower.includes(checkValueLower);
+
+      case 'not_contains':
+        return !valueLower.includes(checkValueLower);
+
+      case 'equals':
+        return valueLower === checkValueLower;
+
+      case 'not_equals':
+        return valueLower !== checkValueLower;
+
+      case 'truthy':
+        return !!dependentResult && dependentResult.success !== false;
+
+      case 'falsy':
+        return !dependentResult || dependentResult.success === false;
+
+      default:
+        console.log('Unknown condition check type:', condition.check);
+        return true;
+    }
+  }
+
+  /**
+   * Topologically sort steps based on dependencies
+   */
+  private topologicalSort(steps: ExecutionStep[]): ExecutionStep[] {
+    const stepMap = new Map(steps.map(s => [s.id, s]));
+    const visited = new Set<string>();
+    const result: ExecutionStep[] = [];
+
+    const visit = (stepId: string) => {
+      if (visited.has(stepId)) return;
+      visited.add(stepId);
+
+      const step = stepMap.get(stepId);
+      if (!step) return;
+
+      // Visit dependencies first
+      if (step.dependsOn) {
+        for (const depId of step.dependsOn) {
+          visit(depId);
+        }
+      }
+
+      result.push(step);
+    };
+
+    // Visit all steps
+    for (const step of steps) {
+      visit(step.id);
+    }
+
+    return result;
+  }
+
+  /**
+   * Determine the final output from execution results
+   */
+  private determineFinalOutput(
+    results: Array<{ stepId: string; tool: string; result: any; success: boolean; skipped?: boolean }>,
+    sharedState: Map<string, any>
+  ): any {
+    // Look for specific output types in order of priority
+
+    // 1. Shopping products
+    for (const [key, value] of sharedState) {
+      if (value.products) {
+        return {
+          products: value.products,
+          query: value.query || key,
+          referenceId: value.referenceId,
+          count: value.count
+        };
+      }
+    }
+
+    // 2. Email send result
+    const emailResult = results.find(r => r.tool === 'email_send' && r.success);
+    if (emailResult) {
+      return emailResult.result;
+    }
+
+    // 3. AI chat response
+    const chatResult = results.find(r => r.tool === 'ai_chat_question' && r.success);
+    if (chatResult) {
+      return chatResult.result;
+    }
+
+    // 4. Contact operations
+    const contactResult = results.find(r =>
+      r.tool.startsWith('user_profile_') && r.success
+    );
+    if (contactResult) {
+      return contactResult.result;
+    }
+
+    // 5. Default - return last successful result
+    const successfulResults = results.filter(r => r.success && !r.skipped);
+    if (successfulResults.length > 0) {
+      return successfulResults[successfulResults.length - 1].result;
+    }
+
     return null;
   }
 
@@ -890,6 +1404,16 @@ export class MCPControllerAgent {
    */
   private async generateFaxTemplate(result: WorkflowResult, request: AgentRequest): Promise<FaxTemplate> {
     const referenceId = result.finalOutput?.referenceId || `FX-${new Date().getFullYear()}-${String(Date.now()).slice(-6)}`;
+
+    console.log('[MCP Agent] generateFaxTemplate:', {
+      intent: request.interpretation.intent,
+      hasFinalOutput: !!result.finalOutput,
+      finalOutputKeys: result.finalOutput ? Object.keys(result.finalOutput) : [],
+      hasProducts: !!result.finalOutput?.products,
+      productCount: result.finalOutput?.products?.length,
+      hasGroupedResults: !!result.finalOutput?.groupedResults,
+      referenceId
+    });
 
     // For shopping responses, use product_selection template
     if (request.interpretation.intent === 'shopping') {

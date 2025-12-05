@@ -11,6 +11,7 @@ import { faxProcessingErrorHandler, ErrorContext } from './faxProcessingErrorHan
 import { InterpretationRequest, InterpretationResult } from '../types/vision';
 import { AgentRequest, AgentResponse } from '../types/agent';
 import { config } from '../config';
+import { agentDecisionFramework } from './agentDecisionFramework';
 
 export interface FaxProcessingOptions {
   onProgress?: (progress: number) => Promise<void>;
@@ -73,7 +74,8 @@ export class FaxProcessingPipeline {
       const agentResponse = await this.processWithAgentWithErrorHandling(
         contextualInterpretation,
         user.id,
-        faxData
+        faxData,
+        user.name // Pass user name for Gemini planner to personalize emails
       );
       
       // Step 6: Generate Response Fax
@@ -472,10 +474,11 @@ export class FaxProcessingPipeline {
   private async processWithAgentWithErrorHandling(
     interpretation: InterpretationResult,
     userId: string,
-    faxData: FaxJobData
+    faxData: FaxJobData,
+    userName?: string
   ): Promise<AgentResponse> {
     try {
-      return await this.processWithAgent(interpretation, userId, faxData.faxId);
+      return await this.processWithAgent(interpretation, userId, faxData.faxId, userName);
     } catch (error) {
       const errorContext: ErrorContext = {
         faxJobId: faxData.faxId,
@@ -484,58 +487,248 @@ export class FaxProcessingPipeline {
         stage: 'agent_processing',
         originalError: error instanceof Error ? error : new Error('Agent processing failed'),
       };
-      
+
       const result = await faxProcessingErrorHandler.handleError(errorContext);
-      
+
       if (result.shouldRetry) {
         if (result.retryDelay) {
           await new Promise(resolve => setTimeout(resolve, result.retryDelay));
         }
-        return await this.processWithAgent(interpretation, userId, faxData.faxId);
+        return await this.processWithAgent(interpretation, userId, faxData.faxId, userName);
       }
-      
+
       throw error;
     }
   }
 
   /**
    * Process interpretation with MCP Controller Agent
+   * Uses Gemini planner for intelligent multi-step workflow orchestration
    */
   private async processWithAgent(
     interpretation: InterpretationResult,
     userId: string,
-    faxJobId: string
+    faxJobId: string,
+    userName?: string
   ): Promise<AgentResponse> {
     try {
+      console.log('Starting agent processing with Gemini planner', {
+        faxJobId,
+        userId,
+        intent: interpretation.intent,
+        confidence: interpretation.confidence,
+        extractedTextLength: interpretation.extractedText?.length || 0,
+      });
+
+      // Try Gemini planner first for intelligent multi-step orchestration
+      const extractedText = interpretation.extractedText || '';
+      if (extractedText.length > 0) {
+        const executionPlan = await agentDecisionFramework.createExecutionPlanWithPlanner(
+          { interpretation, userId },
+          extractedText,
+          userName
+        );
+
+        if (executionPlan && executionPlan.steps.length > 0) {
+          console.log('Executing Gemini-created plan', {
+            stepCount: executionPlan.steps.length,
+            summary: executionPlan.summary,
+          });
+
+          // Execute the plan using the MCP Controller Agent
+          const planResult = await mcpControllerAgent.executePlan(
+            executionPlan,
+            userId,
+            extractedText
+          );
+
+          // Convert plan result to AgentResponse format
+          const agentResponse: AgentResponse = {
+            success: planResult.success,
+            steps: planResult.results.map(r => ({
+              toolName: r.tool,
+              toolServer: r.tool.split('_')[0], // Extract server from tool name
+              input: r.params,
+              output: r.result,
+              timestamp: new Date(),
+              success: r.success,
+              error: r.error,
+            })),
+            finalResult: planResult.finalOutput,
+            responseType: this.determineResponseType(planResult),
+            faxTemplate: this.buildFaxTemplate(planResult, interpretation),
+            userMessage: planResult.synthesizedResponse || this.generateUserMessage(planResult),
+          };
+
+          console.log('Gemini plan execution completed', {
+            faxJobId,
+            success: agentResponse.success,
+            responseType: agentResponse.responseType,
+            stepsExecuted: agentResponse.steps.length,
+          });
+
+          return agentResponse;
+        }
+      }
+
+      // Fallback to original MCP Controller Agent processing
+      console.log('Falling back to standard MCP Controller Agent processing');
+
       const agentRequest: AgentRequest = {
         interpretation,
         userId,
         faxJobId,
         conversationContext: interpretation.context,
       };
-      
-      console.log('Starting MCP Controller Agent processing', {
-        faxJobId,
-        userId,
-        intent: interpretation.intent,
-        confidence: interpretation.confidence,
-      });
-      
+
       const agentResponse = await mcpControllerAgent.processRequest(agentRequest);
-      
+
       console.log('MCP Controller Agent processing completed', {
         faxJobId,
         success: agentResponse.success,
         responseType: agentResponse.responseType,
         stepsExecuted: agentResponse.steps.length,
       });
-      
+
       return agentResponse;
-      
+
     } catch (error) {
-      console.error('MCP Controller Agent processing failed:', error);
+      console.error('Agent processing failed:', error);
       throw new Error(`Agent processing failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
+  }
+
+  /**
+   * Determine response type from plan result
+   */
+  private determineResponseType(planResult: {
+    success: boolean;
+    finalOutput: any;
+    results: Array<{ tool: string; success: boolean }>;
+  }): AgentResponse['responseType'] {
+    if (!planResult.success) return 'clarification';
+
+    // Check if we have products (requires user selection)
+    if (planResult.finalOutput?.products) {
+      return 'selection_required';
+    }
+
+    return 'completion';
+  }
+
+  /**
+   * Build fax template from plan result
+   */
+  private buildFaxTemplate(
+    planResult: {
+      success: boolean;
+      finalOutput: any;
+      synthesizedResponse?: string;
+      results: Array<{ tool: string; result: any; success: boolean }>;
+    },
+    interpretation: InterpretationResult
+  ): AgentResponse['faxTemplate'] {
+    const referenceId = planResult.finalOutput?.referenceId ||
+      `FX-${new Date().getFullYear()}-${String(Date.now()).slice(-6)}`;
+
+    // Shopping response with products
+    if (planResult.finalOutput?.products) {
+      return {
+        type: 'product_selection',
+        referenceId,
+        contextData: {
+          products: planResult.finalOutput.products,
+          searchQuery: planResult.finalOutput.query || interpretation.parameters?.productQuery || '',
+        },
+        pages: [],
+      };
+    }
+
+    // AI chat response
+    const chatResult = planResult.results.find(r => r.tool === 'ai_chat_question' && r.success);
+    if (chatResult) {
+      return {
+        type: 'email_reply',
+        referenceId,
+        contextData: {
+          subject: 'Response from Faxi',
+          body: chatResult.result?.response || planResult.synthesizedResponse || 'Your request has been processed.',
+          from: 'Faxi Support',
+          to: 'You',
+          hasQuickReplies: false,
+          quickReplies: [],
+        },
+        pages: [],
+      };
+    }
+
+    // Email sent response
+    const emailResult = planResult.results.find(r => r.tool === 'email_send' && r.success);
+    if (emailResult) {
+      return {
+        type: 'confirmation',
+        referenceId,
+        contextData: {
+          type: 'email_sent',
+          actionType: 'email',
+          description: 'Email sent successfully',
+          result: planResult.synthesizedResponse || 'Your email has been sent.',
+        },
+        pages: [{
+          content: [{
+            type: 'text',
+            text: planResult.synthesizedResponse || 'Your email has been sent.',
+            fontSize: 12,
+          }],
+          pageNumber: 1,
+          totalPages: 1,
+        }],
+      };
+    }
+
+    // Default confirmation
+    return {
+      type: 'confirmation',
+      referenceId,
+      contextData: {
+        type: 'general',
+        actionType: interpretation.intent,
+        description: `Processed your ${interpretation.intent} request`,
+        result: planResult.synthesizedResponse || 'Your request has been processed.',
+      },
+      pages: [{
+        content: [{
+          type: 'text',
+          text: planResult.synthesizedResponse || 'Your request has been processed.',
+          fontSize: 12,
+        }],
+        pageNumber: 1,
+        totalPages: 1,
+      }],
+    };
+  }
+
+  /**
+   * Generate user message from plan result
+   */
+  private generateUserMessage(planResult: {
+    success: boolean;
+    synthesizedResponse?: string;
+    finalOutput: any;
+  }): string {
+    if (planResult.synthesizedResponse) {
+      return planResult.synthesizedResponse;
+    }
+
+    if (!planResult.success) {
+      return 'I encountered an issue processing your request. Please try again.';
+    }
+
+    if (planResult.finalOutput?.products) {
+      return 'Please review the products and make your selections.';
+    }
+
+    return 'Your request has been completed successfully.';
   }
 
   /**
