@@ -71,11 +71,17 @@ app.use(monitoringService.requestMonitoring());
 app.use('/webhooks/stripe', express.raw({ type: 'application/json' }));
 
 // Special middleware for SNS webhooks (AWS SNS sends text/plain but body is JSON)
-app.use('/webhooks/email/sns', express.text({ type: 'text/plain' }), (req, res, next) => {
+// Also handle application/json in case SNS switches content types
+app.use('/webhooks/email/sns', express.text({ type: ['text/plain', 'application/json'] }), (req, res, next) => {
+  console.log('SNS middleware - Content-Type:', req.headers['content-type']);
+  console.log('SNS middleware - Body type:', typeof req.body);
+  console.log('SNS middleware - Body preview:', typeof req.body === 'string' ? req.body.substring(0, 200) : 'not a string');
+
   // Parse the text body as JSON if it's a string
   if (typeof req.body === 'string' && req.body.length > 0) {
     try {
       req.body = JSON.parse(req.body);
+      console.log('SNS middleware - Parsed body keys:', Object.keys(req.body));
     } catch (e) {
       console.error('Failed to parse SNS message body as JSON:', e);
     }

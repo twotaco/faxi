@@ -51,10 +51,16 @@ export class SnsWebhookHandler {
     try {
       const snsMessage = req.body as SnsMessage;
 
+      // Log full body for debugging SNS issues
+      console.log('SNS raw body type:', typeof req.body);
+      console.log('SNS message keys:', Object.keys(snsMessage));
       console.log('Received SNS notification:', {
         type: snsMessage.Type,
         messageId: snsMessage.MessageId,
-        topicArn: snsMessage.TopicArn
+        topicArn: snsMessage.TopicArn,
+        signingCertURL: snsMessage.SigningCertURL,
+        hasToken: !!snsMessage.Token,
+        hasSubscribeURL: !!snsMessage.SubscribeURL
       });
 
       // Verify SNS signature
