@@ -21,6 +21,20 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 2  # Need history to detect changes
+
+      - name: Check for migration changes
+        id: migration-check
+        run: |
+          # Check if any migration files changed in this push
+          if git diff --name-only HEAD~1 HEAD | grep -qE "^backend/src/migrations/|^backend/migrations/"; then
+            echo "has_migrations=true" >> $GITHUB_OUTPUT
+            echo "Migration files changed - will run migrations"
+          else
+            echo "has_migrations=false" >> $GITHUB_OUTPUT
+            echo "No migration files changed - skipping migrations"
+          fi
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -98,9 +112,10 @@ jobs:
             --region ${{ env.AWS_REGION }}
 
       - name: Run database migrations
+        if: steps.migration-check.outputs.has_migrations == 'true'
         run: |
           echo "Running database migrations..."
-          
+
           # Get network config from backend service
           NETWORK_CONFIG=$(aws ecs describe-services \
             --cluster ${{ env.ECS_CLUSTER }} \
@@ -108,7 +123,7 @@ jobs:
             --region ${{ env.AWS_REGION }} \
             --query 'services[0].networkConfiguration' \
             --output json)
-          
+
           # Run migration as one-off task
           TASK_ARN=$(aws ecs run-task \
             --cluster ${{ env.ECS_CLUSTER }} \
@@ -119,15 +134,15 @@ jobs:
             --region ${{ env.AWS_REGION }} \
             --query 'tasks[0].taskArn' \
             --output text)
-          
+
           echo "Migration task: $TASK_ARN"
-          
+
           # Wait for migration to complete
           aws ecs wait tasks-stopped \
             --cluster ${{ env.ECS_CLUSTER }} \
             --tasks "$TASK_ARN" \
             --region ${{ env.AWS_REGION }}
-          
+
           # Check exit code
           EXIT_CODE=$(aws ecs describe-tasks \
             --cluster ${{ env.ECS_CLUSTER }} \
@@ -135,12 +150,12 @@ jobs:
             --region ${{ env.AWS_REGION }} \
             --query 'tasks[0].containers[0].exitCode' \
             --output text)
-          
+
           if [ "$EXIT_CODE" != "0" ]; then
             echo "Migration failed with exit code: $EXIT_CODE"
             exit 1
           fi
-          
+
           echo "Migrations completed successfully"
 
       - name: Deploy backend to ECS

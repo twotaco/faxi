@@ -180,6 +180,9 @@ export class BrowserAutomationService {
         loggingService.info('Already logged in to Amazon');
       }
 
+      // Clear cart before starting (ensures clean state for each order)
+      await this.clearCart(page);
+
       // Navigate to product page
       const productUrl = `https://www.amazon.co.jp/dp/${order.productAsin}`;
       loggingService.info('Navigating to product page', { productUrl });
@@ -581,6 +584,62 @@ export class BrowserAutomationService {
   }
 
   /**
+   * Clear Amazon cart to ensure clean state for each order
+   */
+  private async clearCart(page: Page): Promise<void> {
+    try {
+      loggingService.info('Clearing Amazon cart');
+      
+      // Navigate to cart
+      await page.goto('https://www.amazon.co.jp/gp/cart/view.html', { waitUntil: 'networkidle' });
+      
+      // Check if cart has items
+      const cartEmpty = await page.locator('.sc-cart-empty').isVisible().catch(() => false);
+      
+      if (cartEmpty) {
+        loggingService.info('Cart is already empty');
+        return;
+      }
+
+      // Find all delete buttons and click them
+      const deleteSelectors = [
+        'input[value="削除"]', // Japanese "Delete"
+        'input[data-action="delete"]',
+        '.sc-action-delete input',
+        'input[name^="submit.delete"]'
+      ];
+
+      let deletedCount = 0;
+      for (const selector of deleteSelectors) {
+        const deleteButtons = await page.locator(selector).all();
+        
+        for (const button of deleteButtons) {
+          const isVisible = await button.isVisible().catch(() => false);
+          if (isVisible) {
+            await button.click();
+            await page.waitForTimeout(500); // Wait for item to be removed
+            deletedCount++;
+          }
+        }
+        
+        if (deletedCount > 0) {
+          break; // Found and clicked delete buttons
+        }
+      }
+
+      if (deletedCount > 0) {
+        loggingService.info('Cart cleared successfully', { itemsDeleted: deletedCount });
+        await page.waitForLoadState('networkidle');
+      } else {
+        loggingService.warn('Could not find delete buttons, cart may already be empty');
+      }
+    } catch (error) {
+      loggingService.warn('Error clearing cart, continuing anyway', { error });
+      // Don't throw - cart clearing is best-effort
+    }
+  }
+
+  /**
    * Close browser
    */
   async close(): Promise<void> {
@@ -590,5 +649,6 @@ export class BrowserAutomationService {
     }
   }
 }
+
 
 export const browserAutomationService = new BrowserAutomationService();
