@@ -2,6 +2,7 @@ import { EmailReplyData } from '../types/fax';
 import { EmailFaxGenerator } from './emailFaxGenerator';
 import { FaxGenerator } from './faxGenerator';
 import { FaxTemplateEngine } from './faxTemplateEngine';
+import { config } from '../config';
 
 export interface EmailToFaxOptions {
   includeAttachmentNotifications?: boolean;
@@ -324,7 +325,7 @@ export class EmailToFaxConverter {
     // Process each email in the thread
     const processedEmails = emails.map((email, index) => {
       const processedBody = this.processEmailBody(email.body, email.html, opts);
-      const direction = email.from.includes('@me.faxi.jp') ? 'You wrote' : `${email.from} wrote`;
+      const direction = email.from.includes(`@${config.email.fromDomain}`) ? 'You wrote' : `${email.from} wrote`;
       const timestamp = email.timestamp.toLocaleDateString('ja-JP');
       
       return {

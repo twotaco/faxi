@@ -310,13 +310,9 @@
                 
                 <form id="faxForm">
                     <div class="form-group">
-                        <label for="testUserPhone">Test User Phone Number:</label>
-                        <input type="tel" id="testUserPhone" value="+1234567890" required>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="fromNumber">From Number:</label>
+                        <label for="fromNumber">From Number (Sender's Fax):</label>
                         <input type="tel" id="fromNumber" value="+1234567890" required>
+                        <small style="color: #666; display: block; margin-top: 4px;">This creates/uses user account: <span id="emailPreview">1234567890@me.faxi.jp</span></small>
                     </div>
 
                     <div class="form-group">
@@ -389,9 +385,21 @@
         document.addEventListener('DOMContentLoaded', function() {
             setupFileUpload();
             setupForm();
+            setupEmailPreview();
             refreshFaxList();
             startPolling();
         });
+
+        // Setup email preview update when From Number changes
+        function setupEmailPreview() {
+            const fromNumberInput = document.getElementById('fromNumber');
+            const emailPreview = document.getElementById('emailPreview');
+
+            fromNumberInput.addEventListener('input', function() {
+                const cleanPhone = this.value.replace(/\D/g, '');
+                emailPreview.textContent = cleanPhone ? `${cleanPhone}@me.faxi.jp` : '(enter phone number)';
+            });
+        }
 
         // Setup file upload drag and drop
         function setupFileUpload() {
@@ -452,7 +460,6 @@
             // Get form data
             const formData = new FormData();
             const fileInput = document.getElementById('faxFile');
-            const testUserPhone = document.getElementById('testUserPhone').value;
             const fromNumber = document.getElementById('fromNumber').value;
             const toNumber = document.getElementById('toNumber').value;
 
@@ -462,7 +469,6 @@
             }
 
             formData.append('fax_file', fileInput.files[0]);
-            formData.append('test_user_phone', testUserPhone);
             formData.append('from_number', fromNumber);
             formData.append('to_number', toNumber);
 

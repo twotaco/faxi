@@ -17,7 +17,7 @@ export interface EmailConfig {
 }
 
 export const emailConfig: EmailConfig = {
-  domain: 'me.faxi.jp',
+  domain: config.email.fromDomain,
   mxRecords: [
     '10 mail.faxi.jp',
     '20 mail2.faxi.jp'
@@ -37,10 +37,12 @@ export const emailConfig: EmailConfig = {
 
 /**
  * Extract phone number from Faxi email address
- * Format: {phone_number}@me.faxi.jp
+ * Format: {phone_number}@{domain}
  */
 export function extractPhoneFromEmail(emailAddress: string): string | null {
-  const match = emailAddress.match(/^(\d+)@me\.faxi\.jp$/);
+  const domain = config.email.fromDomain;
+  const escapedDomain = domain.replace(/\./g, '\\.');
+  const match = emailAddress.match(new RegExp(`^(\\d+)@${escapedDomain}$`));
   return match ? match[1] : null;
 }
 
@@ -48,7 +50,9 @@ export function extractPhoneFromEmail(emailAddress: string): string | null {
  * Validate if email address is a Faxi user email
  */
 export function isFaxiUserEmail(emailAddress: string): boolean {
-  return /^\d+@me\.faxi\.jp$/.test(emailAddress);
+  const domain = config.email.fromDomain;
+  const escapedDomain = domain.replace(/\./g, '\\.');
+  return new RegExp(`^\\d+@${escapedDomain}$`).test(emailAddress);
 }
 
 /**
@@ -56,5 +60,5 @@ export function isFaxiUserEmail(emailAddress: string): boolean {
  */
 export function generateFaxiEmail(phoneNumber: string): string {
   const cleanPhone = phoneNumber.replace(/\D/g, '');
-  return `${cleanPhone}@me.faxi.jp`;
+  return `${cleanPhone}@${config.email.fromDomain}`;
 }

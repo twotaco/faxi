@@ -101,6 +101,10 @@
         {
           "name": "EMAIL_PROVIDER",
           "value": "ses"
+        },
+        {
+          "name": "EMAIL_FROM_DOMAIN",
+          "value": "me.faxi.jp"
         }
       ],
       "secrets": [

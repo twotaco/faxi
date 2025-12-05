@@ -1,4 +1,5 @@
 import { db } from '../database/connection';
+import { config } from '../config';
 
 export interface User {
   id: string;
@@ -149,12 +150,12 @@ export class UserRepository {
 
   /**
    * Generate email address from phone number
-   * Format: {phone_number}@me.faxi.jp
+   * Format: {phone_number}@{domain}
    */
   generateEmailAddress(phoneNumber: string): string {
     // Remove any non-digit characters
     const cleanPhone = phoneNumber.replace(/\D/g, '');
-    return `${cleanPhone}@me.faxi.jp`;
+    return `${cleanPhone}@${config.email.fromDomain}`;
   }
 
   /**

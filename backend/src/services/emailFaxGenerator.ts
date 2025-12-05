@@ -2,6 +2,7 @@ import { FaxTemplateEngine } from './faxTemplateEngine.js';
 import { FaxGenerator } from './faxGenerator.js';
 import { DynamicLayoutCalculator } from './dynamicLayoutCalculator.js';
 import { EmailReplyData, FaxTemplate, FaxPage, FaxContent } from '../types/fax.js';
+import { config } from '../config/index.js';
 
 export interface EmailFaxOptions {
   includeQuickReplies?: boolean;
@@ -243,7 +244,7 @@ Need help? Contact us anytime at help@faxi.jp or +81-3-1234-5678.`,
     // For multiple emails, create a conversation view
     if (emails.length > 1) {
       const conversationBody = emails.map((email, index) => {
-        const direction = email.from.includes('@me.faxi.jp') ? 'You wrote' : `${email.from} wrote`;
+        const direction = email.from.includes(`@${config.email.fromDomain}`) ? 'You wrote' : `${email.from} wrote`;
         const timestamp = new Date().toLocaleDateString('ja-JP'); // In real implementation, use actual timestamps
         
         return `--- ${direction} (${timestamp}) ---

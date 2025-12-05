@@ -1381,6 +1381,24 @@ app.get('/admin/mcp/external-apis', requireAdminAuth, requirePermission('mcp:vie
   }
 });
 
+// Admin Dashboard API Endpoints
+import * as adminDashboardController from './controllers/adminDashboardController';
+
+// MCP Servers monitoring page
+app.get('/api/admin/dashboard/mcp/stats', requireAdminAuth, requirePermission('mcp:view'), adminDashboardController.getMcpStats);
+
+// AI Inspector page
+app.get('/api/admin/dashboard/ai/metrics', requireAdminAuth, requirePermission('ai:view'), adminDashboardController.getAiMetrics);
+
+// System Health page
+app.get('/api/admin/dashboard/health/status', requireAdminAuth, requirePermission('alerts:view'), adminDashboardController.getHealthStatus);
+
+// Analytics page
+app.get('/api/admin/dashboard/analytics/overview', requireAdminAuth, requirePermission('analytics:view'), adminDashboardController.getAnalyticsOverview);
+
+// Audit Logs page
+app.get('/api/admin/dashboard/audit/logs', requireAdminAuth, requirePermission('audit:view'), adminDashboardController.getAuditLogs);
+
 // Rate Limit Monitoring Endpoints
 app.get('/admin/rate-limits/scraping', requireAdminAuth, requirePermission('mcp:view'), async (req: Request, res: Response) => {
   try {

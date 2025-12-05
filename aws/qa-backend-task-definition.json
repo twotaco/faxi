@@ -32,7 +32,7 @@
         },
         {
           "name": "TEST_MODE",
-          "value": "false"
+          "value": "true"
         },
         {
           "name": "DATABASE_HOST",
@@ -101,6 +101,10 @@
         {
           "name": "EMAIL_PROVIDER",
           "value": "ses"
+        },
+        {
+          "name": "EMAIL_FROM_DOMAIN",
+          "value": "qa.me.faxi.jp"
         }
       ],
       "secrets": [
