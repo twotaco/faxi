@@ -3,6 +3,7 @@ import { db } from '../database/connection';
 import { loggingService } from '../services/loggingService';
 import { monitoringService } from '../services/monitoringService';
 import { mcpMonitoringService } from '../services/mcpMonitoringService';
+import { emailMetricsService } from '../services/emailMetricsService';
 
 /**
  * Admin Dashboard Controller
@@ -460,6 +461,177 @@ export async function getAuditLogs(req: Request, res: Response) {
     res.status(500).json({
       error: 'Failed to fetch audit logs',
       message: 'An error occurred while fetching audit logs',
+    });
+  }
+}
+
+/**
+ * GET /api/admin/dashboard/email/metrics
+ * Get email metrics including delivery rates, bounce rates, and recent activity
+ */
+export async function getEmailMetrics(req: Request, res: Response) {
+  try {
+    const { days = '7' } = req.query;
+    const numDays = parseInt(days as string, 10);
+
+    // Get metrics for the specified period
+    const endDate = new Date();
+    const startDate = new Date(endDate.getTime() - numDays * 24 * 60 * 60 * 1000);
+
+    // Get aggregate metrics
+    const metrics = await emailMetricsService.calculateMetrics(startDate, endDate);
+
+    // Get daily breakdown
+    const dailyMetrics = await emailMetricsService.getDailyMetrics(startDate, endDate);
+
+    // Check for threshold violations
+    const alerts = await emailMetricsService.checkThresholds(metrics);
+
+    // Get recent email events from audit logs (without content for privacy)
+    const recentEventsResult = await db.query(
+      `SELECT
+         id,
+         user_id,
+         event_type,
+         event_data->>'provider' as provider,
+         event_data->>'status' as status,
+         event_data->>'fromDomain' as from_domain,
+         event_data->>'toDomain' as to_domain,
+         created_at
+       FROM audit_logs
+       WHERE event_type LIKE 'email.%'
+       ORDER BY created_at DESC
+       LIMIT 50`
+    );
+
+    // Get inbound email stats from audit logs
+    const inboundStatsResult = await db.query(
+      `SELECT
+         COUNT(*) FILTER (WHERE event_type = 'email.received') as total_received,
+         COUNT(*) FILTER (WHERE event_type = 'email.unregistered_recipient_rejected') as rejected_unregistered,
+         COUNT(*) FILTER (WHERE event_type = 'email.blocked_sender_rejected') as rejected_blocked
+       FROM audit_logs
+       WHERE created_at >= $1 AND created_at <= $2
+       AND event_type LIKE 'email.%'`,
+      [startDate, endDate]
+    );
+
+    const inboundStats = inboundStatsResult.rows[0] || {
+      total_received: 0,
+      rejected_unregistered: 0,
+      rejected_blocked: 0
+    };
+
+    // Get email-to-fax pipeline jobs (inbound flow)
+    const emailToFaxResult = await db.query(
+      `SELECT
+         id,
+         fax_id,
+         user_id,
+         to_number,
+         status,
+         webhook_payload->>'type' as job_type,
+         webhook_payload->'originalEmail'->>'from' as email_from,
+         webhook_payload->'originalEmail'->>'subject' as email_subject,
+         webhook_payload->'originalEmail'->>'receivedAt' as email_received_at,
+         action_results->>'telnyxFaxId' as telnyx_fax_id,
+         action_results->>'pageCount' as page_count,
+         action_results->>'referenceId' as reference_id,
+         created_at,
+         completed_at,
+         error_message
+       FROM fax_jobs
+       WHERE webhook_payload->>'type' = 'email_to_fax'
+       AND created_at >= $1
+       ORDER BY created_at DESC
+       LIMIT 50`,
+      [startDate]
+    );
+
+    // Calculate pipeline stats
+    const pipelineStats = {
+      total: emailToFaxResult.rows.length,
+      completed: emailToFaxResult.rows.filter(r => r.status === 'completed').length,
+      processing: emailToFaxResult.rows.filter(r => r.status === 'processing').length,
+      pending: emailToFaxResult.rows.filter(r => r.status === 'pending').length,
+      failed: emailToFaxResult.rows.filter(r => r.status === 'failed').length,
+    };
+
+    res.json({
+      period: {
+        startDate: startDate.toISOString(),
+        endDate: endDate.toISOString(),
+        days: numDays
+      },
+      metrics: {
+        totalSent: metrics.totalSent,
+        totalDelivered: metrics.totalDelivered,
+        totalBounced: metrics.totalBounced,
+        totalComplaints: metrics.totalComplaints,
+        bounceRate: Math.round(metrics.bounceRate * 10000) / 100,
+        complaintRate: Math.round(metrics.complaintRate * 100000) / 1000,
+        deliveryRate: Math.round(metrics.deliveryRate * 10000) / 100,
+      },
+      inbound: {
+        totalReceived: parseInt(inboundStats.total_received, 10) || 0,
+        rejectedUnregistered: parseInt(inboundStats.rejected_unregistered, 10) || 0,
+        rejectedBlocked: parseInt(inboundStats.rejected_blocked, 10) || 0,
+      },
+      pipeline: {
+        stats: pipelineStats,
+        jobs: emailToFaxResult.rows.map(row => ({
+          id: row.id,
+          faxId: row.fax_id,
+          userId: row.user_id,
+          toNumber: row.to_number,
+          status: row.status,
+          emailFrom: row.email_from,
+          emailSubject: row.email_subject,
+          emailReceivedAt: row.email_received_at,
+          telnyxFaxId: row.telnyx_fax_id,
+          pageCount: row.page_count ? parseInt(row.page_count, 10) : null,
+          referenceId: row.reference_id,
+          createdAt: row.created_at,
+          completedAt: row.completed_at,
+          errorMessage: row.error_message,
+          // Calculate processing duration
+          processingDuration: row.completed_at && row.email_received_at
+            ? Math.round((new Date(row.completed_at).getTime() - new Date(row.email_received_at).getTime()) / 1000)
+            : null,
+        })),
+      },
+      alerts: alerts.map(alert => ({
+        type: alert.type,
+        severity: alert.severity,
+        message: alert.message,
+        threshold: alert.threshold,
+        actual: alert.actual,
+      })),
+      dailyMetrics: dailyMetrics.map(day => ({
+        date: day.date,
+        sent: day.metrics.totalSent,
+        delivered: day.metrics.totalDelivered,
+        bounced: day.metrics.totalBounced,
+        complaints: day.metrics.totalComplaints,
+        bounceRate: Math.round(day.metrics.bounceRate * 10000) / 100,
+        deliveryRate: Math.round(day.metrics.deliveryRate * 10000) / 100,
+      })),
+      recentEvents: recentEventsResult.rows.map(row => ({
+        id: row.id,
+        userId: row.user_id,
+        eventType: row.event_type,
+        provider: row.provider,
+        status: row.status,
+        fromDomain: row.from_domain,
+        toDomain: row.to_domain,
+        createdAt: row.created_at,
+      })),
+    });
+  } catch (error) {
+    loggingService.error('Failed to fetch email metrics', error as Error);
+    res.status(500).json({
+      error: 'Failed to fetch email metrics',
+      message: 'An error occurred while fetching email metrics',
     });
   }
 }

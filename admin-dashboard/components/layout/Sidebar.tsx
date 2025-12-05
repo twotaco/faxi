@@ -2,17 +2,18 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { 
-  LayoutDashboard, 
-  FileText, 
-  Users, 
-  Server, 
-  Brain, 
-  Bell, 
+import {
+  LayoutDashboard,
+  FileText,
+  Users,
+  Server,
+  Brain,
+  Bell,
   BarChart3,
   FileSearch,
   ShoppingCart,
-  BookOpen
+  BookOpen,
+  Mail
 } from 'lucide-react';
 
 const navigation = [
@@ -20,6 +21,7 @@ const navigation = [
   { name: 'Fax Jobs', href: '/jobs', icon: FileText },
   { name: 'Pending Orders', href: '/orders/pending', icon: ShoppingCart },
   { name: 'Users', href: '/users', icon: Users },
+  { name: 'Email', href: '/email', icon: Mail },
   { name: 'MCP Servers', href: '/mcp', icon: Server },
   { name: 'AI Inspector', href: '/ai', icon: Brain },
   { name: 'Alerts', href: '/alerts', icon: Bell },

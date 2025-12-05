@@ -1418,6 +1418,9 @@ app.get('/api/admin/dashboard/analytics/overview', requireAdminAuth, requirePerm
 // Audit Logs page
 app.get('/api/admin/dashboard/audit/logs', requireAdminAuth, requirePermission('audit:view'), adminDashboardController.getAuditLogs);
 
+// Email Metrics page
+app.get('/api/admin/dashboard/email/metrics', requireAdminAuth, requirePermission('analytics:view'), adminDashboardController.getEmailMetrics);
+
 // Rate Limit Monitoring Endpoints
 app.get('/admin/rate-limits/scraping', requireAdminAuth, requirePermission('mcp:view'), async (req: Request, res: Response) => {
   try {
